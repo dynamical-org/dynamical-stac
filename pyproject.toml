@@ -7,3 +7,8 @@ dependencies = [
     "boto3>=1.42.91",
     "pystac[validation]>=1.10.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
