@@ -1,0 +1,9 @@
+[project]
+name = "dynamical-stac"
+version = "0.1.0"
+description = "STAC catalog generation for dynamical.org"
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.42.91",
+    "pystac[validation]>=1.10.0",
+]
