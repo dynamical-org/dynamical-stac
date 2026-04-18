@@ -12,6 +12,6 @@ jobs:
       - run: uv sync
       - run: uv run python src/__main__.py generate-and-upload
         env:
-          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT_URL: ${{ secrets.R2_STAC_ENDPOINT_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_STAC_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_STAC_SECRET_ACCESS_KEY }}
