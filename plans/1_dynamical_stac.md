@@ -160,3 +160,75 @@ The 11ty site is hosted on GitHub Pages (CNAME = `dynamical.org`), which does no
 - Catalog root: `/Users/marsh/workspace/dynamical-org/dynamical.org/docs/stac/catalog.json`
 - URL to update: `/Users/marsh/workspace/dynamical-org/dynamical-catalog/src/dynamical_catalog/_stac.py:13`
 - New repo root: `/Users/marsh/workspace/dynamical-org/dynamical-stac/`
+
+---
+
+### 2026-04-20 — Remaining todo items from meta#73
+
+Working through the open checkboxes from the meta issue. Completed below are landed on this branch.
+
+#### Done
+
+- **Integration test: `dynamical-catalog` reads a value.** `tests/test_catalog_read.py` generates the catalog to a tmpdir, serves it over a local HTTP server (root_href override), monkey-patches `dynamical_catalog._stac.STAC_CATALOG_URL`, opens `noaa_gfs_forecast` via icechunk, and reads one scalar from `temperature_2m`. Marked `@pytest.mark.integration`.
+- **Integration test: standard STAC browser.** `tests/test_stac_browse.py` uses `pystac-client` against the same served catalog to assert collection set matches `_COLLECTION_IDS` and that each has title/description/extents/zarr asset. Independent of any dynamical code.
+- **Test wiring.** `generate.generate()` now takes `root_href` (defaults to `ROOT_HREF`), so tests can point at localhost. `tests/conftest.py` has a `served_catalog` fixture shared by both integration tests. `pyproject.toml` gained an `integration` dependency group (`pystac-client`, `dynamical-catalog` via git source on `icechunk-2` until merge + PyPI release) and an `integration` pytest marker.
+- **Reformatters-triggered rebuild (STAC side).** `test.yml` now accepts `repository_dispatch: [reformatters-main-push]` and `workflow_dispatch`. Tests run in two stages (unit, then integration). A `notify-on-failure` job opens a GitHub issue when the dispatch-triggered run fails, including the reformatters SHA/ref from `client_payload`.
+
+#### Reformatters side — separate PR needed
+
+Add this workflow to `reformatters` (requires `STAC_DISPATCH_TOKEN` secret — a fine-grained PAT scoped to `dynamical-org/dynamical-stac` with `Actions: write` + `Contents: read`):
+
+```yaml
+# .github/workflows/notify-stac.yml
+name: Notify dynamical-stac on main push
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/reformatters/**/template_config.py'
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch to dynamical-stac
+        env:
+          GH_TOKEN: ${{ secrets.STAC_DISPATCH_TOKEN }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
+        run: |
+          gh api repos/dynamical-org/dynamical-stac/dispatches \
+            -f event_type=reformatters-main-push \
+            -F "client_payload[sha]=${SHA}" \
+            -F "client_payload[ref]=${REF}"
+```
+
+#### Multi-icechunk schema (Alden's comment)
+
+Context: today each collection has a single `assets.icechunk` object with one `icechunk:storage` block (cloud, bucket, prefix, region). Alden asked how this extends when a dataset is mirrored to a second cloud (e.g. R2 in addition to S3).
+
+Options considered:
+
+1. **Multiple keyed assets** (`icechunk-s3`, `icechunk-r2`). STAC-idiomatic, explicit, easy to browse. Breaks `dynamical-catalog`'s `assets.get("icechunk")` — needs a client-side "preferred cloud" concept or fallback iteration.
+2. **STAC `alternate-assets` extension.** One primary `icechunk` asset with `alternate: {r2: {href, icechunk:storage}}` siblings. `dynamical-catalog` keeps working unchanged (it reads the primary). Matches the "mirror" framing well. This is the standard STAC answer for this exact problem.
+3. **Array of storages inside one asset.** Simple schema evolution but breaks the `icechunk:storage` single-object contract and dynamical-catalog with it.
+4. **Sibling collections per cloud.** Duplicates everything; wrong abstraction.
+
+**Recommendation: Option 2 (`alternate-assets`).**
+
+- Primary asset stays the canonical cloud location (whichever is fastest/cheapest for most users — likely the existing S3/public bucket).
+- Additional clouds live under `alternate` as siblings with their own `href` + `icechunk:storage`.
+- Zero changes needed in `dynamical-catalog` until/unless we want client-side cloud selection, at which point it's a small addition (e.g. `entry.open(cloud="r2")` inspects `assets["icechunk"]["alternate"]`).
+- In `dynamical-stac`, the change is additive in `src/data/*.json` and requires adding `"https://stac-extensions.github.io/alternate-assets/v1.2.0/schema.json"` to `stac_extensions` on affected collections. `validate_all()` will enforce the schema.
+
+Action: no code change until we actually have a second cloud to mirror to. When that happens, follow option 2 and add an integration test case that reads the same value via both primary and alternate storage.
+
+#### User-action items (cannot complete autonomously)
+
+- **R2 bucket versioning on `stac-dynamical-org`.** Cloudflare dashboard → R2 → bucket → Settings → Object versioning: Enable. Or with `wrangler` (`wrangler r2 bucket update stac-dynamical-org --versioning enable` — verify current syntax).
+- **Branch rulesets** on `dynamical-catalog` and `dynamical-stac` (both private; Free-tier private repos can't use rulesets via REST). Either upgrade plan, make public, or set via UI: Settings → Rules → Rulesets → New → require PR + 1 approval + passing `test` status check on `main`.
+- **PyPI 2FA.** pypi.org account settings → two-factor authentication. Account-scoped, user-only.

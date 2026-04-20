@@ -12,3 +12,17 @@ dependencies = [
 dev = [
     "pytest>=8.0.0",
 ]
+integration = [
+    "pystac-client>=0.8.0",
+    "dynamical-catalog",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: slow network-dependent integration tests (reads from public R2 buckets)",
+]
+
+[tool.uv.sources]
+# Use the icechunk-2 branch until it's merged and a new release is published on PyPI.
+# After merge, switch to a pinned PyPI version (e.g. dynamical-catalog>=0.4.0) and drop this source.
+dynamical-catalog = { git = "https://github.com/dynamical-org/dynamical-catalog", branch = "icechunk-2" }
