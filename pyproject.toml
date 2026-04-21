@@ -7,6 +7,7 @@ dependencies = [
     "boto3>=1.42.91",
     "icechunk>=0.2.0",
     "pandas>=2.2.0",
+    "pydantic>=2.0",
     "pystac[validation]>=1.10.0",
     "xarray>=2024.10.0",
     "zarr>=3.0.0",
@@ -15,6 +16,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",
+    "stac-check>=1.4.0",
 ]
 integration = [
     "pystac-client>=0.8.0",
