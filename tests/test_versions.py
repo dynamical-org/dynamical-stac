@@ -1,31 +1,23 @@
-"""Check that icechunk versions in src/data/ match reformatters dataset_version."""
+"""Check that icechunk versions in PROFILES match reformatters dataset_version."""
 
 from __future__ import annotations
 
-import json
 import os
 import re
 from pathlib import Path
 
 import pytest
 
-_DATA_DIR = Path(__file__).parent.parent / "src" / "data"
+from datasets import PROFILES
 
 
 def _stac_icechunk_versions() -> dict[str, str]:
-    """Return {dataset_id: version} for STAC collections that have an icechunk asset."""
+    """Return {dataset_id: version} parsed from each Profile's icechunk_prefix."""
     versions: dict[str, str] = {}
-    for f in sorted(_DATA_DIR.glob("*.json")):
-        col = json.loads(f.read_text())
-        prefix = (
-            col.get("assets", {})
-            .get("icechunk", {})
-            .get("icechunk:storage", {})
-            .get("prefix", "")
-        )
-        m = re.search(r"/v([^/]+)\.icechunk/", prefix)
+    for profile in PROFILES:
+        m = re.search(r"/v([^/]+)\.icechunk/", profile.icechunk_prefix)
         if m:
-            versions[col["id"]] = m.group(1)
+            versions[profile.id] = m.group(1)
     return versions
 
 

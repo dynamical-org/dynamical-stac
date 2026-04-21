@@ -274,7 +274,11 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "boto3" },
+    { name = "icechunk" },
+    { name = "pandas" },
     { name = "pystac", extra = ["validation"] },
+    { name = "xarray" },
+    { name = "zarr" },
 ]
 
 [package.dev-dependencies]
@@ -289,7 +293,11 @@ integration = [
 [package.metadata]
 requires-dist = [
     { name = "boto3", specifier = ">=1.42.91" },
+    { name = "icechunk", specifier = ">=0.2.0" },
+    { name = "pandas", specifier = ">=2.2.0" },
     { name = "pystac", extras = ["validation"], specifier = ">=1.10.0" },
+    { name = "xarray", specifier = ">=2024.10.0" },
+    { name = "zarr", specifier = ">=3.0.0" },
 ]
 
 [package.metadata.requires-dev]
