@@ -24,6 +24,10 @@ jobs:
           R2_ENDPOINT_URL: ${{ secrets.R2_STAC_ENDPOINT_URL }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_STAC_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_STAC_SECRET_ACCESS_KEY }}
+      - name: Trigger dynamical.org rebuild
+        env:
+          DEPLOY_HOOK: ${{ secrets.DYNAMICAL_ORG_DEPLOY_HOOK }}
+        run: curl -fsS -X POST "$DEPLOY_HOOK"
 
   notify-on-failure:
     needs: upload
