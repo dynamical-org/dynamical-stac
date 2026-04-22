@@ -35,6 +35,7 @@ def _valid_input(**overrides: object) -> CollectionInput:
         },
         "icechunk_href": "s3://test-bucket/test-prefix/",
         "icechunk_region": "us-west-2",
+        "zarr_href": "https://data.example.com/test-dataset/latest.zarr",
         "attribution": "Test Attribution",
         "version": "v0.0.0",
     }
@@ -68,6 +69,7 @@ def test_catalog_item_derives_bucket_and_prefix_from_href() -> None:
         id="ds",
         icechunk_href="s3://dynamical-noaa-gfs/ds/v1.0.icechunk/",
         icechunk_region="us-west-2",
+        zarr_href="https://data.example.com/ds/latest.zarr",  # type: ignore[arg-type]
     )
     assert item.icechunk_bucket == "dynamical-noaa-gfs"
     assert item.icechunk_prefix == "ds/v1.0.icechunk/"
@@ -79,6 +81,7 @@ def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
             id="ds",
             icechunk_href="https://not-s3/ds/",
             icechunk_region="us-west-2",
+            zarr_href="https://data.example.com/ds/latest.zarr",  # type: ignore[arg-type]
         )
 
 
