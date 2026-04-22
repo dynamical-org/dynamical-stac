@@ -27,7 +27,7 @@ jobs:
       - name: Trigger dynamical.org rebuild
         env:
           DEPLOY_HOOK: ${{ secrets.DYNAMICAL_ORG_DEPLOY_HOOK }}
-        run: curl -fsS -X POST "$DEPLOY_HOOK"
+        run: curl -fsS -d "" "$DEPLOY_HOOK"
 
   notify-on-failure:
     needs: upload
