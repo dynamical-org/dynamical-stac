@@ -131,12 +131,13 @@ def test_cube_variable_accepts_short_name_and_comment() -> None:
     assert v.standard_name == "air_temperature"
 
 
-def test_dim_entry_temporal_extent_has_real_max() -> None:
+def test_dim_entry_temporal_extent_is_open_ended() -> None:
     times = np.array(["2021-05-01", "2022-01-01", "2023-06-15"], dtype="datetime64[ns]")
     coord = xr.DataArray(times, dims="time", name="time")
     d = _dim_entry("time", coord)
     assert d.type == "temporal"
-    assert d.extent == ["2021-05-01T00:00:00Z", "2023-06-15T00:00:00Z"]
+    assert d.extent == ["2021-05-01T00:00:00Z", None]
+    assert d.size is None
 
 
 def test_dim_entry_timedelta_extent_in_seconds() -> None:

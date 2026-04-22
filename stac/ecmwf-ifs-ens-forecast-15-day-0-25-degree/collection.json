@@ -73,10 +73,9 @@
       "type": "temporal",
       "extent": [
         "2024-04-01T00:00:00Z",
-        "2026-04-22T00:00:00Z"
+        null
       ],
-      "unit": "seconds since 1970-01-01",
-      "size": 752
+      "unit": "seconds since 1970-01-01"
     },
     "latitude": {
       "type": "spatial",
@@ -123,7 +122,7 @@
       "short_name": "ptype",
       "comment": "0=No precipitation; 1=Rain; 2=Thunderstorm; 3=Freezing rain; 4=Mixed/ice; 5=Snow; 6=Wet snow; 7=Mixture of rain and snow; 8=Ice pellets; 9=Graupel; 10=Hail; 11=Drizzle; 12=Freezing drizzle; 13=Hail (less than 5 mm); 14=Hail (greater than or equal to 5 mm); 15-191=Reserved; 192-254=Reserved for local use; 255=Missing"
     },
-    "geopotential_height_850hpa": {
+    "dew_point_temperature_2m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -132,10 +131,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "m",
-      "long_name": "Geopotential height",
-      "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
     },
     "downward_long_wave_radiation_flux_surface": {
       "dimensions": [
@@ -151,7 +150,7 @@
       "standard_name": "surface_downwelling_longwave_flux_in_air",
       "short_name": "sdlwrf"
     },
-    "geopotential_height_925hpa": {
+    "geopotential_height_850hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -165,21 +164,7 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
-    "dew_point_temperature_2m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre dewpoint temperature",
-      "standard_name": "dew_point_temperature",
-      "short_name": "2d"
-    },
-    "geopotential_height_500hpa": {
+    "geopotential_height_925hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -207,7 +192,7 @@
       "standard_name": "surface_downwelling_shortwave_flux_in_air",
       "short_name": "sdswrf"
     },
-    "precipitation_surface": {
+    "geopotential_height_500hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -216,11 +201,24 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "temperature_850hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
     },
     "pressure_reduced_to_mean_sea_level": {
       "dimensions": [
@@ -236,34 +234,6 @@
       "standard_name": "air_pressure_at_mean_sea_level",
       "short_name": "prmsl"
     },
-    "pressure_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "Pa",
-      "long_name": "Surface pressure",
-      "standard_name": "surface_air_pressure",
-      "short_name": "sp"
-    },
-    "temperature_925hpa": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
-    },
     "temperature_2m": {
       "dimensions": [
         "init_time",
@@ -278,7 +248,7 @@
       "standard_name": "air_temperature",
       "short_name": "2t"
     },
-    "temperature_850hpa": {
+    "temperature_925hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -305,6 +275,20 @@
       "long_name": "Maximum 10 metre wind gust since previous post-processing",
       "standard_name": "wind_speed_of_gust",
       "short_name": "10fg"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
     },
     "wind_u_100m": {
       "dimensions": [
@@ -334,7 +318,7 @@
       "standard_name": "eastward_wind",
       "short_name": "10u"
     },
-    "total_cloud_cover_atmosphere": {
+    "wind_v_100m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -343,10 +327,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "percent",
-      "long_name": "Total Cloud Cover",
-      "standard_name": "cloud_area_fraction",
-      "short_name": "tcc"
+      "unit": "m s-1",
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
     },
     "wind_v_10m": {
       "dimensions": [
@@ -362,7 +346,7 @@
       "standard_name": "northward_wind",
       "short_name": "10v"
     },
-    "wind_v_100m": {
+    "precipitation_surface": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -371,10 +355,25 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "m s-1",
-      "long_name": "100 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "100v"
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Total Cloud Cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
     }
   },
   "title": "ECMWF IFS ENS forecast, 15 day, 0.25 degree",

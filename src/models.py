@@ -34,12 +34,12 @@ class CubeDimension(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type: Literal["spatial", "temporal", "other"]
-    extent: list[str] | list[float] | list[int] | list[None] = Field(
+    extent: list[str | None] | list[float | None] | list[int | None] = Field(
         min_length=2, max_length=2
     )
     axis: str | None = None
     unit: str | None = None
-    size: int = Field(ge=0)
+    size: int | None = Field(default=None, ge=0)
 
 
 class CubeVariable(BaseModel):
@@ -85,11 +85,13 @@ def _dim_entry(name: str, coord: xr.DataArray) -> CubeDimension:
             size=size,
         )
     if coord.dtype.kind == "M":
+        # Open-ended + no size so the catalog doesn't drift every time the
+        # upstream store gets a new timestep. The collection-level temporal
+        # extent carries the same [start, None] shape.
         return CubeDimension(
             type="temporal",
-            extent=[_iso(values.min()), _iso(values.max())],
+            extent=[_iso(values.min()), None],
             unit="seconds since 1970-01-01",
-            size=size,
         )
     if coord.dtype.kind == "m":  # numpy timedelta64 (e.g. forecast lead_time)
         return CubeDimension(
