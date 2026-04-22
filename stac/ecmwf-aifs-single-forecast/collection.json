@@ -112,6 +112,19 @@
       "standard_name": "dew_point_temperature",
       "short_name": "2d"
     },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf"
+    },
     "downward_short_wave_radiation_flux_surface": {
       "dimensions": [
         "init_time",
@@ -124,6 +137,19 @@
       "long_name": "Surface downward short-wave radiation flux",
       "standard_name": "surface_downwelling_shortwave_flux_in_air",
       "short_name": "sdswrf"
+    },
+    "geopotential_height_500hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
     },
     "geopotential_height_850hpa": {
       "dimensions": [
@@ -151,7 +177,7 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
-    "geopotential_height_500hpa": {
+    "pressure_reduced_to_mean_sea_level": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -159,12 +185,12 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "m",
-      "long_name": "Geopotential height",
-      "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
     },
-    "downward_long_wave_radiation_flux_surface": {
+    "temperature_2m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -172,12 +198,12 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward long-wave radiation flux",
-      "standard_name": "surface_downwelling_longwave_flux_in_air",
-      "short_name": "sdlwrf"
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
     },
-    "total_cloud_cover_atmosphere": {
+    "temperature_925hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -185,10 +211,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "percent",
-      "long_name": "Total Cloud Cover",
-      "standard_name": "cloud_area_fraction",
-      "short_name": "tcc"
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
     },
     "precipitation_surface": {
       "dimensions": [
@@ -217,45 +243,6 @@
       "standard_name": "surface_air_pressure",
       "short_name": "sp"
     },
-    "temperature_2m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre temperature",
-      "standard_name": "air_temperature",
-      "short_name": "2t"
-    },
-    "temperature_925hpa": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
-    },
-    "pressure_reduced_to_mean_sea_level": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "Pa",
-      "long_name": "Pressure reduced to MSL",
-      "standard_name": "air_pressure_at_mean_sea_level",
-      "short_name": "prmsl"
-    },
     "temperature_850hpa": {
       "dimensions": [
         "init_time",
@@ -269,7 +256,7 @@
       "standard_name": "air_temperature",
       "short_name": "t"
     },
-    "wind_u_100m": {
+    "total_cloud_cover_atmosphere": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -277,10 +264,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "m s-1",
-      "long_name": "100 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "100u"
+      "unit": "percent",
+      "long_name": "Total Cloud Cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
     },
     "wind_u_10m": {
       "dimensions": [
@@ -295,7 +282,7 @@
       "standard_name": "eastward_wind",
       "short_name": "10u"
     },
-    "wind_v_10m": {
+    "wind_u_100m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -304,9 +291,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "10 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "10v"
+      "long_name": "100 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "100u"
     },
     "wind_v_100m": {
       "dimensions": [
@@ -320,6 +307,19 @@
       "long_name": "100 metre V wind component",
       "standard_name": "northward_wind",
       "short_name": "100v"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
     }
   },
   "title": "ECMWF AIFS Single forecast",
@@ -396,22 +396,6 @@
         "client_kwargs": {
           "region_name": "us-west-2"
         }
-      },
-      "icechunk:storage": {
-        "bucket": "dynamical-ecmwf-aifs-single",
-        "prefix": "ecmwf-aifs-single-forecast/v0.1.0.icechunk/",
-        "region": "us-west-2"
-      },
-      "roles": [
-        "data"
-      ]
-    },
-    "zarr": {
-      "href": "https://data.dynamical.org/ecmwf/aifs-single/forecast/latest.zarr",
-      "type": "application/x-zarr",
-      "title": "Zarr v3 store",
-      "xarray:open_kwargs": {
-        "engine": "zarr"
       },
       "roles": [
         "data"

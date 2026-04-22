@@ -415,22 +415,6 @@
           "region_name": "us-west-2"
         }
       },
-      "icechunk:storage": {
-        "bucket": "dynamical-noaa-gfs",
-        "prefix": "noaa-gfs-analysis/v0.1.0.icechunk/",
-        "region": "us-west-2"
-      },
-      "roles": [
-        "data"
-      ]
-    },
-    "zarr": {
-      "href": "https://data.dynamical.org/noaa/gfs/analysis/latest.zarr",
-      "type": "application/x-zarr",
-      "title": "Zarr v3 store",
-      "xarray:open_kwargs": {
-        "engine": "zarr"
-      },
       "roles": [
         "data"
       ]

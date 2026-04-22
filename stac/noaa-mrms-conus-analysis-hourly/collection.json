@@ -84,32 +84,6 @@
     }
   },
   "cube:variables": {
-    "precipitation_pass_1_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate over the previous hour, pass 1 (lower latency, fewer gauges). Derived from MultiSensor_QPE_01H_Pass1. Available from October 2020 onward. Units equivalent to mm/s."
-    },
-    "precipitation_radar_only_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate from radar",
-      "standard_name": "precipitation_flux",
-      "short_name": "rdpr",
-      "comment": "Average radar-only precipitation rate over the previous hour (no gauge correction). Derived from RadarOnly_QPE_01H. Units equivalent to mm/s."
-    },
     "categorical_precipitation_type_surface": {
       "dimensions": [
         "time",
@@ -121,19 +95,6 @@
       "long_name": "Precipitation type",
       "short_name": "ptype",
       "comment": "Precipitation type flag. 0=no precipitation, 1=warm stratiform rain, 3=snow, 6=convective, 7=hail, 10=cold stratiform rain, 91=tropical."
-    },
-    "precipitation_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate over the previous hour. Derived from MultiSensor_QPE_01H_Pass2 from October 2020, GaugeCorr_QPE_01H before. If primary product is unavailable, falls back to MultiSensor_QPE_01H_Pass1 and then RadarOnly_QPE_01H. Units equivalent to mm/s."
     },
     "precipitation_pass_2_surface": {
       "dimensions": [
@@ -148,6 +109,19 @@
       "short_name": "prate",
       "comment": "Average precipitation rate over the previous hour, pass 2 (higher latency, more gauges). Derived from MultiSensor_QPE_01H_Pass2. Available from October 2020 onward. Units equivalent to mm/s."
     },
+    "precipitation_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous hour. Derived from MultiSensor_QPE_01H_Pass2 from October 2020, GaugeCorr_QPE_01H before. If primary product is unavailable, falls back to MultiSensor_QPE_01H_Pass1 and then RadarOnly_QPE_01H. Units equivalent to mm/s."
+    },
     "flash_qpe_ffg_max_surface": {
       "dimensions": [
         "time",
@@ -159,6 +133,32 @@
       "long_name": "FLASH QPE-to-FFG percentage maximum",
       "short_name": "FLASH_QPE_FFGMAX",
       "comment": "Maximum percentage of Quantitative Precipitation Estimate (QPE) to Flash Flood Guidance (FFG) from the FLASH system. Percentage where values > 100 indicate QPE exceeds FFG. Available from October 2020 onward."
+    },
+    "precipitation_radar_only_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate from radar",
+      "standard_name": "precipitation_flux",
+      "short_name": "rdpr",
+      "comment": "Average radar-only precipitation rate over the previous hour (no gauge correction). Derived from RadarOnly_QPE_01H. Units equivalent to mm/s."
+    },
+    "precipitation_pass_1_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous hour, pass 1 (lower latency, fewer gauges). Derived from MultiSensor_QPE_01H_Pass1. Available from October 2020 onward. Units equivalent to mm/s."
     }
   },
   "title": "NOAA MRMS CONUS analysis, hourly",
@@ -218,22 +218,6 @@
         "client_kwargs": {
           "region_name": "us-west-2"
         }
-      },
-      "icechunk:storage": {
-        "bucket": "dynamical-noaa-mrms",
-        "prefix": "noaa-mrms-conus-analysis-hourly/v0.3.0.icechunk/",
-        "region": "us-west-2"
-      },
-      "roles": [
-        "data"
-      ]
-    },
-    "zarr": {
-      "href": "https://data.dynamical.org/noaa/mrms/conus-analysis-hourly/latest.zarr",
-      "type": "application/x-zarr",
-      "title": "Zarr v3 store",
-      "xarray:open_kwargs": {
-        "engine": "zarr"
       },
       "roles": [
         "data"

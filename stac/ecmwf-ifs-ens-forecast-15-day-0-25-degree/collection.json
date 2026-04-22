@@ -164,6 +164,20 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf"
+    },
     "geopotential_height_500hpa": {
       "dimensions": [
         "init_time",
@@ -192,20 +206,6 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
-    "downward_long_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward long-wave radiation flux",
-      "standard_name": "surface_downwelling_longwave_flux_in_air",
-      "short_name": "sdlwrf"
-    },
     "precipitation_surface": {
       "dimensions": [
         "init_time",
@@ -221,7 +221,7 @@
       "short_name": "prate",
       "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
     },
-    "pressure_reduced_to_mean_sea_level": {
+    "pressure_surface": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -231,9 +231,9 @@
       ],
       "type": "data",
       "unit": "Pa",
-      "long_name": "Pressure reduced to MSL",
-      "standard_name": "air_pressure_at_mean_sea_level",
-      "short_name": "prmsl"
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
     },
     "temperature_2m": {
       "dimensions": [
@@ -249,7 +249,7 @@
       "standard_name": "air_temperature",
       "short_name": "2t"
     },
-    "pressure_surface": {
+    "pressure_reduced_to_mean_sea_level": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -259,9 +259,9 @@
       ],
       "type": "data",
       "unit": "Pa",
-      "long_name": "Surface pressure",
-      "standard_name": "surface_air_pressure",
-      "short_name": "sp"
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
     },
     "temperature_850hpa": {
       "dimensions": [
@@ -277,7 +277,21 @@
       "standard_name": "air_temperature",
       "short_name": "t"
     },
-    "wind_u_10m": {
+    "temperature_925hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
+    },
+    "wind_u_100m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -287,9 +301,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "10 metre U wind component",
+      "long_name": "100 metre U wind component",
       "standard_name": "eastward_wind",
-      "short_name": "10u"
+      "short_name": "100u"
     },
     "total_cloud_cover_atmosphere": {
       "dimensions": [
@@ -305,7 +319,7 @@
       "standard_name": "cloud_area_fraction",
       "short_name": "tcc"
     },
-    "wind_gust_10m": {
+    "wind_u_10m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -315,23 +329,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "Maximum 10 metre wind gust since previous post-processing",
-      "standard_name": "wind_speed_of_gust",
-      "short_name": "10fg"
-    },
-    "temperature_925hpa": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
     },
     "wind_v_10m": {
       "dimensions": [
@@ -347,6 +347,20 @@
       "standard_name": "northward_wind",
       "short_name": "10v"
     },
+    "wind_gust_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "Maximum 10 metre wind gust since previous post-processing",
+      "standard_name": "wind_speed_of_gust",
+      "short_name": "10fg"
+    },
     "wind_v_100m": {
       "dimensions": [
         "init_time",
@@ -360,20 +374,6 @@
       "long_name": "100 metre V wind component",
       "standard_name": "northward_wind",
       "short_name": "100v"
-    },
-    "wind_u_100m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m s-1",
-      "long_name": "100 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "100u"
     }
   },
   "title": "ECMWF IFS ENS forecast, 15 day, 0.25 degree",
@@ -452,22 +452,6 @@
         "client_kwargs": {
           "region_name": "us-west-2"
         }
-      },
-      "icechunk:storage": {
-        "bucket": "dynamical-ecmwf-ifs-ens",
-        "prefix": "ecmwf-ifs-ens-forecast-15-day-0-25-degree/v0.1.0.icechunk/",
-        "region": "us-west-2"
-      },
-      "roles": [
-        "data"
-      ]
-    },
-    "zarr": {
-      "href": "https://data.dynamical.org/ecmwf/ifs-ens/forecast-15-day-0-25-degree/latest.zarr",
-      "type": "application/x-zarr",
-      "title": "Zarr v3 store",
-      "xarray:open_kwargs": {
-        "engine": "zarr"
       },
       "roles": [
         "data"

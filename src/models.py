@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from typing import Literal
-from urllib.parse import urlparse
 
 import numpy as np
 import pandas as pd
@@ -260,7 +259,6 @@ class CollectionInput(BaseModel):
             k: v.model_dump(exclude_none=True) for k, v in self.cube_variables.items()
         }
 
-        icechunk_parsed = urlparse(self.icechunk_href)
         collection.add_asset(
             "icechunk",
             pystac.Asset(
@@ -273,14 +271,6 @@ class CollectionInput(BaseModel):
                     "xarray:storage_options": {
                         "anon": True,
                         "client_kwargs": {"region_name": self.icechunk_region},
-                    },
-                    # TODO(temporary): drop once all dynamical-catalog consumers
-                    # are on >=0.4.0 (which derives bucket/prefix from the s3
-                    # href). Kept so 0.3.0 keeps resolving the icechunk store.
-                    "icechunk:storage": {
-                        "bucket": icechunk_parsed.netloc,
-                        "prefix": icechunk_parsed.path.lstrip("/"),
-                        "region": self.icechunk_region,
                     },
                 },
             ),
