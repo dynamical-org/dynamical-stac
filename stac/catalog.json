@@ -1,0 +1,75 @@
+{
+  "type": "Catalog",
+  "id": "dynamical-org",
+  "stac_version": "1.1.0",
+  "description": "Cloud-optimized weather and climate datasets from dynamical.org",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-gfs-analysis/collection.json",
+      "type": "application/json",
+      "title": "NOAA GFS analysis"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-gfs-forecast/collection.json",
+      "type": "application/json",
+      "title": "NOAA GFS forecast"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-gefs-forecast-35-day/collection.json",
+      "type": "application/json",
+      "title": "NOAA GEFS forecast, 35 day"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-gefs-analysis/collection.json",
+      "type": "application/json",
+      "title": "NOAA GEFS analysis"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-hrrr-forecast-48-hour/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR forecast, 48 hour"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-hrrr-analysis/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR analysis"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-mrms-conus-analysis-hourly/collection.json",
+      "type": "application/json",
+      "title": "NOAA MRMS CONUS analysis, hourly"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-aifs-single-forecast/collection.json",
+      "type": "application/json",
+      "title": "ECMWF AIFS Single forecast"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-ifs-ens-forecast-15-day-0-25-degree/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 15 day, 0.25 degree"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "title": "dynamical.org STAC Catalog"
+}

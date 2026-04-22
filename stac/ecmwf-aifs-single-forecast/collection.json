@@ -1,0 +1,405 @@
+{
+  "type": "Collection",
+  "id": "ecmwf-aifs-single-forecast",
+  "stac_version": "1.1.0",
+  "description": "Weather forecasts from the ECMWF Artificial Intelligence Forecasting System (AIFS) Single model.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "license",
+      "href": "https://apps.ecmwf.int/datasets/licences/general/",
+      "type": "text/html",
+      "title": "ECMWF Terms of Use (additional terms)"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ecmwf-aifs-single-forecast/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-aifs-single-forecast.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "Example notebook (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ecmwf-aifs-single-forecast.ipynb",
+      "type": "text/html",
+      "title": "Example notebook (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.dynamical.org/ecmwf-aifs-single-forecast/collection.json",
+      "type": "application/json",
+      "title": "ECMWF AIFS Single forecast"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "ECMWF AIFS Single forecast data processed by dynamical.org from ECMWF Open Data.",
+  "version": "0.1.0",
+  "cube:dimensions": {
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2024-04-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        -90.0,
+        90.0
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 721
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        1296000
+      ],
+      "unit": "seconds",
+      "size": 61
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -180.0,
+        179.75
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 1440
+    }
+  },
+  "cube:variables": {
+    "geopotential_height_925hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
+    "geopotential_height_850hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf"
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "geopotential_height_500hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "temperature_850hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
+    },
+    "temperature_925hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Total Cloud Cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
+    },
+    "wind_u_100m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "100 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "100u"
+    },
+    "wind_v_100m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
+    }
+  },
+  "title": "ECMWF AIFS Single forecast",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -180.0,
+          -90.0,
+          179.75,
+          90.0
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2024-04-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Global"
+    ],
+    "spatial_resolution": [
+      "0.25 degrees (~20km)"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2024-04-01 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-360 hours (0-15 days) ahead"
+    ],
+    "forecast_resolution": [
+      "6 hourly"
+    ],
+    "cube:variables": [
+      "dew_point_temperature_2m",
+      "downward_long_wave_radiation_flux_surface",
+      "downward_short_wave_radiation_flux_surface",
+      "geopotential_height_500hpa",
+      "geopotential_height_850hpa",
+      "geopotential_height_925hpa",
+      "precipitation_surface",
+      "pressure_reduced_to_mean_sea_level",
+      "pressure_surface",
+      "temperature_2m",
+      "temperature_850hpa",
+      "temperature_925hpa",
+      "total_cloud_cover_atmosphere",
+      "wind_u_100m",
+      "wind_u_10m",
+      "wind_v_100m",
+      "wind_v_10m"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-ecmwf-aifs-single/ecmwf-aifs-single-forecast/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Regenerate the STAC catalog into ./stac/ and, optionally, upload to R2.
+#
+# Usage:
+#   scripts/generate                      # generate into ./stac/
+#   scripts/generate --upload             # generate, then upload ./stac/ to R2
+#   scripts/generate --upload --op-env    # same, with R2 creds from 1Password
+#
+# --upload requires R2_ENDPOINT_URL, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY in
+# the environment. Pass --op-env to load them from the `r2-stac-rw` 1Password
+# item via `op run`.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# If --op-env is present, re-exec under `op run` with R2_* injected from
+# 1Password. The R2 creds live in the `r2-stac-rw` item in the Dynamical vault.
+if [[ " $* " == *" --op-env "* ]]; then
+  filtered=()
+  for arg in "$@"; do
+    [[ "$arg" != "--op-env" ]] && filtered+=("$arg")
+  done
+  exec op run --env-file=<(cat <<'EOF'
+R2_ENDPOINT_URL=op://Dynamical/r2-stac-rw/Endpoint
+R2_ACCESS_KEY_ID=op://Dynamical/r2-stac-rw/Access Key ID
+R2_SECRET_ACCESS_KEY=op://Dynamical/r2-stac-rw/Secret Access Key
+EOF
+) -- "$0" ${filtered[@]+"${filtered[@]}"}
+fi
+
+upload=false
+for arg in "$@"; do
+  case "$arg" in
+    --upload) upload=true ;;
+    *) echo "unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
+
+uv sync
+
+uv run python src/__main__.py generate
+
+if $upload; then
+  : "${R2_ENDPOINT_URL:?must be set}"
+  : "${R2_ACCESS_KEY_ID:?must be set}"
+  : "${R2_SECRET_ACCESS_KEY:?must be set}"
+  uv run python src/__main__.py upload stac
+fi

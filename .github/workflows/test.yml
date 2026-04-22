@@ -1,0 +1,53 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  repository_dispatch:
+    types: [reformatters-main-push]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: dynamical-org/reformatters
+          path: reformatters
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+      - run: uv sync --group integration
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run pytest tests/ -m "not integration"
+        env:
+          REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
+      - run: uv run pytest tests/ -m integration
+        env:
+          REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
+
+  notify-on-failure:
+    needs: test
+    if: failure() && github.event_name == 'repository_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Open issue on failure
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISPATCH_SHA: ${{ github.event.client_payload.sha }}
+          DISPATCH_REF: ${{ github.event.client_payload.ref }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create \
+            --title "STAC version check failed after reformatters push" \
+            --body "Triggered by reformatters ref \`${DISPATCH_REF}\` at \`${DISPATCH_SHA}\`.
+
+          Run: ${RUN_URL}"
