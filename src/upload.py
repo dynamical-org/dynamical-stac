@@ -5,7 +5,7 @@ import pathlib
 
 import boto3
 
-_BUCKET = "stac-dynamical-org"
+_BUCKET = "stac"
 
 
 def upload(stac_dir: pathlib.Path) -> None:
@@ -23,4 +23,4 @@ def upload(stac_dir: pathlib.Path) -> None:
             key,
             ExtraArgs={"ContentType": "application/json"},
         )
-        print(f"uploaded {key}")
+        print(f"uploaded {key}")  # noqa: T201

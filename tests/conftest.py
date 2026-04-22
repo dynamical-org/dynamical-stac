@@ -12,6 +12,8 @@ import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
 
+from generate import generate
+
 
 @contextmanager
 def _serve(directory: pathlib.Path) -> Iterator[int]:
@@ -38,8 +40,6 @@ def served_catalog(tmp_path: pathlib.Path) -> Iterator[tuple[pathlib.Path, str]]
 
     Yields (catalog_dir, root_url).
     """
-    from generate import generate
-
     with _serve(tmp_path) as port:
         root_url = f"http://127.0.0.1:{port}"
         generate(tmp_path, root_href=root_url)

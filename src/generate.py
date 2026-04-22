@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import pathlib
-import urllib.error
-import urllib.request
 
 import icechunk
 import pystac
@@ -27,24 +25,9 @@ def _open_icechunk(item: CatalogItem) -> xr.Dataset:
     return xr.open_zarr(session.store, consolidated=False, decode_timedelta=True)
 
 
-def _verify_zarr_url(url: str) -> None:
-    manifest_url = url.rstrip("/") + "/zarr.json"
-    req = urllib.request.Request(
-        manifest_url,
-        method="HEAD",
-        headers={"User-Agent": "dynamical-stac-generate/0.1"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            if resp.status >= 400:
-                raise RuntimeError(f"{manifest_url} returned HTTP {resp.status}")
-    except urllib.error.URLError as e:
-        raise RuntimeError(f"Failed to reach zarr URL {manifest_url}: {e}") from e
-
-
 def _verify_read(ds: xr.Dataset) -> None:
     first_var = next(iter(ds.data_vars))
-    sel = {name: 0 for name in ds[first_var].dims}
+    sel = dict.fromkeys(ds[first_var].dims, 0)
     value = ds[first_var].isel(sel).load().values
     assert value.size == 1, f"Expected scalar from {first_var}, got shape {value.shape}"
 
@@ -64,11 +47,9 @@ def generate(output_dir: pathlib.Path, root_href: str = ROOT_HREF) -> None:
         description="Cloud-optimized weather and climate datasets from dynamical.org",
     )
     for item in CATALOG_ITEMS:
-        print(f"{item.id}: opening icechunk store")
+        print(f"{item.id}: opening icechunk store")  # noqa: T201
         ds = _open_icechunk(item)
         _verify_read(ds)
-        print(f"{item.id}: verifying zarr URL")
-        _verify_zarr_url(str(item.zarr_href))
         collection_input = CollectionInput.from_dataset(item, ds)
         catalog.add_child(collection_input.to_pystac_collection())
 

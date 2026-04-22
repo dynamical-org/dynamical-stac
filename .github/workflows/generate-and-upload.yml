@@ -3,6 +3,13 @@ name: Generate and upload STAC catalog
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: generate-and-upload
+  cancel-in-progress: false
+
 jobs:
   generate-and-upload:
     runs-on: ubuntu-latest
@@ -14,3 +21,20 @@ jobs:
           R2_ENDPOINT_URL: ${{ secrets.R2_STAC_ENDPOINT_URL }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_STAC_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_STAC_SECRET_ACCESS_KEY }}
+
+  notify-on-failure:
+    needs: generate-and-upload
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Open issue on failure
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create \
+            --title "STAC generate-and-upload failed" \
+            --body "Run: ${RUN_URL}"

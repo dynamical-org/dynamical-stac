@@ -27,4 +27,4 @@ def test_browse_with_pystac_client(
         assert col.description
         assert col.extent.spatial.bboxes
         assert col.extent.temporal.intervals
-        assert "zarr" in col.assets
+        assert "icechunk" in col.assets

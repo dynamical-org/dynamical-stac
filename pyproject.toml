@@ -16,6 +16,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",
+    "ruff==0.14.14",
     "stac-check>=1.4.0",
 ]
 integration = [
@@ -26,6 +27,70 @@ integration = [
 [tool.pytest.ini_options]
 markers = [
     "integration: slow network-dependent integration tests (reads from public R2 buckets)",
+]
+
+[tool.ruff.lint]
+select = [
+    "UP",    # pyupgrade
+    "I",     # isort
+    "F",     # pyflakes
+    "N",     # pep8-naming
+    "W",     # pycodestyle warning
+    "E",     # pycodestyle error
+    "ASYNC", # async
+    "S",     # security
+    "B",     # bugs
+    "A",     # shadowing builtins
+    "C4",    # comprehensions
+    "T10",   # debugger
+    "T20",   # print
+    "RUF",   # ruff
+    "FURB",  # refurb
+    "INP",   # missing __init__.py
+    "PIE",   # misc flake8
+    "PL",    # pylint
+    "PGH",   # pygrep-hooks
+    "PTH",   # use pathlib
+    "LOG",   # logging
+    "G",     # logging format
+    "TD",    # todos
+    "ICN",   # import conventions
+    "ISC",   # implicit string concatenation
+    "ANN",   # annotations
+    "BLE",   # blind catch exception
+    "PYI",   # pyimport
+    "PT",    # pytest
+    "Q",     # quotes
+    "SLF",   # private member access
+    "SIM",   # simplify
+    "SLOT",  # slots
+    "TID",   # tidy imports
+    "ARG",   # arguments
+    "FLY",   # f-strings
+    "NPY",   # numpy
+    "PERF",  # performance
+    "COM818",# trailing comma in bare tuple
+]
+ignore = [
+    "S101",    # disallow asserts
+    "E501",    # line too long (ruff format will handle)
+    "W293",    # black line contains whitespace
+    "UP046",   # non-pep695-generic-class - defer migration to PEP 695 generics
+    "UP047",   # non-pep695-generic-function - defer migration to PEP 695 generics
+    "PLC0414", # import aliases to same name - we use to specifically re-export
+    "PLR0913", # too many arguments
+    "TD003",   # don't require issue link in todos
+    "PTH123",  # allow `open`
+    "G004",    # allow f-string in logging
+    "PLR2004", # magic value used in comparison
+    "SIM300",  # allow comparisons with constants in any order
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "SLF",     # private member access
+    "ARG001",  # unused function arg
+    "ARG005",  # unused lambda arg
 ]
 
 [tool.uv.sources]

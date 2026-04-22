@@ -35,9 +35,13 @@ def _reformatters_versions(reformatters_dir: Path) -> dict[str, str]:
 
 @pytest.fixture
 def reformatters_dir() -> Path:
-    path = Path(os.environ.get("REFORMATTERS_DIR", Path(__file__).parents[3] / "reformatters"))
+    path = Path(
+        os.environ.get("REFORMATTERS_DIR", Path(__file__).parents[3] / "reformatters")
+    )
     if not path.exists():
-        pytest.skip(f"reformatters not found at {path} — set REFORMATTERS_DIR to run this test")
+        pytest.skip(
+            f"reformatters not found at {path} — set REFORMATTERS_DIR to run this test"
+        )
     return path
 
 

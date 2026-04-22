@@ -7,30 +7,33 @@ import pydantic
 import pytest
 import xarray as xr
 
-from catalog import DatasetLicense
+from catalog import AdditionalTerms, CatalogItem, DatasetLicense
 from models import CollectionInput, CubeDimension, CubeVariable, _dim_entry
 
 
 def _valid_input(**overrides: object) -> CollectionInput:
-    defaults: dict[str, object] = dict(
-        id="test-dataset",
-        name="Test Dataset",
-        description="A test dataset",
-        license="CC-BY-4.0",
-        bbox=(-180.0, -90.0, 180.0, 90.0),
-        temporal_start=dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc),
-        cube_dimensions={
+    defaults: dict[str, object] = {
+        "id": "test-dataset",
+        "name": "Test Dataset",
+        "description": "A test dataset",
+        "license": "CC-BY-4.0",
+        "bbox": (-180.0, -90.0, 180.0, 90.0),
+        "temporal_start": dt.datetime(2020, 1, 1, tzinfo=dt.UTC),
+        "cube_dimensions": {
             "latitude": CubeDimension(
-                type="spatial", axis="y", extent=[-90.0, 90.0], unit="degree_north", size=721
+                type="spatial",
+                axis="y",
+                extent=[-90.0, 90.0],
+                unit="degree_north",
+                size=721,
             ),
         },
-        cube_variables={
+        "cube_variables": {
             "temp": CubeVariable(dimensions=["latitude"], unit="K"),
         },
-        zarr_href="https://data.example.com/test.zarr",
-        icechunk_href="s3://test-bucket/test-prefix/",
-        icechunk_region="us-west-2",
-    )
+        "icechunk_href": "s3://test-bucket/test-prefix/",
+        "icechunk_region": "us-west-2",
+    }
     defaults.update(overrides)
     return CollectionInput(**defaults)  # type: ignore[arg-type]
 
@@ -57,11 +60,8 @@ def test_about_url_and_icechunk_href() -> None:
 
 
 def test_catalog_item_derives_bucket_and_prefix_from_href() -> None:
-    from catalog import CatalogItem
-
     item = CatalogItem(
         id="ds",
-        zarr_href="https://data.example.com/ds/latest.zarr",
         icechunk_href="s3://dynamical-noaa-gfs/ds/v1.0.icechunk/",
         icechunk_region="us-west-2",
         license=DatasetLicense.CC_BY_4_0,
@@ -71,12 +71,9 @@ def test_catalog_item_derives_bucket_and_prefix_from_href() -> None:
 
 
 def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
-    from catalog import CatalogItem
-
     with pytest.raises(pydantic.ValidationError):
         CatalogItem(
             id="ds",
-            zarr_href="https://data.example.com/ds/latest.zarr",
             icechunk_href="https://not-s3/ds/",
             icechunk_region="us-west-2",
             license=DatasetLicense.CC_BY_4_0,
@@ -98,7 +95,7 @@ def test_temporal_start_rejects_naive_datetime() -> None:
 def test_temporal_start_normalizes_to_utc() -> None:
     tz = dt.timezone(dt.timedelta(hours=5))
     c = _valid_input(temporal_start=dt.datetime(2020, 1, 1, 12, tzinfo=tz))
-    assert c.temporal_start.tzinfo is dt.timezone.utc
+    assert c.temporal_start.tzinfo is dt.UTC
     assert c.temporal_start.hour == 7
 
 
@@ -145,3 +142,46 @@ def test_dim_entry_timedelta_extent_in_seconds() -> None:
     assert d.type == "other"
     assert d.extent == [0, 86400]
     assert d.unit == "seconds"
+
+
+@pytest.mark.parametrize(
+    "extent",
+    [
+        ["2020-01-01T00:00:00Z", "2020-12-31T00:00:00Z"],
+        [-90.0, 90.0],
+        [0, 86400],
+        [None, None],
+    ],
+)
+def test_cube_dimension_extent_accepts_supported_shapes(
+    extent: list[object],
+) -> None:
+    d = CubeDimension(type="other", extent=extent, size=2)  # type: ignore[arg-type]
+    assert d.extent == extent
+
+
+def test_cube_dimension_extent_rejects_mixed_types() -> None:
+    with pytest.raises(pydantic.ValidationError):
+        CubeDimension(type="other", extent=[1, "a"], size=2)  # type: ignore[list-item]
+
+
+def test_collection_input_renders_license_link_only_without_terms() -> None:
+    collection = _valid_input().to_pystac_collection()
+    license_links = [link for link in collection.links if link.rel == "license"]
+    assert len(license_links) == 1
+
+
+def test_collection_input_renders_additional_terms_as_extra_license_link() -> None:
+    terms = AdditionalTerms(
+        href="https://example.org/terms",  # type: ignore[arg-type]
+        title="Extra Terms",
+    )
+    collection = _valid_input(additional_terms=terms).to_pystac_collection()
+    license_links = [link for link in collection.links if link.rel == "license"]
+    assert len(license_links) == 2
+    assert any(link.title == "Extra Terms" for link in license_links)
+
+
+def test_additional_terms_rejects_empty_title() -> None:
+    with pytest.raises(pydantic.ValidationError):
+        AdditionalTerms(href="https://example.org/terms", title="")  # type: ignore[arg-type]

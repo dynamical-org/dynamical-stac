@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, Literal
+from typing import Literal
 
+import numpy as np
 import pandas as pd
-import pydantic
 import pystac
 import xarray as xr
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
-from catalog import CatalogItem, DatasetLicense
+from catalog import AdditionalTerms, CatalogItem, DatasetLicense
 
 LICENSE_URLS: dict[DatasetLicense, str] = {
     DatasetLicense.CC_BY_4_0: "https://creativecommons.org/licenses/by/4.0/",
@@ -34,7 +34,9 @@ class CubeDimension(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type: Literal["spatial", "temporal", "other"]
-    extent: list[Any] = Field(min_length=2, max_length=2)
+    extent: list[str] | list[float] | list[int] | list[None] = Field(
+        min_length=2, max_length=2
+    )
     axis: str | None = None
     unit: str | None = None
     size: int = Field(ge=0)
@@ -95,17 +97,19 @@ def _dim_entry(name: str, coord: xr.DataArray) -> CubeDimension:
             unit="seconds",
             size=size,
         )
-    return CubeDimension(type="other", extent=[None, None], unit=units or None, size=size)
+    return CubeDimension(
+        type="other", extent=[None, None], unit=units or None, size=size
+    )
 
 
-def _iso(value: Any) -> str:
+def _iso(value: np.datetime64) -> str:
     ts = pd.Timestamp(value)
     if ts.tzinfo is None:
         ts = ts.tz_localize("UTC")
     return ts.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _td_seconds(value: Any) -> int:
+def _td_seconds(value: np.timedelta64) -> int:
     return int(pd.Timedelta(value).total_seconds())
 
 
@@ -118,7 +122,9 @@ def _time_dim(ds: xr.Dataset) -> str:
 
 def _bbox(ds: xr.Dataset) -> tuple[float, float, float, float]:
     if "latitude" not in ds.coords or "longitude" not in ds.coords:
-        raise ValueError(f"Dataset missing latitude/longitude coords; has {list(ds.coords)}")
+        raise ValueError(
+            f"Dataset missing latitude/longitude coords; has {list(ds.coords)}"
+        )
     lat, lon = ds.latitude, ds.longitude
     return (float(lon.min()), float(lat.min()), float(lon.max()), float(lat.max()))
 
@@ -136,14 +142,12 @@ class CollectionInput(BaseModel):
     temporal_start: dt.datetime
     cube_dimensions: dict[str, CubeDimension]
     cube_variables: dict[str, CubeVariable]
-    zarr_href: pydantic.HttpUrl
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: str = Field(min_length=1)
     attribution: str | None = None
     version: str | None = None
     summaries: dict[str, str] = Field(default_factory=dict)
-    additional_terms_href: pydantic.HttpUrl | None = None
-    additional_terms_title: str | None = None
+    additional_terms: AdditionalTerms | None = None
 
     @field_validator("bbox")
     @classmethod
@@ -162,7 +166,7 @@ class CollectionInput(BaseModel):
     def _utc_aware(cls, v: dt.datetime) -> dt.datetime:
         if v.tzinfo is None:
             raise ValueError("temporal_start must be timezone-aware")
-        return v.astimezone(dt.timezone.utc)
+        return v.astimezone(dt.UTC)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -197,7 +201,7 @@ class CollectionInput(BaseModel):
         time_dim = _time_dim(ds)
         t0 = pd.Timestamp(ds[time_dim].values.min()).to_pydatetime()
         if t0.tzinfo is None:
-            t0 = t0.replace(tzinfo=dt.timezone.utc)
+            t0 = t0.replace(tzinfo=dt.UTC)
         dims = {
             name: _dim_entry(name, ds[name])
             for name in sorted(ds.dims)
@@ -223,14 +227,12 @@ class CollectionInput(BaseModel):
             temporal_start=t0,
             cube_dimensions=dims,
             cube_variables=variables,
-            zarr_href=item.zarr_href,
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
             attribution=ds.attrs.get("attribution"),
             version=ds.attrs.get("dataset_version"),
             summaries={k: ds.attrs[k] for k in _SUMMARY_ATTRS if k in ds.attrs},
-            additional_terms_href=item.additional_terms_href,
-            additional_terms_title=item.additional_terms_title,
+            additional_terms=item.additional_terms,
         )
 
     def to_pystac_collection(self) -> pystac.Collection:
@@ -263,16 +265,6 @@ class CollectionInput(BaseModel):
         }
 
         collection.add_asset(
-            "zarr",
-            pystac.Asset(
-                href=str(self.zarr_href),
-                media_type="application/x-zarr",
-                title="Zarr v3 store",
-                roles=["data"],
-                extra_fields={"xarray:open_kwargs": {"engine": "zarr"}},
-            ),
-        )
-        collection.add_asset(
             "icechunk",
             pystac.Asset(
                 href=self.icechunk_href,
@@ -297,13 +289,13 @@ class CollectionInput(BaseModel):
                 title=self.license.value,
             )
         )
-        if self.additional_terms_href and self.additional_terms_title:
+        if self.additional_terms:
             collection.add_link(
                 pystac.Link(
                     rel="license",
-                    target=str(self.additional_terms_href),
+                    target=str(self.additional_terms.href),
                     media_type="text/html",
-                    title=self.additional_terms_title,
+                    title=self.additional_terms.title,
                 )
             )
         collection.add_link(
@@ -341,7 +333,7 @@ class CollectionInput(BaseModel):
         return collection
 
 
-def _str_or_none(value: Any) -> str | None:
+def _str_or_none(value: object) -> str | None:
     if value is None:
         return None
     s = str(value)

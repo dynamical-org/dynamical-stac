@@ -12,14 +12,13 @@ def test_open_and_read_via_dynamical_catalog(
     served_catalog: tuple[pathlib.Path, str],
 ) -> None:
     dynamical_catalog = pytest.importorskip("dynamical_catalog")
-    from dynamical_catalog import _stac
+    from dynamical_catalog import _stac  # noqa: PLC0415
 
     _, root_url = served_catalog
     _stac.STAC_CATALOG_URL = f"{root_url}/catalog.json"
     _stac.clear_cache()
 
-    entry = dynamical_catalog.catalog.noaa_gfs_forecast
-    ds = entry.open()
+    ds = dynamical_catalog.open("noaa-gfs-forecast")
 
     assert "temperature_2m" in ds.data_vars
     value = (
