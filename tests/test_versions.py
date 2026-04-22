@@ -1,4 +1,4 @@
-"""Check that icechunk versions in PROFILES match reformatters dataset_version."""
+"""Check that icechunk versions in CATALOG_ITEMS match reformatters dataset_version."""
 
 from __future__ import annotations
 
@@ -8,16 +8,16 @@ from pathlib import Path
 
 import pytest
 
-from datasets import PROFILES
+from catalog import CATALOG_ITEMS
 
 
 def _stac_icechunk_versions() -> dict[str, str]:
-    """Return {dataset_id: version} parsed from each Profile's icechunk_prefix."""
+    """Return {dataset_id: version} parsed from each CatalogItem's icechunk_prefix."""
     versions: dict[str, str] = {}
-    for profile in PROFILES:
-        m = re.search(r"/v([^/]+)\.icechunk/", profile.icechunk_prefix)
+    for item in CATALOG_ITEMS:
+        m = re.search(r"/v([^/]+)\.icechunk/", item.icechunk_prefix)
         if m:
-            versions[profile.id] = m.group(1)
+            versions[item.id] = m.group(1)
     return versions
 
 

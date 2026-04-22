@@ -8,18 +8,18 @@ import icechunk
 import pystac
 import xarray as xr
 
-from datasets import PROFILES, Profile
+from catalog import CATALOG_ITEMS, CatalogItem
 from models import CollectionInput
 
 ROOT_HREF = "https://stac.dynamical.org"
 CATALOG_TITLE = "Dynamical.org STAC Catalog"
 
 
-def _open_icechunk(profile: Profile) -> xr.Dataset:
+def _open_icechunk(item: CatalogItem) -> xr.Dataset:
     storage = icechunk.s3_storage(
-        bucket=profile.icechunk_bucket,
-        prefix=profile.icechunk_prefix,
-        region=profile.icechunk_region,
+        bucket=item.icechunk_bucket,
+        prefix=item.icechunk_prefix,
+        region=item.icechunk_region,
         anonymous=True,
     )
     repo = icechunk.Repository.open(storage)
@@ -63,13 +63,13 @@ def generate(output_dir: pathlib.Path, root_href: str = ROOT_HREF) -> None:
         title=CATALOG_TITLE,
         description="Cloud-optimized weather and climate datasets from dynamical.org",
     )
-    for profile in PROFILES:
-        print(f"{profile.id}: opening icechunk store")
-        ds = _open_icechunk(profile)
+    for item in CATALOG_ITEMS:
+        print(f"{item.id}: opening icechunk store")
+        ds = _open_icechunk(item)
         _verify_read(ds)
-        print(f"{profile.id}: verifying zarr URL")
-        _verify_zarr_url(profile.zarr_href)
-        collection_input = CollectionInput.from_dataset(profile, ds)
+        print(f"{item.id}: verifying zarr URL")
+        _verify_zarr_url(item.zarr_href)
+        collection_input = CollectionInput.from_dataset(item, ds)
         catalog.add_child(collection_input.to_pystac_collection())
 
     catalog.normalize_hrefs(root_href)

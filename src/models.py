@@ -9,7 +9,11 @@ import pystac
 import xarray as xr
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
-from datasets import Profile
+from catalog import CatalogItem, DatasetLicense
+
+LICENSE_URLS: dict[DatasetLicense, str] = {
+    DatasetLicense.CC_BY_4_0: "https://creativecommons.org/licenses/by/4.0/",
+}
 
 STAC_EXTENSIONS = [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
@@ -121,7 +125,7 @@ class CollectionInput(BaseModel):
     id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     description: str = Field(min_length=1)
-    license: str = Field(min_length=1)
+    license: DatasetLicense
     bbox: tuple[float, float, float, float]
     temporal_start: dt.datetime
     cube_dimensions: dict[str, CubeDimension]
@@ -133,6 +137,8 @@ class CollectionInput(BaseModel):
     attribution: str | None = None
     version: str | None = None
     summaries: dict[str, str] = Field(default_factory=dict)
+    additional_terms_href: str | None = None
+    additional_terms_title: str | None = None
 
     @field_validator("bbox")
     @classmethod
@@ -181,12 +187,12 @@ class CollectionInput(BaseModel):
         return f"s3://{self.icechunk_bucket}/{self.icechunk_prefix}"
 
     @classmethod
-    def from_dataset(cls, profile: Profile, ds: xr.Dataset) -> CollectionInput:
+    def from_dataset(cls, item: CatalogItem, ds: xr.Dataset) -> CollectionInput:
         ds_id = ds.attrs.get("dataset_id")
-        if ds_id != profile.id:
+        if ds_id != item.id:
             raise ValueError(
-                f"Profile id {profile.id!r} does not match store dataset_id {ds_id!r}"
-                f" (bucket={profile.icechunk_bucket}, prefix={profile.icechunk_prefix})"
+                f"CatalogItem id {item.id!r} does not match store dataset_id {ds_id!r}"
+                f" (bucket={item.icechunk_bucket}, prefix={item.icechunk_prefix})"
             )
         time_dim = _time_dim(ds)
         t0 = pd.Timestamp(ds[time_dim].values.min()).to_pydatetime()
@@ -207,21 +213,23 @@ class CollectionInput(BaseModel):
                 ),
             )
         return cls(
-            id=profile.id,
+            id=item.id,
             name=ds.attrs["name"],
             description=ds.attrs["description"],
-            license=profile.license,
+            license=item.license,
             bbox=_bbox(ds),
             temporal_start=t0,
             cube_dimensions=dims,
             cube_variables=variables,
-            zarr_href=profile.zarr_href,
-            icechunk_bucket=profile.icechunk_bucket,
-            icechunk_prefix=profile.icechunk_prefix,
-            icechunk_region=profile.icechunk_region,
+            zarr_href=item.zarr_href,
+            icechunk_bucket=item.icechunk_bucket,
+            icechunk_prefix=item.icechunk_prefix,
+            icechunk_region=item.icechunk_region,
             attribution=ds.attrs.get("attribution"),
             version=ds.attrs.get("dataset_version"),
             summaries={k: ds.attrs[k] for k in _SUMMARY_ATTRS if k in ds.attrs},
+            additional_terms_href=item.additional_terms_href,
+            additional_terms_title=item.additional_terms_title,
         )
 
     def to_pystac_collection(self) -> pystac.Collection:
@@ -281,6 +289,23 @@ class CollectionInput(BaseModel):
             ),
         )
 
+        collection.add_link(
+            pystac.Link(
+                rel="license",
+                target=LICENSE_URLS[self.license],
+                media_type="text/html",
+                title=self.license.value,
+            )
+        )
+        if self.additional_terms_href and self.additional_terms_title:
+            collection.add_link(
+                pystac.Link(
+                    rel="license",
+                    target=self.additional_terms_href,
+                    media_type="text/html",
+                    title=self.additional_terms_title,
+                )
+            )
         collection.add_link(
             pystac.Link(
                 rel="about",

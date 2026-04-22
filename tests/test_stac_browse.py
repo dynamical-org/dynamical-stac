@@ -6,7 +6,7 @@ import pathlib
 
 import pytest
 
-from datasets import _COLLECTION_IDS
+from catalog import _COLLECTION_IDS
 
 
 @pytest.mark.integration

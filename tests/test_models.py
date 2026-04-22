@@ -5,6 +5,7 @@ import datetime as dt
 import pydantic
 import pytest
 
+from catalog import DatasetLicense
 from models import CollectionInput, CubeDimension, CubeVariable
 
 
@@ -77,3 +78,13 @@ def test_model_is_frozen() -> None:
     c = _valid_input()
     with pytest.raises(pydantic.ValidationError):
         c.id = "changed"  # type: ignore[misc]
+
+
+def test_license_accepts_enum_and_string() -> None:
+    assert _valid_input(license=DatasetLicense.CC_BY_4_0).license == "CC-BY-4.0"
+    assert _valid_input(license="CC-BY-4.0").license == DatasetLicense.CC_BY_4_0
+
+
+def test_license_rejects_unknown_value() -> None:
+    with pytest.raises(pydantic.ValidationError):
+        _valid_input(license="MIT")
