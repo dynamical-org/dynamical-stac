@@ -29,10 +29,14 @@ def _valid_input(**overrides: object) -> CollectionInput:
             ),
         },
         "cube_variables": {
-            "temp": CubeVariable(dimensions=["latitude"], unit="K"),
+            "temp": CubeVariable(
+                dimensions=["latitude"], unit="K", long_name="Temperature"
+            ),
         },
         "icechunk_href": "s3://test-bucket/test-prefix/",
         "icechunk_region": "us-west-2",
+        "attribution": "Test Attribution",
+        "version": "v0.0.0",
     }
     defaults.update(overrides)
     return CollectionInput(**defaults)  # type: ignore[arg-type]
@@ -117,12 +121,14 @@ def test_cube_variable_accepts_short_name_and_comment() -> None:
     v = CubeVariable(
         dimensions=["time"],
         unit="K",
-        description="Temperature",
+        long_name="Temperature",
+        standard_name="air_temperature",
         short_name="2t",
         comment="averaged",
     )
     assert v.short_name == "2t"
     assert v.comment == "averaged"
+    assert v.standard_name == "air_temperature"
 
 
 def test_dim_entry_temporal_extent_has_real_max() -> None:

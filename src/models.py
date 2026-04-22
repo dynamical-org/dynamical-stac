@@ -48,7 +48,8 @@ class CubeVariable(BaseModel):
     dimensions: list[str] = Field(min_length=1)
     type: Literal["data"] = "data"
     unit: str | None = None
-    description: str | None = None
+    long_name: str = Field(min_length=1)
+    standard_name: str | None = None
     short_name: str | None = None
     comment: str | None = None
 
@@ -144,8 +145,8 @@ class CollectionInput(BaseModel):
     cube_variables: dict[str, CubeVariable]
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: str = Field(min_length=1)
-    attribution: str | None = None
-    version: str | None = None
+    attribution: str = Field(min_length=1)
+    version: str = Field(min_length=1)
     summaries: dict[str, str] = Field(default_factory=dict)
     additional_terms: AdditionalTerms | None = None
 
@@ -175,11 +176,6 @@ class CollectionInput(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def github_icechunk_notebook_url(self) -> str:
-        return f"https://github.com/dynamical-org/notebooks/blob/main/{self.id}-icechunk.ipynb"
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
     def colab_notebook_url(self) -> str:
         return self.github_notebook_url.replace(
             "https://github.com/", "https://colab.research.google.com/github/"
@@ -192,7 +188,7 @@ class CollectionInput(BaseModel):
 
     @classmethod
     def from_dataset(cls, item: CatalogItem, ds: xr.Dataset) -> CollectionInput:
-        ds_id = ds.attrs.get("dataset_id")
+        ds_id = ds.attrs["dataset_id"]
         if ds_id != item.id:
             raise ValueError(
                 f"CatalogItem id {item.id!r} does not match store dataset_id {ds_id!r}"
@@ -212,9 +208,8 @@ class CollectionInput(BaseModel):
             variables[str(name)] = CubeVariable(
                 dimensions=list(da.dims),
                 unit=_str_or_none(da.attrs.get("units") or da.attrs.get("unit")),
-                description=_str_or_none(
-                    da.attrs.get("long_name") or da.attrs.get("standard_name")
-                ),
+                long_name=da.attrs["long_name"],
+                standard_name=_str_or_none(da.attrs.get("standard_name")),
                 short_name=_str_or_none(da.attrs.get("short_name")),
                 comment=_str_or_none(da.attrs.get("comment")),
             )
@@ -229,8 +224,8 @@ class CollectionInput(BaseModel):
             cube_variables=variables,
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
-            attribution=ds.attrs.get("attribution"),
-            version=ds.attrs.get("dataset_version"),
+            attribution=ds.attrs["attribution"],
+            version=ds.attrs["dataset_version"],
             summaries={k: ds.attrs[k] for k in _SUMMARY_ATTRS if k in ds.attrs},
             additional_terms=item.additional_terms,
         )
@@ -248,10 +243,8 @@ class CollectionInput(BaseModel):
             extent=extent,
         )
         collection.stac_extensions = list(STAC_EXTENSIONS)
-        if self.attribution:
-            collection.extra_fields["attribution"] = self.attribution
-        if self.version:
-            collection.extra_fields["version"] = self.version
+        collection.extra_fields["attribution"] = self.attribution
+        collection.extra_fields["version"] = self.version
 
         summaries: dict[str, list[str]] = {k: [v] for k, v in self.summaries.items()}
         summaries["cube:variables"] = sorted(self.cube_variables)
@@ -272,7 +265,7 @@ class CollectionInput(BaseModel):
                 title="Icechunk v2 repository",
                 roles=["data"],
                 extra_fields={
-                    "xarray:open_kwargs": {"engine": "zarr", "chunks": None},
+                    "xarray:open_kwargs": {"engine": "zarr"},
                     "xarray:storage_options": {
                         "anon": True,
                         "client_kwargs": {"region_name": self.icechunk_region},
@@ -320,14 +313,6 @@ class CollectionInput(BaseModel):
                 target=self.colab_notebook_url,
                 media_type="text/html",
                 title="Example notebook (Colab)",
-            )
-        )
-        collection.add_link(
-            pystac.Link(
-                rel="example",
-                target=self.github_icechunk_notebook_url,
-                media_type="application/x-ipynb+json",
-                title="Icechunk example notebook (GitHub)",
             )
         )
         return collection

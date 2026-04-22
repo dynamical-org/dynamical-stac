@@ -10,7 +10,7 @@ from catalog import CATALOG_ITEMS, CatalogItem
 from models import CollectionInput
 
 ROOT_HREF = "https://stac.dynamical.org"
-CATALOG_TITLE = "Dynamical.org STAC Catalog"
+CATALOG_TITLE = "dynamical.org STAC Catalog"
 
 
 def _open_icechunk(item: CatalogItem) -> xr.Dataset:

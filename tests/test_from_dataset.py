@@ -40,6 +40,8 @@ def _synthetic_dataset(
         "name": "Test Dataset",
         "description": "A synthetic dataset for unit tests.",
         "license": "CC-BY-4.0",
+        "attribution": "Test Attribution",
+        "dataset_version": "v0.0.0",
     }
     if ds_attrs_overrides:
         ds_attrs.update(ds_attrs_overrides)
@@ -53,7 +55,10 @@ def _synthetic_dataset(
 
 
 def test_from_dataset_rejects_mismatched_dataset_id() -> None:
-    item = _catalog_item(item_id="expected-id")
+    item = _catalog_item(
+        item_id="expected-id",
+        icechunk_href="s3://test-bucket/expected-id/v0.icechunk/",
+    )
     ds = _synthetic_dataset(dataset_id="different-id")
     with pytest.raises(ValueError, match="does not match store dataset_id"):
         CollectionInput.from_dataset(item, ds)
@@ -76,7 +81,11 @@ def test_from_dataset_prefers_init_time_over_time() -> None:
     data = np.zeros((2, 2, 2, 2), dtype="float32")
     ds = xr.Dataset(
         data_vars={
-            "t": (("init_time", "time", "latitude", "longitude"), data),
+            "t": (
+                ("init_time", "time", "latitude", "longitude"),
+                data,
+                {"long_name": "Temperature"},
+            ),
         },
         coords={
             "init_time": inits,
@@ -89,6 +98,8 @@ def test_from_dataset_prefers_init_time_over_time() -> None:
             "name": "Test Dataset",
             "description": "desc",
             "license": "CC-BY-4.0",
+            "attribution": "Test Attribution",
+            "dataset_version": "v0.0.0",
         },
     )
     result = CollectionInput.from_dataset(item, ds)
@@ -102,13 +113,45 @@ def test_from_dataset_falls_back_from_units_to_unit() -> None:
     assert result.cube_variables["temperature"].unit == "m/s"
 
 
-def test_from_dataset_falls_back_from_long_name_to_standard_name() -> None:
+def test_from_dataset_populates_long_name_and_standard_name() -> None:
     item = _catalog_item()
     ds = _synthetic_dataset(
-        extra_var_attrs={"long_name": "", "standard_name": "air_temperature"}
+        extra_var_attrs={"standard_name": "air_temperature"},
     )
-    result = CollectionInput.from_dataset(item, ds)
-    assert result.cube_variables["temperature"].description == "air_temperature"
+    variable = CollectionInput.from_dataset(item, ds).cube_variables["temperature"]
+    assert variable.long_name == "Near-surface temperature"
+    assert variable.standard_name == "air_temperature"
+
+
+def test_from_dataset_standard_name_is_optional() -> None:
+    item = _catalog_item()
+    ds = _synthetic_dataset()
+    variable = CollectionInput.from_dataset(item, ds).cube_variables["temperature"]
+    assert variable.long_name == "Near-surface temperature"
+    assert variable.standard_name is None
+
+
+def test_from_dataset_requires_long_name() -> None:
+    item = _catalog_item()
+    ds = _synthetic_dataset(extra_var_attrs={"long_name": ""})
+    with pytest.raises((KeyError, ValueError)):
+        CollectionInput.from_dataset(item, ds)
+
+
+def test_from_dataset_requires_attribution() -> None:
+    item = _catalog_item()
+    ds = _synthetic_dataset()
+    del ds.attrs["attribution"]
+    with pytest.raises(KeyError):
+        CollectionInput.from_dataset(item, ds)
+
+
+def test_from_dataset_requires_dataset_version() -> None:
+    item = _catalog_item()
+    ds = _synthetic_dataset()
+    del ds.attrs["dataset_version"]
+    with pytest.raises(KeyError):
+        CollectionInput.from_dataset(item, ds)
 
 
 def test_from_dataset_passes_additional_terms_through() -> None:

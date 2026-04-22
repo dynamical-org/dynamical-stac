@@ -1,29 +1,32 @@
-name: Generate and upload STAC catalog
+name: Upload STAC catalog
 
 on:
+  push:
+    branches: [main]
+    paths: ["stac/**"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: generate-and-upload
+  group: upload-stac
   cancel-in-progress: false
 
 jobs:
-  generate-and-upload:
+  upload:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
-      - run: uv run --locked python src/__main__.py generate-and-upload
+      - run: uv run --locked python src/__main__.py upload stac
         env:
           R2_ENDPOINT_URL: ${{ secrets.R2_STAC_ENDPOINT_URL }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_STAC_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_STAC_SECRET_ACCESS_KEY }}
 
   notify-on-failure:
-    needs: generate-and-upload
+    needs: upload
     if: failure()
     runs-on: ubuntu-latest
     permissions:
@@ -36,5 +39,5 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           gh issue create \
-            --title "STAC generate-and-upload failed" \
+            --title "STAC upload failed" \
             --body "Run: ${RUN_URL}"

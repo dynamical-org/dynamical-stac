@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import StrEnum
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 
 class DatasetLicense(StrEnum):
@@ -32,6 +32,16 @@ class CatalogItem(BaseModel):
     @property
     def icechunk_prefix(self) -> str:
         return urlparse(self.icechunk_href).path.lstrip("/")
+
+    @model_validator(mode="after")
+    def _id_matches_href_path(self) -> CatalogItem:
+        first = self.icechunk_prefix.split("/", 1)[0]
+        if first != self.id:
+            raise ValueError(
+                f"id {self.id!r} must be the first path fragment of icechunk_href "
+                f"(got {first!r} from {self.icechunk_href!r})"
+            )
+        return self
 
 
 ECMWF_TERMS = AdditionalTerms(

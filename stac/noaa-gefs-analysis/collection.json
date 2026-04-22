@@ -1,0 +1,436 @@
+{
+  "type": "Collection",
+  "id": "noaa-gefs-analysis",
+  "stac_version": "1.1.0",
+  "description": "Weather analysis from the Global Ensemble Forecast System (GEFS) operated by NOAA NWS NCEP.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-gefs-analysis/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-gefs-analysis.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "Example notebook (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-gefs-analysis.ipynb",
+      "type": "text/html",
+      "title": "Example notebook (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.dynamical.org/noaa-gefs-analysis/collection.json",
+      "type": "application/json",
+      "title": "NOAA GEFS analysis"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "NOAA NWS NCEP GEFS data processed by dynamical.org from NOAA Open Data Dissemination archives.",
+  "version": "0.1.2",
+  "cube:dimensions": {
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        -90.0,
+        90.0
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 721
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -180.0,
+        179.75
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 1440
+    },
+    "time": {
+      "type": "temporal",
+      "extent": [
+        "2000-01-01T00:00:00Z",
+        "2026-04-22T12:00:00Z"
+      ],
+      "unit": "seconds since 1970-01-01",
+      "size": 76869
+    }
+  },
+  "cube:variables": {
+    "categorical_freezing_rain_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical freezing rain",
+      "short_name": "cfrzr",
+      "comment": "0=no; 1=yes"
+    },
+    "categorical_ice_pellets_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical ice pellets",
+      "short_name": "cicep",
+      "comment": "0=no; 1=yes"
+    },
+    "categorical_rain_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical rain",
+      "short_name": "crain",
+      "comment": "0=no; 1=yes"
+    },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf",
+      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+    },
+    "geopotential_height_500hpa": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf",
+      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+    },
+    "categorical_snow_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical snow",
+      "short_name": "csnow",
+      "comment": "0=no; 1=yes"
+    },
+    "geopotential_height_cloud_ceiling": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "percent_frozen_precipitation_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Percent frozen precipitation",
+      "short_name": "cpofp",
+      "comment": "Contains the value -50 when there is no precipitation."
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "minimum_temperature_2m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Minimum temperature",
+      "standard_name": "air_temperature",
+      "short_name": "tmin"
+    },
+    "maximum_temperature_2m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Maximum temperature",
+      "standard_name": "air_temperature",
+      "short_name": "tmax"
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "precipitable_water_atmosphere": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2",
+      "long_name": "Precipitable water",
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "short_name": "pwat"
+    },
+    "relative_humidity_2m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "2 metre relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "2r"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Total Cloud Cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc",
+      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+    },
+    "wind_v_100m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
+    },
+    "wind_u_100m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "100 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "100u"
+    }
+  },
+  "title": "NOAA GEFS analysis",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -180.0,
+          -90.0,
+          179.75,
+          90.0
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2000-01-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Global"
+    ],
+    "spatial_resolution": [
+      "0.25 degrees (~20km)"
+    ],
+    "time_domain": [
+      "2000-01-01 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "3.0 hours"
+    ],
+    "cube:variables": [
+      "categorical_freezing_rain_surface",
+      "categorical_ice_pellets_surface",
+      "categorical_rain_surface",
+      "categorical_snow_surface",
+      "downward_long_wave_radiation_flux_surface",
+      "downward_short_wave_radiation_flux_surface",
+      "geopotential_height_500hpa",
+      "geopotential_height_cloud_ceiling",
+      "maximum_temperature_2m",
+      "minimum_temperature_2m",
+      "percent_frozen_precipitation_surface",
+      "precipitable_water_atmosphere",
+      "precipitation_surface",
+      "pressure_reduced_to_mean_sea_level",
+      "pressure_surface",
+      "relative_humidity_2m",
+      "temperature_2m",
+      "total_cloud_cover_atmosphere",
+      "wind_u_100m",
+      "wind_u_10m",
+      "wind_v_100m",
+      "wind_v_10m"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-noaa-gefs/noaa-gefs-analysis/v0.1.2.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}
