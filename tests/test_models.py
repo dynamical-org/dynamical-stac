@@ -28,8 +28,7 @@ def _valid_input(**overrides: object) -> CollectionInput:
             "temp": CubeVariable(dimensions=["latitude"], unit="K"),
         },
         zarr_href="https://data.example.com/test.zarr",
-        icechunk_bucket="test-bucket",
-        icechunk_prefix="test-prefix/",
+        icechunk_href="s3://test-bucket/test-prefix/",
         icechunk_region="us-west-2",
     )
     defaults.update(overrides)
@@ -51,10 +50,37 @@ def test_colab_url_is_derived_from_github_url() -> None:
     )
 
 
-def test_about_and_icechunk_urls() -> None:
-    c = _valid_input(id="ds", icechunk_bucket="b", icechunk_prefix="p/")
+def test_about_url_and_icechunk_href() -> None:
+    c = _valid_input(id="ds", icechunk_href="s3://b/p/")
     assert c.about_url == "https://dynamical.org/catalog/ds/"
-    assert c.icechunk_s3_href == "s3://b/p/"
+    assert c.icechunk_href == "s3://b/p/"
+
+
+def test_catalog_item_derives_bucket_and_prefix_from_href() -> None:
+    from catalog import CatalogItem
+
+    item = CatalogItem(
+        id="ds",
+        zarr_href="https://data.example.com/ds/latest.zarr",
+        icechunk_href="s3://dynamical-noaa-gfs/ds/v1.0.icechunk/",
+        icechunk_region="us-west-2",
+        license=DatasetLicense.CC_BY_4_0,
+    )
+    assert item.icechunk_bucket == "dynamical-noaa-gfs"
+    assert item.icechunk_prefix == "ds/v1.0.icechunk/"
+
+
+def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
+    from catalog import CatalogItem
+
+    with pytest.raises(pydantic.ValidationError):
+        CatalogItem(
+            id="ds",
+            zarr_href="https://data.example.com/ds/latest.zarr",
+            icechunk_href="https://not-s3/ds/",
+            icechunk_region="us-west-2",
+            license=DatasetLicense.CC_BY_4_0,
+        )
 
 
 def test_bbox_validation_rejects_out_of_range() -> None:

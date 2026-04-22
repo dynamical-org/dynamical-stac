@@ -137,8 +137,7 @@ class CollectionInput(BaseModel):
     cube_dimensions: dict[str, CubeDimension]
     cube_variables: dict[str, CubeVariable]
     zarr_href: pydantic.HttpUrl
-    icechunk_bucket: str = Field(min_length=1)
-    icechunk_prefix: str = Field(min_length=1)
+    icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: str = Field(min_length=1)
     attribution: str | None = None
     version: str | None = None
@@ -187,18 +186,13 @@ class CollectionInput(BaseModel):
     def about_url(self) -> str:
         return f"https://dynamical.org/catalog/{self.id}/"
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def icechunk_s3_href(self) -> str:
-        return f"s3://{self.icechunk_bucket}/{self.icechunk_prefix}"
-
     @classmethod
     def from_dataset(cls, item: CatalogItem, ds: xr.Dataset) -> CollectionInput:
         ds_id = ds.attrs.get("dataset_id")
         if ds_id != item.id:
             raise ValueError(
                 f"CatalogItem id {item.id!r} does not match store dataset_id {ds_id!r}"
-                f" (bucket={item.icechunk_bucket}, prefix={item.icechunk_prefix})"
+                f" (icechunk_href={item.icechunk_href})"
             )
         time_dim = _time_dim(ds)
         t0 = pd.Timestamp(ds[time_dim].values.min()).to_pydatetime()
@@ -230,8 +224,7 @@ class CollectionInput(BaseModel):
             cube_dimensions=dims,
             cube_variables=variables,
             zarr_href=item.zarr_href,
-            icechunk_bucket=item.icechunk_bucket,
-            icechunk_prefix=item.icechunk_prefix,
+            icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
             attribution=ds.attrs.get("attribution"),
             version=ds.attrs.get("dataset_version"),
@@ -282,17 +275,16 @@ class CollectionInput(BaseModel):
         collection.add_asset(
             "icechunk",
             pystac.Asset(
-                href=self.icechunk_s3_href,
+                href=self.icechunk_href,
                 media_type="application/x-icechunk",
                 title="Icechunk v2 repository",
                 roles=["data"],
                 extra_fields={
-                    "icechunk:storage": {
-                        "bucket": self.icechunk_bucket,
-                        "prefix": self.icechunk_prefix,
-                        "region": self.icechunk_region,
-                    },
                     "xarray:open_kwargs": {"engine": "zarr", "chunks": None},
+                    "xarray:storage_options": {
+                        "anon": True,
+                        "client_kwargs": {"region_name": self.icechunk_region},
+                    },
                 },
             ),
         )
