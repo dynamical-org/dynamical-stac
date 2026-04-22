@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import datetime as dt
 
+import numpy as np
 import pydantic
 import pytest
+import xarray as xr
 
 from catalog import DatasetLicense
-from models import CollectionInput, CubeDimension, CubeVariable
+from models import CollectionInput, CubeDimension, CubeVariable, _dim_entry
 
 
 def _valid_input(**overrides: object) -> CollectionInput:
@@ -88,3 +90,32 @@ def test_license_accepts_enum_and_string() -> None:
 def test_license_rejects_unknown_value() -> None:
     with pytest.raises(pydantic.ValidationError):
         _valid_input(license="MIT")
+
+
+def test_cube_variable_accepts_short_name_and_comment() -> None:
+    v = CubeVariable(
+        dimensions=["time"],
+        unit="K",
+        description="Temperature",
+        short_name="2t",
+        comment="averaged",
+    )
+    assert v.short_name == "2t"
+    assert v.comment == "averaged"
+
+
+def test_dim_entry_temporal_extent_has_real_max() -> None:
+    times = np.array(["2021-05-01", "2022-01-01", "2023-06-15"], dtype="datetime64[ns]")
+    coord = xr.DataArray(times, dims="time", name="time")
+    d = _dim_entry("time", coord)
+    assert d.type == "temporal"
+    assert d.extent == ["2021-05-01T00:00:00Z", "2023-06-15T00:00:00Z"]
+
+
+def test_dim_entry_timedelta_extent_in_seconds() -> None:
+    leads = np.array([0, 3600, 86400], dtype="timedelta64[s]").astype("timedelta64[ns]")
+    coord = xr.DataArray(leads, dims="lead_time", name="lead_time")
+    d = _dim_entry("lead_time", coord)
+    assert d.type == "other"
+    assert d.extent == [0, 86400]
+    assert d.unit == "seconds"

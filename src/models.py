@@ -47,6 +47,8 @@ class CubeVariable(BaseModel):
     type: Literal["data"] = "data"
     unit: str | None = None
     description: str | None = None
+    short_name: str | None = None
+    comment: str | None = None
 
 
 def _dim_entry(name: str, coord: xr.DataArray) -> CubeDimension:
@@ -82,14 +84,14 @@ def _dim_entry(name: str, coord: xr.DataArray) -> CubeDimension:
     if coord.dtype.kind == "M":
         return CubeDimension(
             type="temporal",
-            extent=[_iso(values.min()), None],
+            extent=[_iso(values.min()), _iso(values.max())],
             unit="seconds since 1970-01-01",
             size=size,
         )
     if coord.dtype.kind == "m":  # numpy timedelta64 (e.g. forecast lead_time)
         return CubeDimension(
             type="other",
-            extent=[None, None],
+            extent=[_td_seconds(values.min()), _td_seconds(values.max())],
             unit="seconds",
             size=size,
         )
@@ -101,6 +103,10 @@ def _iso(value: Any) -> str:
     if ts.tzinfo is None:
         ts = ts.tz_localize("UTC")
     return ts.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _td_seconds(value: Any) -> int:
+    return int(pd.Timedelta(value).total_seconds())
 
 
 def _time_dim(ds: xr.Dataset) -> str:
@@ -211,6 +217,8 @@ class CollectionInput(BaseModel):
                 description=_str_or_none(
                     da.attrs.get("long_name") or da.attrs.get("standard_name")
                 ),
+                short_name=_str_or_none(da.attrs.get("short_name")),
+                comment=_str_or_none(da.attrs.get("comment")),
             )
         return cls(
             id=item.id,
