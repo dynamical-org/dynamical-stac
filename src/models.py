@@ -8,14 +8,7 @@ import numpy as np
 import pandas as pd
 import pystac
 import xarray as xr
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    HttpUrl,
-    computed_field,
-    field_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from catalog import AdditionalTerms, CatalogItem, DatasetLicense
 
@@ -155,9 +148,6 @@ class CollectionInput(BaseModel):
     cube_variables: dict[str, CubeVariable]
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: str = Field(min_length=1)
-    # TODO(temporary): drop the `zarr` asset once all dynamical-catalog
-    # consumers are on the icechunk-only release.
-    zarr_href: HttpUrl
     attribution: str = Field(min_length=1)
     version: str = Field(min_length=1)
     summaries: dict[str, str] = Field(default_factory=dict)
@@ -237,7 +227,6 @@ class CollectionInput(BaseModel):
             cube_variables=variables,
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
-            zarr_href=item.zarr_href,
             attribution=ds.attrs["attribution"],
             version=ds.attrs["dataset_version"],
             summaries={k: ds.attrs[k] for k in _SUMMARY_ATTRS if k in ds.attrs},
@@ -294,19 +283,6 @@ class CollectionInput(BaseModel):
                         "region": self.icechunk_region,
                     },
                 },
-            ),
-        )
-        # TODO(temporary): drop once all dynamical-catalog consumers are on the
-        # icechunk-only release. Kept so older versions keep resolving a
-        # `zarr` asset.
-        collection.add_asset(
-            "zarr",
-            pystac.Asset(
-                href=str(self.zarr_href),
-                media_type="application/x-zarr",
-                title="Zarr v3 store",
-                roles=["data"],
-                extra_fields={"xarray:open_kwargs": {"engine": "zarr"}},
             ),
         )
 
