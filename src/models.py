@@ -145,6 +145,7 @@ class CollectionInput(BaseModel):
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
     id: str = Field(min_length=1)
+    model_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     description: str = Field(min_length=1)
     license: DatasetLicense
@@ -227,8 +228,9 @@ class CollectionInput(BaseModel):
             )
         return cls(
             id=item.id,
+            model_id=item.model_id,
             name=ds.attrs["name"],
-            description=ds.attrs["description"],
+            description=item.description,
             license=ds.attrs["license"],
             bbox=_bbox(ds),
             temporal_start=t0,
@@ -256,6 +258,7 @@ class CollectionInput(BaseModel):
             extent=extent,
         )
         collection.stac_extensions = list(STAC_EXTENSIONS)
+        collection.extra_fields["model_id"] = self.model_id
         collection.extra_fields["attribution"] = self.attribution
         collection.extra_fields["version"] = self.version
 

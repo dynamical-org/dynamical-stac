@@ -14,6 +14,7 @@ from models import CollectionInput, CubeDimension, CubeVariable, _dim_entry
 def _valid_input(**overrides: object) -> CollectionInput:
     defaults: dict[str, object] = {
         "id": "test-dataset",
+        "model_id": "test-model",
         "name": "Test Dataset",
         "description": "A test dataset",
         "license": "CC-BY-4.0",
@@ -67,6 +68,8 @@ def test_about_url_and_icechunk_href() -> None:
 def test_catalog_item_derives_bucket_and_prefix_from_href() -> None:
     item = CatalogItem(
         id="ds",
+        model_id="test-model",
+        description="A test dataset",
         icechunk_href="s3://dynamical-noaa-gfs/ds/v1.0.icechunk/",
         icechunk_region="us-west-2",
         zarr_href="https://data.example.com/ds/latest.zarr",  # type: ignore[arg-type]
@@ -79,6 +82,8 @@ def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
     with pytest.raises(pydantic.ValidationError):
         CatalogItem(
             id="ds",
+            model_id="test-model",
+            description="A test dataset",
             icechunk_href="https://not-s3/ds/",
             icechunk_region="us-west-2",
             zarr_href="https://data.example.com/ds/latest.zarr",  # type: ignore[arg-type]
@@ -193,3 +198,8 @@ def test_collection_input_renders_additional_terms_as_extra_license_link() -> No
 def test_additional_terms_rejects_empty_title() -> None:
     with pytest.raises(pydantic.ValidationError):
         AdditionalTerms(href="https://example.org/terms", title="")  # type: ignore[arg-type]
+
+
+def test_to_pystac_collection_includes_model_id_extra_field() -> None:
+    collection = _valid_input(model_id="noaa-gfs").to_pystac_collection()
+    assert collection.extra_fields["model_id"] == "noaa-gfs"

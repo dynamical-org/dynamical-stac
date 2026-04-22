@@ -17,6 +17,8 @@ def _catalog_item(
 ) -> CatalogItem:
     return CatalogItem(
         id=item_id,
+        model_id="test-model",
+        description="A synthetic dataset for unit tests.",
         icechunk_href=icechunk_href,
         icechunk_region="us-west-2",
         zarr_href="https://data.example.com/test-dataset/latest.zarr",  # type: ignore[arg-type]
@@ -155,6 +157,21 @@ def test_from_dataset_requires_dataset_version() -> None:
         CollectionInput.from_dataset(item, ds)
 
 
+def test_from_dataset_uses_catalog_item_description_not_ds_attr() -> None:
+    item = _catalog_item()
+    ds = _synthetic_dataset(
+        ds_attrs_overrides={"description": "this should be ignored"}
+    )
+    result = CollectionInput.from_dataset(item, ds)
+    assert result.description == item.description
+
+
+def test_from_dataset_propagates_model_id() -> None:
+    item = _catalog_item()
+    result = CollectionInput.from_dataset(item, _synthetic_dataset())
+    assert result.model_id == item.model_id
+
+
 def test_from_dataset_passes_additional_terms_through() -> None:
     terms = AdditionalTerms(
         href="https://example.org/terms",  # type: ignore[arg-type]
@@ -162,6 +179,8 @@ def test_from_dataset_passes_additional_terms_through() -> None:
     )
     item = CatalogItem(
         id="test-dataset",
+        model_id="test-model",
+        description="A synthetic dataset for unit tests.",
         icechunk_href="s3://test-bucket/test-dataset/v0.icechunk/",
         icechunk_region="us-west-2",
         zarr_href="https://data.example.com/test-dataset/latest.zarr",  # type: ignore[arg-type]
