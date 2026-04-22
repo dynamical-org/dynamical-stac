@@ -2,7 +2,7 @@
   "type": "Collection",
   "id": "ecmwf-aifs-single-forecast",
   "stac_version": "1.1.0",
-  "description": "Weather forecasts from the ECMWF Artificial Intelligence Forecasting System (AIFS) Single model.",
+  "description": "This dataset is an archive of past and present ECMWF AIFS Single forecasts.\nForecasts are identified by an initialization time (`init_time`) denoting the\nstart time of the model run. Each forecast steps forward in time along the\n`lead_time` dimension, from 0 to 360 hours (15 days) at a 6 hourly step.\n\n## Source\n\nThe source grib files this archive is constructed from are provided by\n[ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data)\nand accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\nECMWF does not provide user support for the free & open datasets. Users should\nrefer to the public [User Forum](https://forum.ecmwf.int/) for any questions\nrelated to the source material.\n\n## Model updates\n\nAIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n## Storage\n\nStorage for this dataset is generously provided by\n[Source Cooperative](https://source.coop/),\na [Radiant Earth](https://radiant.earth/) initiative.\nIcechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n## Compression\n\nThe data values in this dataset have been rounded in their binary\nfloating point representation to improve compression. See\n[Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2)\nfor more information on this approach. The exact number of rounded bits\ncan be found in our\n[reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/aifs_single/forecast/template_config.py).",
   "links": [
     {
       "rel": "root",
@@ -57,6 +57,7 @@
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
     "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
   ],
+  "model_id": "ecmwf-aifs-single",
   "attribution": "ECMWF AIFS Single forecast data processed by dynamical.org from ECMWF Open Data.",
   "version": "0.1.0",
   "cube:dimensions": {
@@ -99,19 +100,6 @@
     }
   },
   "cube:variables": {
-    "dew_point_temperature_2m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre dewpoint temperature",
-      "standard_name": "dew_point_temperature",
-      "short_name": "2d"
-    },
     "downward_long_wave_radiation_flux_surface": {
       "dimensions": [
         "init_time",
@@ -125,7 +113,7 @@
       "standard_name": "surface_downwelling_longwave_flux_in_air",
       "short_name": "sdlwrf"
     },
-    "geopotential_height_850hpa": {
+    "dew_point_temperature_2m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -133,10 +121,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "m",
-      "long_name": "Geopotential height",
-      "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
     },
     "downward_short_wave_radiation_flux_surface": {
       "dimensions": [
@@ -177,6 +165,19 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
+    "geopotential_height_850hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
     "temperature_850hpa": {
       "dimensions": [
         "init_time",
@@ -190,7 +191,7 @@
       "standard_name": "air_temperature",
       "short_name": "t"
     },
-    "pressure_reduced_to_mean_sea_level": {
+    "total_cloud_cover_atmosphere": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -198,49 +199,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "Pa",
-      "long_name": "Pressure reduced to MSL",
-      "standard_name": "air_pressure_at_mean_sea_level",
-      "short_name": "prmsl"
-    },
-    "pressure_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "Pa",
-      "long_name": "Surface pressure",
-      "standard_name": "surface_air_pressure",
-      "short_name": "sp"
-    },
-    "temperature_925hpa": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
-    },
-    "temperature_2m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre temperature",
-      "standard_name": "air_temperature",
-      "short_name": "2t"
+      "unit": "percent",
+      "long_name": "Total Cloud Cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
     },
     "precipitation_surface": {
       "dimensions": [
@@ -256,7 +218,7 @@
       "short_name": "prate",
       "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
     },
-    "total_cloud_cover_atmosphere": {
+    "pressure_surface": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -264,10 +226,36 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "percent",
-      "long_name": "Total Cloud Cover",
-      "standard_name": "cloud_area_fraction",
-      "short_name": "tcc"
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
     },
     "wind_v_10m": {
       "dimensions": [
@@ -282,7 +270,7 @@
       "standard_name": "northward_wind",
       "short_name": "10v"
     },
-    "wind_u_10m": {
+    "wind_v_100m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -291,9 +279,22 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "10 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "10u"
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
+    },
+    "temperature_925hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
     },
     "wind_u_100m": {
       "dimensions": [
@@ -308,7 +309,7 @@
       "standard_name": "eastward_wind",
       "short_name": "100u"
     },
-    "wind_v_100m": {
+    "wind_u_10m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -317,9 +318,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "100 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "100v"
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
     }
   },
   "title": "ECMWF AIFS Single forecast",

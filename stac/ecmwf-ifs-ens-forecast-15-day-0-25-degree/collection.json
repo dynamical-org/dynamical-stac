@@ -2,7 +2,7 @@
   "type": "Collection",
   "id": "ecmwf-ifs-ens-forecast-15-day-0-25-degree",
   "stac_version": "1.1.0",
-  "description": "Ensemble weather forecasts from the ECMWF Integrated Forecasting System (IFS).",
+  "description": "This dataset is an archive of past and present ECMWF IFS ENS forecasts.\nForecasts are identified by an initialization time (`init_time`)\ndenoting the start time of the model run, as well as by the\n`ensemble_member`. Along the `lead_time` dimension,\neach forecast begins at a 3 hourly forecast step (0-144 hours) and switches\nto a 6 hourly step for days 6 through 15 of the forecast (hours 144-360).\nThis dataset contains the 00 UTC initialization times only.\n\n## Source\n\nThe source grib files this archive is constructed from are provided by\n[ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data)\nand accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\nECMWF does not provide user support for the free & open datasets. Users should\nrefer to the public [User Forum](https://forum.ecmwf.int/) for any questions\nrelated to the source material.\n\n## Data availability\n\nThis dataset contains only forecasts initialized on or after 2024-04-01,\nwhich are available at the open data 0.25 degree (~20km) resolution.\nAll variables are available for the full period, save for\n`precipitation_surface`, which is filled with NaNs\nbefore 2024-11-13 UTC.\n\n## Ensemble members\n\nEach forecast contains 51 ensemble members, including a control member (0)\nand 50 perturbed members (1-50). The control forecast is produced with\nthe best available data and unperturbed models. The other 50 members\nare each produced with slight perturbations of initial conditions\nand of the models. Taken together, ensemble of 51 forecasts shows\nthe range of possible outcomes and the likelihood of their occurrence.\n\n## Model updates\n\nIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n## Storage\n\nStorage for this dataset is generously provided by\n[Source Cooperative](https://source.coop/),\na [Radiant Earth](https://radiant.earth/) initiative.\nIcechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n## Compression\n\nThe data values in this dataset have been rounded in their binary\nfloating point representation to improve compression. See\n[Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2)\nfor more information on this approach. The exact number of rounded bits\ncan be found in our\n[reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/ifs_ens/forecast_15_day_0_25_degree/template_config.py).",
   "links": [
     {
       "rel": "root",
@@ -57,6 +57,7 @@
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
     "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
   ],
+  "model_id": "ecmwf-ifs-ens",
   "attribution": "ECMWF IFS ENS forecast data processed by dynamical.org from ECMWF Open Data.",
   "version": "0.1.0",
   "cube:dimensions": {
@@ -108,34 +109,6 @@
     }
   },
   "cube:variables": {
-    "dew_point_temperature_2m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre dewpoint temperature",
-      "standard_name": "dew_point_temperature",
-      "short_name": "2d"
-    },
-    "geopotential_height_500hpa": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m",
-      "long_name": "Geopotential height",
-      "standard_name": "geopotential_height",
-      "short_name": "gh"
-    },
     "categorical_precipitation_type_surface": {
       "dimensions": [
         "init_time",
@@ -149,6 +122,20 @@
       "long_name": "Precipitation type",
       "short_name": "ptype",
       "comment": "0=No precipitation; 1=Rain; 2=Thunderstorm; 3=Freezing rain; 4=Mixed/ice; 5=Snow; 6=Wet snow; 7=Mixture of rain and snow; 8=Ice pellets; 9=Graupel; 10=Hail; 11=Drizzle; 12=Freezing drizzle; 13=Hail (less than 5 mm); 14=Hail (greater than or equal to 5 mm); 15-191=Reserved; 192-254=Reserved for local use; 255=Missing"
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
     },
     "downward_long_wave_radiation_flux_surface": {
       "dimensions": [
@@ -192,6 +179,20 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
+    "geopotential_height_500hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
     "downward_short_wave_radiation_flux_surface": {
       "dimensions": [
         "init_time",
@@ -221,20 +222,6 @@
       "short_name": "prate",
       "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
     },
-    "temperature_850hpa": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
-    },
     "pressure_surface": {
       "dimensions": [
         "init_time",
@@ -263,34 +250,6 @@
       "standard_name": "air_temperature",
       "short_name": "2t"
     },
-    "temperature_925hpa": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
-    },
-    "total_cloud_cover_atmosphere": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "percent",
-      "long_name": "Total Cloud Cover",
-      "standard_name": "cloud_area_fraction",
-      "short_name": "tcc"
-    },
     "pressure_reduced_to_mean_sea_level": {
       "dimensions": [
         "init_time",
@@ -305,7 +264,7 @@
       "standard_name": "air_pressure_at_mean_sea_level",
       "short_name": "prmsl"
     },
-    "wind_u_100m": {
+    "temperature_850hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -314,12 +273,12 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "m s-1",
-      "long_name": "100 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "100u"
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
     },
-    "wind_v_10m": {
+    "temperature_925hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -328,10 +287,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "m s-1",
-      "long_name": "10 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "10v"
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
     },
     "wind_gust_10m": {
       "dimensions": [
@@ -347,6 +306,20 @@
       "standard_name": "wind_speed_of_gust",
       "short_name": "10fg"
     },
+    "wind_v_100m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
+    },
     "wind_u_10m": {
       "dimensions": [
         "init_time",
@@ -361,7 +334,7 @@
       "standard_name": "eastward_wind",
       "short_name": "10u"
     },
-    "wind_v_100m": {
+    "wind_v_10m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -371,9 +344,37 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "100 metre V wind component",
+      "long_name": "10 metre V wind component",
       "standard_name": "northward_wind",
-      "short_name": "100v"
+      "short_name": "10v"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Total Cloud Cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
+    },
+    "wind_u_100m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "100 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "100u"
     }
   },
   "title": "ECMWF IFS ENS forecast, 15 day, 0.25 degree",

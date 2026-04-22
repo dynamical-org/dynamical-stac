@@ -2,7 +2,7 @@
   "type": "Collection",
   "id": "noaa-gfs-forecast",
   "stac_version": "1.1.0",
-  "description": "Weather forecasts from the Global Forecast System (GFS) operated by NOAA NWS NCEP.",
+  "description": "This dataset is an archive of past and present GFS forecasts. Forecasts\nare identified by an initialization time (`init_time`) denoting the\nstart time of the model run. Each forecast steps forward in time along the\n`lead_time` dimension.\n\n## Source\n\nThe source grib files this archive is constructed from are provided by\n[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination)\nand accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gfs-bdp-pds/).\nOperational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n## Storage\n\nStorage for this dataset is generously provided by\n[Source Cooperative](https://source.coop/),\na [Radiant Earth](https://radiant.earth/) initiative.\nIcechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n## Compression\n\nThe data values in this dataset have been rounded in their binary\nfloating point representation to improve compression. See\n[Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2)\nfor more information on this approach. The exact number of rounded bits\ncan be found in our\n[reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/gfs/forecast/template_config.py).",
   "links": [
     {
       "rel": "root",
@@ -51,6 +51,7 @@
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
     "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
   ],
+  "model_id": "noaa-gfs",
   "attribution": "NOAA NWS NCEP GFS data processed by dynamical.org from NOAA Open Data Dissemination archives.",
   "version": "0.2.7",
   "cube:dimensions": {
@@ -93,47 +94,6 @@
     }
   },
   "cube:variables": {
-    "downward_long_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward long-wave radiation flux",
-      "standard_name": "surface_downwelling_longwave_flux_in_air",
-      "short_name": "sdlwrf",
-      "comment": "Average over the previous 1-6 hours, reset every 6-hour forecast step (00Z, 06Z, 12Z, 18Z)."
-    },
-    "downward_short_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward short-wave radiation flux",
-      "standard_name": "surface_downwelling_shortwave_flux_in_air",
-      "short_name": "sdswrf",
-      "comment": "Average over the previous 1-6 hours, reset every 6-hour forecast step (00Z, 06Z, 12Z, 18Z)."
-    },
-    "categorical_rain_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "1",
-      "long_name": "Categorical rain",
-      "short_name": "crain",
-      "comment": "Presence/absence over the previous 1-6 hours, reset every 6-hour forecast step (00Z, 06Z, 12Z, 18Z). 0=no; 1=yes."
-    },
     "categorical_freezing_rain_surface": {
       "dimensions": [
         "init_time",
@@ -173,6 +133,20 @@
       "short_name": "csnow",
       "comment": "Presence/absence over the previous 1-6 hours, reset every 6-hour forecast step (00Z, 06Z, 12Z, 18Z). 0=no; 1=yes."
     },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf",
+      "comment": "Average over the previous 1-6 hours, reset every 6-hour forecast step (00Z, 06Z, 12Z, 18Z)."
+    },
     "geopotential_height_cloud_ceiling": {
       "dimensions": [
         "init_time",
@@ -185,6 +159,33 @@
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
       "short_name": "gh"
+    },
+    "categorical_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical rain",
+      "short_name": "crain",
+      "comment": "Presence/absence over the previous 1-6 hours, reset every 6-hour forecast step (00Z, 06Z, 12Z, 18Z). 0=no; 1=yes."
+    },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf",
+      "comment": "Average over the previous 1-6 hours, reset every 6-hour forecast step (00Z, 06Z, 12Z, 18Z)."
     },
     "maximum_temperature_2m": {
       "dimensions": [
@@ -212,7 +213,7 @@
       "long_name": "Percent frozen precipitation",
       "short_name": "cpofp"
     },
-    "precipitation_surface": {
+    "minimum_temperature_2m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -220,24 +221,11 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
-    },
-    "pressure_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "Pa",
-      "long_name": "Surface pressure",
-      "standard_name": "surface_air_pressure",
-      "short_name": "sp"
+      "unit": "degree_Celsius",
+      "long_name": "Minimum temperature",
+      "standard_name": "air_temperature",
+      "short_name": "tmin",
+      "comment": "Minimum over the previous 1-6 hours, reset every 6-hour forecast step (00Z, 06Z, 12Z, 18Z)."
     },
     "precipitable_water_atmosphere": {
       "dimensions": [
@@ -265,7 +253,7 @@
       "standard_name": "air_pressure_at_mean_sea_level",
       "short_name": "prmsl"
     },
-    "minimum_temperature_2m": {
+    "pressure_surface": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -273,11 +261,24 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Minimum temperature",
-      "standard_name": "air_temperature",
-      "short_name": "tmin",
-      "comment": "Minimum over the previous 1-6 hours, reset every 6-hour forecast step (00Z, 06Z, 12Z, 18Z)."
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
     },
     "relative_humidity_2m": {
       "dimensions": [
@@ -291,6 +292,19 @@
       "long_name": "2 metre relative humidity",
       "standard_name": "relative_humidity",
       "short_name": "2r"
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
     },
     "total_cloud_cover_atmosphere": {
       "dimensions": [
@@ -319,7 +333,7 @@
       "standard_name": "eastward_wind",
       "short_name": "100u"
     },
-    "wind_v_100m": {
+    "wind_u_10m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -328,22 +342,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "100 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "100v"
-    },
-    "temperature_2m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre temperature",
-      "standard_name": "air_temperature",
-      "short_name": "2t"
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
     },
     "wind_v_10m": {
       "dimensions": [
@@ -358,7 +359,7 @@
       "standard_name": "northward_wind",
       "short_name": "10v"
     },
-    "wind_u_10m": {
+    "wind_v_100m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -367,9 +368,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "10 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "10u"
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
     }
   },
   "title": "NOAA GFS forecast",
