@@ -1,25 +1,24 @@
 from __future__ import annotations
 
 import pathlib
-import tempfile
 
 from generate import generate
 from upload import upload
 
+DEFAULT_OUTPUT_DIR = pathlib.Path("stac")
+
 
 def main(argv: list[str]) -> int:
     match argv:
+        case ["generate"]:
+            generate(DEFAULT_OUTPUT_DIR)
         case ["generate", "--output", out]:
             generate(pathlib.Path(out))
         case ["upload", stac_dir]:
             upload(pathlib.Path(stac_dir))
-        case ["generate-and-upload"]:
-            with tempfile.TemporaryDirectory() as tmp:
-                generate(pathlib.Path(tmp))
-                upload(pathlib.Path(tmp))
         case _:
             print(  # noqa: T201
-                "usage: generate --output DIR | upload DIR | generate-and-upload"
+                "usage: generate [--output DIR] | upload DIR"
             )
             return 1
     return 0

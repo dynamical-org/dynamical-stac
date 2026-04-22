@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# Generate the STAC catalog and (optionally) upload it to R2.
+# Regenerate the STAC catalog into ./stac/ and, optionally, upload to R2.
 #
-# By default this does a dry run: generate the catalog into a temp dir and
-# print the files that would be uploaded. Pass --commit to actually upload.
+# Usage:
+#   scripts/generate                      # generate into ./stac/
+#   scripts/generate --upload             # generate, then upload ./stac/ to R2
+#   scripts/generate --upload --op-env    # same, with R2 creds from 1Password
 #
-# Upload requires R2_ENDPOINT_URL, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY in
-# the environment. Pass --op-env to load them from 1Password via `op run`.
+# --upload requires R2_ENDPOINT_URL, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY in
+# the environment. Pass --op-env to load them from the `r2-stac-rw` 1Password
+# item via `op run`.
 
 set -euo pipefail
 
@@ -26,28 +29,21 @@ EOF
 ) -- "$0" ${filtered[@]+"${filtered[@]}"}
 fi
 
-commit=false
+upload=false
 for arg in "$@"; do
   case "$arg" in
-    --commit) commit=true ;;
+    --upload) upload=true ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
 
 uv sync
 
-if $commit; then
+uv run python src/__main__.py generate
+
+if $upload; then
   : "${R2_ENDPOINT_URL:?must be set}"
   : "${R2_ACCESS_KEY_ID:?must be set}"
   : "${R2_SECRET_ACCESS_KEY:?must be set}"
-  uv run python src/__main__.py generate-and-upload
-else
-  out=$(mktemp -d)
-  trap 'rm -rf "$out"' EXIT
-  uv run python src/__main__.py generate --output "$out"
-  echo
-  echo "Dry run — would upload the following to R2:"
-  (cd "$out" && find . -name '*.json' | sort | sed 's|^\./||')
-  echo
-  echo "Re-run with --commit to upload."
+  uv run python src/__main__.py upload stac
 fi
