@@ -68,7 +68,7 @@ def generate(output_dir: pathlib.Path, root_href: str = ROOT_HREF) -> None:
         ds = _open_icechunk(item)
         _verify_read(ds)
         print(f"{item.id}: verifying zarr URL")
-        _verify_zarr_url(item.zarr_href)
+        _verify_zarr_url(str(item.zarr_href))
         collection_input = CollectionInput.from_dataset(item, ds)
         catalog.add_child(collection_input.to_pystac_collection())
 

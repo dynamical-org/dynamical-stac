@@ -1,22 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import StrEnum
+
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class DatasetLicense(StrEnum):
     CC_BY_4_0 = "CC-BY-4.0"
 
 
-@dataclass(frozen=True, kw_only=True)
-class CatalogItem:
-    id: str
-    zarr_href: str
-    icechunk_bucket: str
-    icechunk_prefix: str
+class CatalogItem(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id: str = Field(min_length=1)
+    zarr_href: HttpUrl
+    icechunk_bucket: str = Field(min_length=1)
+    icechunk_prefix: str = Field(min_length=1)
     license: DatasetLicense = DatasetLicense.CC_BY_4_0
-    icechunk_region: str = "us-west-2"
-    additional_terms_href: str | None = None
+    icechunk_region: str = Field(min_length=1, default="us-west-2")
+    additional_terms_href: HttpUrl | None = None
     additional_terms_title: str | None = None
 
 

@@ -86,7 +86,7 @@ def _dim_entry(name: str, coord: xr.DataArray) -> CubeDimension:
             unit="seconds since 1970-01-01",
             size=size,
         )
-    if coord.dtype.kind == "m":
+    if coord.dtype.kind == "m":  # numpy timedelta64 (e.g. forecast lead_time)
         return CubeDimension(
             type="other",
             extent=[None, None],
@@ -137,7 +137,7 @@ class CollectionInput(BaseModel):
     attribution: str | None = None
     version: str | None = None
     summaries: dict[str, str] = Field(default_factory=dict)
-    additional_terms_href: str | None = None
+    additional_terms_href: pydantic.HttpUrl | None = None
     additional_terms_title: str | None = None
 
     @field_validator("bbox")
@@ -276,7 +276,7 @@ class CollectionInput(BaseModel):
             pystac.Asset(
                 href=self.icechunk_s3_href,
                 media_type="application/x-icechunk",
-                title="Icechunk repository",
+                title="Icechunk v2 repository",
                 roles=["data"],
                 extra_fields={
                     "icechunk:storage": {
@@ -301,7 +301,7 @@ class CollectionInput(BaseModel):
             collection.add_link(
                 pystac.Link(
                     rel="license",
-                    target=self.additional_terms_href,
+                    target=str(self.additional_terms_href),
                     media_type="text/html",
                     title=self.additional_terms_title,
                 )
