@@ -19,6 +19,7 @@ def _catalog_item(
         id=item_id,
         icechunk_href=icechunk_href,
         icechunk_region="us-west-2",
+        zarr_href="https://data.example.com/test-dataset/latest.zarr",  # type: ignore[arg-type]
     )
 
 
@@ -163,6 +164,7 @@ def test_from_dataset_passes_additional_terms_through() -> None:
         id="test-dataset",
         icechunk_href="s3://test-bucket/test-dataset/v0.icechunk/",
         icechunk_region="us-west-2",
+        zarr_href="https://data.example.com/test-dataset/latest.zarr",  # type: ignore[arg-type]
         additional_terms=terms,
     )
     result = CollectionInput.from_dataset(item, _synthetic_dataset())
