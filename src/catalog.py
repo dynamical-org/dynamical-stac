@@ -23,7 +23,6 @@ class CatalogItem(BaseModel):
     id: str = Field(min_length=1)
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: str = Field(min_length=1)
-    license: DatasetLicense
     additional_terms: AdditionalTerms | None = None
 
     @property
@@ -46,56 +45,47 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="noaa-gfs-analysis",
         icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-analysis/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
     ),
     CatalogItem(
         id="noaa-gfs-forecast",
         icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-forecast/v0.2.7.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
     ),
     CatalogItem(
         id="noaa-gefs-forecast-35-day",
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-35-day/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
     ),
     CatalogItem(
         id="noaa-gefs-analysis",
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-analysis/v0.1.2.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
     ),
     CatalogItem(
         id="noaa-hrrr-forecast-48-hour",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
     ),
     CatalogItem(
         id="noaa-hrrr-analysis",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-analysis/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
     ),
     CatalogItem(
         id="noaa-mrms-conus-analysis-hourly",
         icechunk_href="s3://dynamical-noaa-mrms/noaa-mrms-conus-analysis-hourly/v0.3.0.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
     ),
     CatalogItem(
         id="ecmwf-aifs-single-forecast",
         icechunk_href="s3://dynamical-ecmwf-aifs-single/ecmwf-aifs-single-forecast/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
         id="ecmwf-ifs-ens-forecast-15-day-0-25-degree",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-15-day-0-25-degree/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
         additional_terms=ECMWF_TERMS,
     ),
 ]

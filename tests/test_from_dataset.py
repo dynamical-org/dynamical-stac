@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from catalog import AdditionalTerms, CatalogItem, DatasetLicense
+from catalog import AdditionalTerms, CatalogItem
 from models import CollectionInput, _dim_entry
 
 
@@ -19,7 +19,6 @@ def _catalog_item(
         id=item_id,
         icechunk_href=icechunk_href,
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
     )
 
 
@@ -40,6 +39,7 @@ def _synthetic_dataset(
         "dataset_id": dataset_id,
         "name": "Test Dataset",
         "description": "A synthetic dataset for unit tests.",
+        "license": "CC-BY-4.0",
     }
     if ds_attrs_overrides:
         ds_attrs.update(ds_attrs_overrides)
@@ -88,6 +88,7 @@ def test_from_dataset_prefers_init_time_over_time() -> None:
             "dataset_id": "test-dataset",
             "name": "Test Dataset",
             "description": "desc",
+            "license": "CC-BY-4.0",
         },
     )
     result = CollectionInput.from_dataset(item, ds)
@@ -119,7 +120,6 @@ def test_from_dataset_passes_additional_terms_through() -> None:
         id="test-dataset",
         icechunk_href="s3://test-bucket/test-dataset/v0.icechunk/",
         icechunk_region="us-west-2",
-        license=DatasetLicense.CC_BY_4_0,
         additional_terms=terms,
     )
     result = CollectionInput.from_dataset(item, _synthetic_dataset())

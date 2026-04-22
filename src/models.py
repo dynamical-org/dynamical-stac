@@ -222,7 +222,7 @@ class CollectionInput(BaseModel):
             id=item.id,
             name=ds.attrs["name"],
             description=ds.attrs["description"],
-            license=item.license,
+            license=ds.attrs["license"],
             bbox=_bbox(ds),
             temporal_start=t0,
             cube_dimensions=dims,
