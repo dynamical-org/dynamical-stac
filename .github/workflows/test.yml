@@ -27,9 +27,29 @@ jobs:
       - run: uv run pytest tests/ -m "not integration"
         env:
           REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
-      - run: uv run pytest tests/ -m integration
+      - run: uv run pytest tests/ -m integration --ignore=tests/test_released_catalog_read.py
         env:
           REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
+
+  # Per-version compatibility checks. Each matrix entry shows up as its own
+  # PR status check so a breaking change surfaces as `compat (0.3.0) ❌`
+  # rather than hiding inside the main test job.
+  #
+  # Keep this list in sync with SUPPORTED_RELEASES in
+  # tests/test_released_catalog_read.py — the sanity-check test in that file
+  # fails if they diverge.
+  compat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dynamical-catalog-version:
+          - "0.3.0"
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+      - run: uv sync --group integration
+      - run: uv run pytest tests/test_released_catalog_read.py -m integration -k "[${{ matrix.dynamical-catalog-version }}]" -v
 
   notify-on-failure:
     needs: test

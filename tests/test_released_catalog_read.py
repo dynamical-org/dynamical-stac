@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -32,6 +33,9 @@ import pytest
 from catalog import _COLLECTION_IDS
 
 SUPPORTED_RELEASES = ["0.3.0"]
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+TEST_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "test.yml"
 
 _HARNESS = textwrap.dedent(
     """
@@ -90,3 +94,29 @@ def test_released_dynamical_catalog_opens_every_collection(
         ],
         check=True,
     )
+
+
+def test_compat_matrix_matches_supported_releases() -> None:
+    """Guard against the `compat` job matrix in .github/workflows/test.yml
+    drifting out of sync with SUPPORTED_RELEASES.
+
+    PyYAML is pulled in transitively by stac-check (dev deps), so we can
+    parse the workflow directly rather than regexing.
+    """
+    yaml = pytest.importorskip("yaml")
+    workflow = yaml.safe_load(TEST_WORKFLOW.read_text())
+    matrix_versions = workflow["jobs"]["compat"]["strategy"]["matrix"][
+        "dynamical-catalog-version"
+    ]
+    assert matrix_versions == SUPPORTED_RELEASES, (
+        f"compat matrix in {TEST_WORKFLOW.relative_to(REPO_ROOT)} "
+        f"({matrix_versions}) must match SUPPORTED_RELEASES ({SUPPORTED_RELEASES})"
+    )
+
+
+def test_supported_releases_use_exact_pins() -> None:
+    """Each entry in SUPPORTED_RELEASES should be a concrete version so the
+    compat harness installs exactly that release (no `>=`, no wildcards)."""
+    pattern = re.compile(r"^\d+\.\d+\.\d+$")
+    bad = [v for v in SUPPORTED_RELEASES if not pattern.match(v)]
+    assert not bad, f"Non-exact versions in SUPPORTED_RELEASES: {bad}"
