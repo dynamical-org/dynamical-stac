@@ -175,6 +175,15 @@ MODELS: dict[str, Model] = {
             "obtain the best possible estimate of the current state of the Earth system."
         ),
     ),
+    "dwd-icon-eu": Model(
+        id="dwd-icon-eu",
+        name="DWD ICON-EU",
+        description=(
+            "ICON-EU is a regional weather forecast model operated by Deutscher Wetterdienst (DWD), "
+            "Germany's national meteorological service. ICON-EU is a nested configuration of DWD's global "
+            "ICON (Icosahedral Non-hydrostatic) model that provides high-resolution forecasts over Europe."
+        ),
+    ),
 }
 
 
@@ -183,7 +192,7 @@ class CatalogItem(BaseModel):
 
     id: str = Field(min_length=1)
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
-    icechunk_region: str = Field(min_length=1)
+    icechunk_region: Literal["us-west-2"]  # add additional as needed
     model_id: str = Field(min_length=1)
     description_summary: str = Field(min_length=1)
     reformatter_url: str = Field(min_length=1)
@@ -430,6 +439,28 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         additional_terms=ECMWF_TERMS,
+    ),
+    CatalogItem(
+        id="dwd-icon-eu-forecast-5-day",
+        icechunk_href="s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day/v0.2.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="dwd-icon-eu",
+        description_summary=(
+            "This dataset is an archive of past and present ICON-EU forecasts. "
+            "Forecasts are identified by an initialization time (`init_time`) "
+            "denoting the start time of the model run and step forward in time "
+            "along the `lead_time` dimension. This dataset contains only the "
+            "00, 06, 12, and 18 hour UTC initialization times which produce "
+            "the full length, 5 day forecast."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/dwd/icon_eu/forecast_5_day/template_config.py",
+        examples=(
+            _example(
+                "Maximum temperature in a forecast",
+                'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day")\n'
+                'ds["temperature_2m"].sel(init_time="2026-04-01T00", latitude=50, longitude=10).max().compute()',
+            ),
+        ),
     ),
 ]
 

@@ -65,6 +65,12 @@
       "title": "ECMWF IFS ENS forecast, 15 day, 0.25 degree"
     },
     {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json",
+      "type": "application/json",
+      "title": "DWD ICON-EU forecast, 5 Day"
+    },
+    {
       "rel": "self",
       "href": "https://stac.dynamical.org/catalog.json",
       "type": "application/json",

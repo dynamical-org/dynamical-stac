@@ -1,0 +1,423 @@
+{
+  "type": "Collection",
+  "id": "dwd-icon-eu-forecast-5-day",
+  "stac_version": "1.1.0",
+  "description": "High-resolution weather forecasts for Europe from the ICON-EU model operated by Deutscher Wetterdienst (DWD).",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/dwd-icon-eu-forecast-5-day/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "Example notebook (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day.ipynb",
+      "type": "text/html",
+      "title": "Example notebook (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json",
+      "type": "application/json",
+      "title": "DWD ICON-EU forecast, 5 Day"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "DWD ICON-EU data processed by dynamical.org.",
+  "version": "0.2.0",
+  "model_id": "dwd-icon-eu",
+  "model_name": "DWD ICON-EU",
+  "description_summary": "This dataset is an archive of past and present ICON-EU forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run and step forward in time along the `lead_time` dimension. This dataset contains only the 00, 06, 12, and 18 hour UTC initialization times which produce the full length, 5 day forecast.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by\n[DWD Open Data](https://www.dwd.de/EN/ourservices/opendata/opendata.html)\nand the [dynamical.org DWD ICON grib archive](https://source.coop/dynamical/dwd-icon-grib)\non [Source Cooperative](https://source.coop/).\n\n### Storage\n\nIcechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\nStorage for the dynamical.org DWD ICON-EU grib archive is generously provided by\n[Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/dwd/icon_eu/forecast_5_day/template_config.py).",
+  "description_model": "ICON-EU is a regional weather forecast model operated by Deutscher Wetterdienst (DWD), Germany's national meteorological service. ICON-EU is a nested configuration of DWD's global ICON (Icosahedral Non-hydrostatic) model that provides high-resolution forecasts over Europe.",
+  "examples": [
+    {
+      "title": "Maximum temperature in a forecast",
+      "code": "import dynamical_catalog  # dynamical-catalog>=0.4.0\n\nds = dynamical_catalog.open(\"dwd-icon-eu-forecast-5-day\")\nds[\"temperature_2m\"].sel(init_time=\"2026-04-01T00\", latitude=50, longitude=10).max().compute()",
+      "language": "python"
+    }
+  ],
+  "cube:dimensions": {
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2026-02-10T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        29.5,
+        70.5
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 657
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        432000
+      ],
+      "unit": "seconds",
+      "size": 93
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -23.5,
+        62.5
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 1377
+    }
+  },
+  "cube:variables": {
+    "cloud_cover_high": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "High cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "hcc",
+      "comment": "Cloud cover (0 - 400 hPa)."
+    },
+    "cloud_cover_low": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Low cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "lcc",
+      "comment": "Cloud cover (800 hPa - surface)."
+    },
+    "cloud_cover_medium": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Medium cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "mcc",
+      "comment": "Cloud cover (400 - 800 hPa)."
+    },
+    "convective_available_potential_energy_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "J kg-1",
+      "long_name": "Convective available potential energy",
+      "standard_name": "atmosphere_convective_available_potential_energy",
+      "short_name": "cape"
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
+    "downward_diffuse_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface diffuse short-wave radiation flux",
+      "standard_name": "surface_diffuse_downwelling_shortwave_flux_in_air",
+      "short_name": "aswdifd_s"
+    },
+    "downward_direct_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface direct short-wave radiation flux",
+      "standard_name": "surface_direct_downwelling_shortwave_flux_in_air",
+      "short_name": "aswdir_s",
+      "comment": "Average value since the previous forecast step."
+    },
+    "precipitable_water_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2",
+      "long_name": "Precipitable water",
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "short_name": "pwat"
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "relative_humidity_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "2 metre relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "2r"
+    },
+    "snow_thickness_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Snow depth",
+      "standard_name": "surface_snow_thickness",
+      "short_name": "sde"
+    },
+    "snow_water_equivalent_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Snow depth water equivalent",
+      "standard_name": "lwe_thickness_of_surface_snow_amount",
+      "short_name": "sd",
+      "comment": "Set to 0 over water surfaces and snow-free land points."
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
+    },
+    "wind_gust_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "Maximum 10 metre wind gust since previous post-processing",
+      "standard_name": "wind_speed_of_gust",
+      "short_name": "10fg"
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
+    }
+  },
+  "title": "DWD ICON-EU forecast, 5 Day",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -23.5,
+          29.5,
+          62.5,
+          70.5
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-02-10T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Europe"
+    ],
+    "spatial_resolution": [
+      "0.0625 degrees (~7km)"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2026-02-10 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-120 hours (0-5 days) ahead"
+    ],
+    "forecast_resolution": [
+      "Forecast step 0-78 hours: hourly, 81-120 hours: 3 hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day/v0.2.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}
