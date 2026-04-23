@@ -31,25 +31,30 @@ jobs:
         env:
           REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
 
-  # Per-version compatibility checks. Each matrix entry shows up as its own
+  # Per-target compatibility checks. Each matrix entry shows up as its own
   # PR status check so a breaking change surfaces as `compat (0.3.0) ❌`
   # rather than hiding inside the main test job.
   #
-  # Keep this list in sync with SUPPORTED_RELEASES in
+  # Entries must be kept in sync with SUPPORTED_RELEASES + TRACKED_REFS in
   # tests/test_released_catalog_read.py — the sanity-check test in that file
-  # fails if they diverge.
+  # fails if they diverge. Released versions (e.g. "0.4.0") install from
+  # PyPI; non-semver entries (e.g. "main") install from the matching git ref
+  # on dynamical-org/dynamical-catalog, and should be treated as an advisory
+  # canary rather than a merge blocker.
   compat:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        dynamical-catalog-version:
+        dynamical-catalog-target:
           - "0.3.0"
+          - "0.4.0"
+          - "main"
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - run: uv sync --group integration
-      - run: uv run pytest tests/test_released_catalog_read.py -m integration -k "[${{ matrix.dynamical-catalog-version }}]" -v
+      - run: uv run pytest tests/test_released_catalog_read.py -m integration -k "[${{ matrix.dynamical-catalog-target }}]" -v
 
   notify-on-failure:
     needs: test
