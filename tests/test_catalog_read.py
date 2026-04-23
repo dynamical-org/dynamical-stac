@@ -17,7 +17,7 @@ def _point_value(ds: object, name: str) -> object:
     return da.isel(dict.fromkeys(da.dims, 0)).load().item()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def dynamical_catalog_fixture(
     served_catalog: tuple[pathlib.Path, str],
 ) -> object:
