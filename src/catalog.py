@@ -109,21 +109,74 @@ def _load_prose(path: str, **extra: str) -> str:
     return text
 
 
-def _model(model_id: str, name: str) -> Model:
-    return Model(
-        id=model_id,
-        name=name,
-        description=_load_prose(f"models/{model_id}.md"),
-    )
-
-
 MODELS: dict[str, Model] = {
-    "noaa-gfs": _model("noaa-gfs", "NOAA GFS"),
-    "noaa-gefs": _model("noaa-gefs", "NOAA GEFS"),
-    "noaa-hrrr": _model("noaa-hrrr", "NOAA HRRR"),
-    "noaa-mrms": _model("noaa-mrms", "NOAA MRMS"),
-    "ecmwf-aifs-single": _model("ecmwf-aifs-single", "ECMWF AIFS Single"),
-    "ecmwf-ifs-ens": _model("ecmwf-ifs-ens", "ECMWF IFS ENS"),
+    "noaa-gfs": Model(
+        id="noaa-gfs",
+        name="NOAA GFS",
+        description=(
+            "The Global Forecast System (GFS) is a National Oceanic and Atmospheric Administration "
+            "(NOAA) National Centers for Environmental Prediction (NCEP) weather forecast model that "
+            "generates data for dozens of atmospheric and land-soil variables, including temperatures, "
+            "winds, precipitation, soil moisture, and atmospheric ozone concentration. The system "
+            "couples four separate models (atmosphere, ocean model, land/soil model, and sea ice) that "
+            "work together to depict weather conditions."
+        ),
+    ),
+    "noaa-gefs": Model(
+        id="noaa-gefs",
+        name="NOAA GEFS",
+        description=(
+            "The Global Ensemble Forecast System (GEFS) is a National Oceanic and Atmospheric "
+            "Administration (NOAA) National Centers for Environmental Prediction (NCEP) weather "
+            "forecast model. GEFS creates 31 separate forecasts (ensemble members) to describe the "
+            "range of forecast uncertainty."
+        ),
+    ),
+    "noaa-hrrr": Model(
+        id="noaa-hrrr",
+        name="NOAA HRRR",
+        description=(
+            "The High-Resolution Rapid Refresh (HRRR) is a NOAA real-time 3-km resolution, hourly "
+            "updated, cloud-resolving, convection-allowing atmospheric model, initialized by 3km grids "
+            "with 3km radar assimilation. Radar data is assimilated in the HRRR every 15 min over a "
+            "1-h period adding further detail to that provided by the hourly data assimilation from "
+            "the 13km radar-enhanced Rapid Refresh."
+        ),
+    ),
+    "noaa-mrms": Model(
+        id="noaa-mrms",
+        name="NOAA MRMS",
+        description=(
+            "The NOAA Multi-Radar/Multi-Sensor System (MRMS) integrates data from multiple radars "
+            "and radar networks, surface observations, numerical weather prediction (NWP) models, and "
+            "climatology to generate seamless, high spatio-temporal resolution mosaics at low latency "
+            "focused on hail, wind, tornado, quantitative precipitation estimations, convection, "
+            "icing, and turbulence."
+        ),
+    ),
+    "ecmwf-aifs-single": Model(
+        id="ecmwf-aifs-single",
+        name="ECMWF AIFS Single",
+        description=(
+            "The Artificial Intelligence Forecasting System (AIFS) is a data driven forecast model "
+            "developed by the European Centre for Medium-Range Weather Forecasts (ECMWF). This is the "
+            "non-ensemble configuration of AIFS that produces a single forecast trace. AIFS is trained "
+            "on ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) "
+            "analyses."
+        ),
+    ),
+    "ecmwf-ifs-ens": Model(
+        id="ecmwf-ifs-ens",
+        name="ECMWF IFS ENS",
+        description=(
+            "The Integrated Forecasting System (IFS) is a global forecast model developed by ECMWF. "
+            "ENS is an ensemble configuration of IFS, containing 51 ensemble members. IFS consists of "
+            "a numerical model of the Earth system, which includes an atmospheric model at its heart, "
+            "coupled with models of other Earth system components such as the ocean. The data "
+            "assimilation system combines the latest weather observations with a recent forecast to "
+            "obtain the best possible estimate of the current state of the Earth system."
+        ),
+    ),
 }
 
 
