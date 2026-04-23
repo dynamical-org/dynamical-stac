@@ -217,8 +217,12 @@ class CollectionInput(BaseModel):
             for name in sorted(ds.dims)
             if name in ds.coords
         }
+        # Sort by variable name so regeneration is deterministic; xarray's
+        # `data_vars` iteration order depends on zarr store internals and
+        # silently reshuffles across generator runs otherwise.
         variables: dict[str, CubeVariable] = {}
-        for name, da in ds.data_vars.items():
+        for name in sorted(ds.data_vars):
+            da = ds.data_vars[name]
             variables[str(name)] = CubeVariable(
                 dimensions=list(da.dims),
                 unit=_str_or_none(da.attrs.get("units") or da.attrs.get("unit")),

@@ -108,6 +108,18 @@
       "short_name": "cfrzr",
       "comment": "0=no; 1=yes"
     },
+    "categorical_ice_pellets_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical ice pellets",
+      "short_name": "cicep",
+      "comment": "0=no; 1=yes"
+    },
     "categorical_rain_surface": {
       "dimensions": [
         "time",
@@ -118,6 +130,18 @@
       "unit": "1",
       "long_name": "Categorical rain",
       "short_name": "crain",
+      "comment": "0=no; 1=yes"
+    },
+    "categorical_snow_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical snow",
+      "short_name": "csnow",
       "comment": "0=no; 1=yes"
     },
     "downward_long_wave_radiation_flux_surface": {
@@ -133,42 +157,6 @@
       "short_name": "sdlwrf",
       "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
     },
-    "geopotential_height_500hpa": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m",
-      "long_name": "Geopotential height",
-      "standard_name": "geopotential_height",
-      "short_name": "gh"
-    },
-    "categorical_ice_pellets_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "1",
-      "long_name": "Categorical ice pellets",
-      "short_name": "cicep",
-      "comment": "0=no; 1=yes"
-    },
-    "categorical_snow_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "1",
-      "long_name": "Categorical snow",
-      "short_name": "csnow",
-      "comment": "0=no; 1=yes"
-    },
     "downward_short_wave_radiation_flux_surface": {
       "dimensions": [
         "time",
@@ -182,6 +170,18 @@
       "short_name": "sdswrf",
       "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
     },
+    "geopotential_height_500hpa": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
     "geopotential_height_cloud_ceiling": {
       "dimensions": [
         "time",
@@ -193,6 +193,18 @@
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
       "short_name": "gh"
+    },
+    "maximum_temperature_2m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Maximum temperature",
+      "standard_name": "air_temperature",
+      "short_name": "tmax"
     },
     "minimum_temperature_2m": {
       "dimensions": [
@@ -206,18 +218,6 @@
       "standard_name": "air_temperature",
       "short_name": "tmin"
     },
-    "precipitable_water_atmosphere": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2",
-      "long_name": "Precipitable water",
-      "standard_name": "atmosphere_mass_content_of_water_vapor",
-      "short_name": "pwat"
-    },
     "percent_frozen_precipitation_surface": {
       "dimensions": [
         "time",
@@ -229,6 +229,18 @@
       "long_name": "Percent frozen precipitation",
       "short_name": "cpofp",
       "comment": "Contains the value -50 when there is no precipitation."
+    },
+    "precipitable_water_atmosphere": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2",
+      "long_name": "Precipitable water",
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "short_name": "pwat"
     },
     "precipitation_surface": {
       "dimensions": [
@@ -243,29 +255,17 @@
       "short_name": "prate",
       "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
     },
-    "relative_humidity_2m": {
+    "pressure_reduced_to_mean_sea_level": {
       "dimensions": [
         "time",
         "latitude",
         "longitude"
       ],
       "type": "data",
-      "unit": "percent",
-      "long_name": "2 metre relative humidity",
-      "standard_name": "relative_humidity",
-      "short_name": "2r"
-    },
-    "maximum_temperature_2m": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Maximum temperature",
-      "standard_name": "air_temperature",
-      "short_name": "tmax"
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
     },
     "pressure_surface": {
       "dimensions": [
@@ -279,17 +279,17 @@
       "standard_name": "surface_air_pressure",
       "short_name": "sp"
     },
-    "pressure_reduced_to_mean_sea_level": {
+    "relative_humidity_2m": {
       "dimensions": [
         "time",
         "latitude",
         "longitude"
       ],
       "type": "data",
-      "unit": "Pa",
-      "long_name": "Pressure reduced to MSL",
-      "standard_name": "air_pressure_at_mean_sea_level",
-      "short_name": "prmsl"
+      "unit": "percent",
+      "long_name": "2 metre relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "2r"
     },
     "temperature_2m": {
       "dimensions": [
@@ -302,30 +302,6 @@
       "long_name": "2 metre temperature",
       "standard_name": "air_temperature",
       "short_name": "2t"
-    },
-    "wind_u_100m": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m s-1",
-      "long_name": "100 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "100u"
-    },
-    "wind_v_10m": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m s-1",
-      "long_name": "10 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "10v"
     },
     "total_cloud_cover_atmosphere": {
       "dimensions": [
@@ -340,7 +316,7 @@
       "short_name": "tcc",
       "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
     },
-    "wind_v_100m": {
+    "wind_u_100m": {
       "dimensions": [
         "time",
         "latitude",
@@ -348,9 +324,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "100 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "100v"
+      "long_name": "100 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "100u"
     },
     "wind_u_10m": {
       "dimensions": [
@@ -363,6 +339,30 @@
       "long_name": "10 metre U wind component",
       "standard_name": "eastward_wind",
       "short_name": "10u"
+    },
+    "wind_v_100m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
     }
   },
   "title": "NOAA GEFS analysis",

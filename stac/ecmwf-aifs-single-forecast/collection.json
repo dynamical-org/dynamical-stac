@@ -111,6 +111,19 @@
     }
   },
   "cube:variables": {
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
     "downward_long_wave_radiation_flux_surface": {
       "dimensions": [
         "init_time",
@@ -123,6 +136,19 @@
       "long_name": "Surface downward long-wave radiation flux",
       "standard_name": "surface_downwelling_longwave_flux_in_air",
       "short_name": "sdlwrf"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf"
     },
     "geopotential_height_500hpa": {
       "dimensions": [
@@ -150,32 +176,6 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
-    "dew_point_temperature_2m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre dewpoint temperature",
-      "standard_name": "dew_point_temperature",
-      "short_name": "2d"
-    },
-    "downward_short_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward short-wave radiation flux",
-      "standard_name": "surface_downwelling_shortwave_flux_in_air",
-      "short_name": "sdswrf"
-    },
     "geopotential_height_925hpa": {
       "dimensions": [
         "init_time",
@@ -189,7 +189,7 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
-    "temperature_925hpa": {
+    "precipitation_surface": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -197,10 +197,24 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
     },
     "pressure_surface": {
       "dimensions": [
@@ -215,7 +229,33 @@
       "standard_name": "surface_air_pressure",
       "short_name": "sp"
     },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
     "temperature_850hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
+    },
+    "temperature_925hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -241,7 +281,7 @@
       "standard_name": "cloud_area_fraction",
       "short_name": "tcc"
     },
-    "precipitation_surface": {
+    "wind_u_100m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -249,37 +289,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
-    },
-    "temperature_2m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre temperature",
-      "standard_name": "air_temperature",
-      "short_name": "2t"
-    },
-    "pressure_reduced_to_mean_sea_level": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "Pa",
-      "long_name": "Pressure reduced to MSL",
-      "standard_name": "air_pressure_at_mean_sea_level",
-      "short_name": "prmsl"
+      "unit": "m s-1",
+      "long_name": "100 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "100u"
     },
     "wind_u_10m": {
       "dimensions": [
@@ -294,19 +307,6 @@
       "standard_name": "eastward_wind",
       "short_name": "10u"
     },
-    "wind_v_10m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m s-1",
-      "long_name": "10 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "10v"
-    },
     "wind_v_100m": {
       "dimensions": [
         "init_time",
@@ -320,7 +320,7 @@
       "standard_name": "northward_wind",
       "short_name": "100v"
     },
-    "wind_u_100m": {
+    "wind_v_10m": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -329,9 +329,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "100 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "100u"
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
     }
   },
   "title": "ECMWF AIFS Single forecast",
