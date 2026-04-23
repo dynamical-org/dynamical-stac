@@ -102,20 +102,6 @@
     }
   },
   "cube:variables": {
-    "categorical_freezing_rain_surface": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "1",
-      "long_name": "Categorical freezing rain",
-      "short_name": "cfrzr",
-      "comment": "0=no; 1=yes"
-    },
     "categorical_ice_pellets_surface": {
       "dimensions": [
         "init_time",
@@ -130,7 +116,7 @@
       "short_name": "cicep",
       "comment": "0=no; 1=yes"
     },
-    "downward_long_wave_radiation_flux_surface": {
+    "categorical_rain_surface": {
       "dimensions": [
         "init_time",
         "ensemble_member",
@@ -139,40 +125,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward long-wave radiation flux",
-      "standard_name": "surface_downwelling_longwave_flux_in_air",
-      "short_name": "sdlwrf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
-    },
-    "downward_short_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward short-wave radiation flux",
-      "standard_name": "surface_downwelling_shortwave_flux_in_air",
-      "short_name": "sdswrf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
-    },
-    "geopotential_height_cloud_ceiling": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m",
-      "long_name": "Geopotential height",
-      "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "unit": "1",
+      "long_name": "Categorical rain",
+      "short_name": "crain",
+      "comment": "0=no; 1=yes"
     },
     "categorical_snow_surface": {
       "dimensions": [
@@ -202,7 +158,21 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
-    "categorical_rain_surface": {
+    "geopotential_height_cloud_ceiling": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "categorical_freezing_rain_surface": {
       "dimensions": [
         "init_time",
         "ensemble_member",
@@ -212,9 +182,39 @@
       ],
       "type": "data",
       "unit": "1",
-      "long_name": "Categorical rain",
-      "short_name": "crain",
+      "long_name": "Categorical freezing rain",
+      "short_name": "cfrzr",
       "comment": "0=no; 1=yes"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf",
+      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+    },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf",
+      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
     },
     "maximum_temperature_2m": {
       "dimensions": [
@@ -230,7 +230,7 @@
       "standard_name": "air_temperature",
       "short_name": "tmax"
     },
-    "precipitable_water_atmosphere": {
+    "minimum_temperature_2m": {
       "dimensions": [
         "init_time",
         "ensemble_member",
@@ -239,25 +239,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "kg m-2",
-      "long_name": "Precipitable water",
-      "standard_name": "atmosphere_mass_content_of_water_vapor",
-      "short_name": "pwat"
-    },
-    "precipitation_surface": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+      "unit": "degree_Celsius",
+      "long_name": "Minimum temperature",
+      "standard_name": "air_temperature",
+      "short_name": "tmin"
     },
     "percent_frozen_precipitation_surface": {
       "dimensions": [
@@ -273,7 +258,7 @@
       "short_name": "cpofp",
       "comment": "Contains the value -50 when there is no precipitation."
     },
-    "minimum_temperature_2m": {
+    "precipitable_water_atmosphere": {
       "dimensions": [
         "init_time",
         "ensemble_member",
@@ -282,10 +267,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Minimum temperature",
-      "standard_name": "air_temperature",
-      "short_name": "tmin"
+      "unit": "kg m-2",
+      "long_name": "Precipitable water",
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "short_name": "pwat"
     },
     "pressure_surface": {
       "dimensions": [
@@ -329,21 +314,6 @@
       "standard_name": "air_temperature",
       "short_name": "2t"
     },
-    "total_cloud_cover_atmosphere": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "percent",
-      "long_name": "Total Cloud Cover",
-      "standard_name": "cloud_area_fraction",
-      "short_name": "tcc",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
-    },
     "pressure_reduced_to_mean_sea_level": {
       "dimensions": [
         "init_time",
@@ -358,7 +328,22 @@
       "standard_name": "air_pressure_at_mean_sea_level",
       "short_name": "prmsl"
     },
-    "wind_v_100m": {
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "wind_u_100m": {
       "dimensions": [
         "init_time",
         "ensemble_member",
@@ -368,9 +353,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "100 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "100v"
+      "long_name": "100 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "100u"
     },
     "wind_u_10m": {
       "dimensions": [
@@ -386,7 +371,22 @@
       "standard_name": "eastward_wind",
       "short_name": "10u"
     },
-    "wind_u_100m": {
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc",
+      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+    },
+    "wind_v_100m": {
       "dimensions": [
         "init_time",
         "ensemble_member",
@@ -396,9 +396,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "100 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "100u"
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
     },
     "wind_v_10m": {
       "dimensions": [

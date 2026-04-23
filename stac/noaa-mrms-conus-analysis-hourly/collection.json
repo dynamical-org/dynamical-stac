@@ -96,6 +96,18 @@
       "short_name": "ptype",
       "comment": "Precipitation type flag. 0=no precipitation, 1=warm stratiform rain, 3=snow, 6=convective, 7=hail, 10=cold stratiform rain, 91=tropical."
     },
+    "flash_qpe_ffg_max_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "FLASH QPE-to-FFG percentage maximum",
+      "short_name": "FLASH_QPE_FFGMAX",
+      "comment": "Maximum percentage of Quantitative Precipitation Estimate (QPE) to Flash Flood Guidance (FFG) from the FLASH system. Percentage where values > 100 indicate QPE exceeds FFG. Available from October 2020 onward."
+    },
     "precipitation_pass_2_surface": {
       "dimensions": [
         "time",
@@ -121,18 +133,6 @@
       "standard_name": "precipitation_flux",
       "short_name": "prate",
       "comment": "Average precipitation rate over the previous hour. Derived from MultiSensor_QPE_01H_Pass2 from October 2020, GaugeCorr_QPE_01H before. If primary product is unavailable, falls back to MultiSensor_QPE_01H_Pass1 and then RadarOnly_QPE_01H. Units equivalent to mm/s."
-    },
-    "flash_qpe_ffg_max_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "percent",
-      "long_name": "FLASH QPE-to-FFG percentage maximum",
-      "short_name": "FLASH_QPE_FFGMAX",
-      "comment": "Maximum percentage of Quantitative Precipitation Estimate (QPE) to Flash Flood Guidance (FFG) from the FLASH system. Percentage where values > 100 indicate QPE exceeds FFG. Available from October 2020 onward."
     },
     "precipitation_radar_only_surface": {
       "dimensions": [
