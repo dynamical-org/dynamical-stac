@@ -32,33 +32,47 @@ jobs:
           REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
 
   # Per-target compatibility checks. Each matrix entry shows up as its own
-  # PR status check so a breaking change surfaces as `compat (0.3.0) ❌`
-  # rather than hiding inside the main test job.
+  # PR status check (via the job-level `name:` template) so a breaking
+  # change surfaces as `compat (0.3.0) ❌` rather than hiding inside the
+  # main test job.
   #
-  # Entries must be kept in sync with SUPPORTED_RELEASES + TRACKED_REFS in
-  # tests/test_released_catalog_read.py — the sanity-check test in that file
+  # Each `include` entry carries two fields:
+  #   target: the human-readable thing we're testing (PyPI version or git
+  #           ref), shown in the status check name.
+  #   id:     the shell-safe pytest parametrize id used for the -k filter.
+  #           Keeping `[`, `]`, and `.` out of the filter expression avoids
+  #           edge cases in pytest's -k parser.
+  #
+  # Entries must stay in sync with SUPPORTED_RELEASES + TRACKED_REFS in
+  # tests/test_released_catalog_read.py — test_compat_matrix_matches_targets
   # fails if they diverge. Released versions (e.g. "0.4.0") install from
   # PyPI; non-semver entries (e.g. "main") install from the matching git ref
   # on dynamical-org/dynamical-catalog, and should be treated as an advisory
   # canary rather than a merge blocker.
   compat:
+    name: "compat (${{ matrix.target }})"
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.allow-failure }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - dynamical-catalog-target: "0.3.0"
+          - target: "0.3.0"
+            id: "0_3_0"
             allow-failure: false
-          - dynamical-catalog-target: "0.4.0"
+          - target: "0.4.0"
+            id: "0_4_0"
             allow-failure: false
-          - dynamical-catalog-target: "main"
+          # main is a canary, not a support contract; allow-failure so a
+          # dynamical-catalog breakage doesn't block dynamical-stac PRs.
+          - target: "main"
+            id: "main"
             allow-failure: true
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - run: uv sync --group integration
-      - run: uv run pytest tests/test_released_catalog_read.py -m integration -k "[${{ matrix.dynamical-catalog-target }}]" -v
+      - run: uv run pytest tests/test_released_catalog_read.py -m integration -k "${{ matrix.id }}" -v
 
   notify-on-failure:
     needs: test

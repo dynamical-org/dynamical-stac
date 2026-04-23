@@ -47,6 +47,17 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 TEST_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "test.yml"
 _DYNAMICAL_CATALOG_REPO = "https://github.com/dynamical-org/dynamical-catalog"
 
+
+def _safe_id(target: str) -> str:
+    """Return a pytest parametrize id free of characters that can trip up
+    `pytest -k` expression parsing (`[`, `]`, `.`) or look odd in a GHA
+    matrix key. Keeps alphanumerics + underscores.
+
+    `0.3.0` -> `0_3_0`; `main` -> `main`; `release/foo` -> `release_foo`.
+    """
+    return re.sub(r"[^A-Za-z0-9_]", "_", target)
+
+
 _HARNESS = textwrap.dedent(
     """
     import json, math, sys
@@ -83,7 +94,10 @@ def _install_spec(target: str) -> str:
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("target", _ALL_TARGETS)
+@pytest.mark.parametrize(
+    "target",
+    [pytest.param(t, id=_safe_id(t)) for t in _ALL_TARGETS],
+)
 def test_released_dynamical_catalog_opens_every_collection(
     served_catalog: tuple[pathlib.Path, str],
     target: str,
@@ -117,22 +131,42 @@ def test_released_dynamical_catalog_opens_every_collection(
     )
 
 
+def _expected_matrix_entries() -> list[dict[str, object]]:
+    """The `include` matrix the workflow must declare.
+
+    - `target`: human-readable, shown in the PR status check name.
+    - `id`: shell-safe pytest parametrize id for the `-k` filter.
+    - `allow-failure`: False for supported releases (they block merges),
+      True for tracked refs (canary only).
+    """
+    return [
+        *(
+            {"target": t, "id": _safe_id(t), "allow-failure": False}
+            for t in SUPPORTED_RELEASES
+        ),
+        *(
+            {"target": t, "id": _safe_id(t), "allow-failure": True}
+            for t in TRACKED_REFS
+        ),
+    ]
+
+
 def test_compat_matrix_matches_targets() -> None:
     """Guard against the `compat` job matrix in .github/workflows/test.yml
-    drifting out of sync with _ALL_TARGETS (SUPPORTED_RELEASES + TRACKED_REFS).
+    drifting out of sync with SUPPORTED_RELEASES + TRACKED_REFS, including
+    the policy that tracked refs are allowed to fail while releases are not.
 
     PyYAML is pulled in transitively by stac-check (dev deps), so we can
     parse the workflow directly rather than regexing.
     """
     yaml = pytest.importorskip("yaml")
     workflow = yaml.safe_load(TEST_WORKFLOW.read_text())
-    matrix_targets = workflow["jobs"]["compat"]["strategy"]["matrix"][
-        "dynamical-catalog-target"
-    ]
-    assert matrix_targets == _ALL_TARGETS, (
+    matrix_entries = workflow["jobs"]["compat"]["strategy"]["matrix"]["include"]
+    expected = _expected_matrix_entries()
+    assert matrix_entries == expected, (
         f"compat matrix in {TEST_WORKFLOW.relative_to(REPO_ROOT)} "
-        f"({matrix_targets}) must match SUPPORTED_RELEASES + TRACKED_REFS "
-        f"({_ALL_TARGETS})"
+        f"({matrix_entries}) must match SUPPORTED_RELEASES + TRACKED_REFS "
+        f"({expected})"
     )
 
 
