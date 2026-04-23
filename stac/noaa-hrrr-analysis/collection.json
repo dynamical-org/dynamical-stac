@@ -61,7 +61,7 @@
   "examples": [
     {
       "title": "Temperature at a specific place and time",
-      "code": "import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\nds = xr.open_zarr(\"https://data.dynamical.org/noaa/hrrr/analysis/latest.zarr\")\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\", x=0, y=0, method=\"nearest\").compute()",
+      "code": "import dynamical_catalog  # dynamical-catalog>=0.4.0\n\nds = dynamical_catalog.open(\"noaa-hrrr-analysis\")\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\", x=0, y=0, method=\"nearest\").compute()",
       "language": "python"
     }
   ],
