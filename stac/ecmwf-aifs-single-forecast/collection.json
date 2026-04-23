@@ -59,6 +59,18 @@
   ],
   "attribution": "ECMWF AIFS Single forecast data processed by dynamical.org from ECMWF Open Data.",
   "version": "0.1.0",
+  "model_id": "ecmwf-aifs-single",
+  "model_name": "ECMWF AIFS Single",
+  "description_summary": "This dataset is an archive of past and present ECMWF AIFS Single forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run. Each forecast steps forward in time along the `lead_time` dimension, from 0 to 360 hours (15 days) at a 6 hourly step.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\nECMWF does not provide user support for the free & open datasets. Users should refer to the public [User Forum](https://forum.ecmwf.int/) for any questions related to the source material.\n\n### Model updates\n\nAIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/aifs_single/forecast/template_config.py).",
+  "description_model": "The Artificial Intelligence Forecasting System (AIFS) is a data driven forecast model developed by the European Centre for Medium-Range Weather Forecasts (ECMWF). This is the non-ensemble configuration of AIFS that produces a single forecast trace. AIFS is trained on ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) analyses.",
+  "examples": [
+    {
+      "title": "Maximum temperature in a forecast",
+      "code": "import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\nds = xr.open_zarr(\"https://data.dynamical.org/ecmwf/aifs-single/forecast/latest.zarr\")\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", latitude=0, longitude=0).max().compute()",
+      "language": "python"
+    }
+  ],
   "cube:dimensions": {
     "init_time": {
       "type": "temporal",
@@ -112,6 +124,45 @@
       "standard_name": "dew_point_temperature",
       "short_name": "2d"
     },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf"
+    },
+    "geopotential_height_500hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
     "geopotential_height_850hpa": {
       "dimensions": [
         "init_time",
@@ -137,45 +188,6 @@
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
       "short_name": "gh"
-    },
-    "downward_long_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward long-wave radiation flux",
-      "standard_name": "surface_downwelling_longwave_flux_in_air",
-      "short_name": "sdlwrf"
-    },
-    "geopotential_height_500hpa": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m",
-      "long_name": "Geopotential height",
-      "standard_name": "geopotential_height",
-      "short_name": "gh"
-    },
-    "downward_short_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward short-wave radiation flux",
-      "standard_name": "surface_downwelling_shortwave_flux_in_air",
-      "short_name": "sdswrf"
     },
     "precipitation_surface": {
       "dimensions": [
@@ -204,6 +216,19 @@
       "standard_name": "air_pressure_at_mean_sea_level",
       "short_name": "prmsl"
     },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
     "temperature_2m": {
       "dimensions": [
         "init_time",
@@ -217,7 +242,7 @@
       "standard_name": "air_temperature",
       "short_name": "2t"
     },
-    "total_cloud_cover_atmosphere": {
+    "temperature_850hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -225,23 +250,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "percent",
-      "long_name": "Total cloud cover",
-      "standard_name": "cloud_area_fraction",
-      "short_name": "tcc"
-    },
-    "pressure_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "Pa",
-      "long_name": "Surface pressure",
-      "standard_name": "surface_air_pressure",
-      "short_name": "sp"
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
     },
     "temperature_925hpa": {
       "dimensions": [
@@ -256,7 +268,7 @@
       "standard_name": "air_temperature",
       "short_name": "t"
     },
-    "temperature_850hpa": {
+    "total_cloud_cover_atmosphere": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -264,10 +276,10 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
     },
     "wind_u_100m": {
       "dimensions": [

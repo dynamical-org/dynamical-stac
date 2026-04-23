@@ -7,23 +7,32 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from catalog import AdditionalTerms, CatalogItem
+from catalog import AdditionalTerms, CatalogItem, DatasetExample
 from models import CollectionInput, _dim_entry
+
+# Use a real id so ``CatalogItem.description_details`` can resolve the
+# matching ``prose/datasets/{id}.md`` fixture; the tests here don't inspect
+# description content so the specific id doesn't matter.
+_TEST_ID = "noaa-gfs-analysis"
 
 
 def _catalog_item(
-    item_id: str = "test-dataset",
-    icechunk_href: str = "s3://test-bucket/test-dataset/v0.icechunk/",
+    item_id: str = _TEST_ID,
+    icechunk_href: str = f"s3://test-bucket/{_TEST_ID}/v0.icechunk/",
 ) -> CatalogItem:
     return CatalogItem(
         id=item_id,
         icechunk_href=icechunk_href,
         icechunk_region="us-west-2",
+        model_id="noaa-gfs",
+        description_summary="test summary",
+        reformatter_url="https://example.com/reformatter.py",
+        examples=(DatasetExample(title="Example", code="import xarray"),),
     )
 
 
 def _synthetic_dataset(
-    dataset_id: str = "test-dataset",
+    dataset_id: str = _TEST_ID,
     time_dim: str = "time",
     extra_var_attrs: dict[str, str] | None = None,
     ds_attrs_overrides: dict[str, object] | None = None,
@@ -55,10 +64,7 @@ def _synthetic_dataset(
 
 
 def test_from_dataset_rejects_mismatched_dataset_id() -> None:
-    item = _catalog_item(
-        item_id="expected-id",
-        icechunk_href="s3://test-bucket/expected-id/v0.icechunk/",
-    )
+    item = _catalog_item()
     ds = _synthetic_dataset(dataset_id="different-id")
     with pytest.raises(ValueError, match="does not match store dataset_id"):
         CollectionInput.from_dataset(item, ds)
@@ -94,7 +100,7 @@ def test_from_dataset_prefers_init_time_over_time() -> None:
             "longitude": lons,
         },
         attrs={
-            "dataset_id": "test-dataset",
+            "dataset_id": _TEST_ID,
             "name": "Test Dataset",
             "description": "desc",
             "license": "CC-BY-4.0",
@@ -160,10 +166,14 @@ def test_from_dataset_passes_additional_terms_through() -> None:
         title="Extra Terms",
     )
     item = CatalogItem(
-        id="test-dataset",
-        icechunk_href="s3://test-bucket/test-dataset/v0.icechunk/",
+        id=_TEST_ID,
+        icechunk_href=f"s3://test-bucket/{_TEST_ID}/v0.icechunk/",
         icechunk_region="us-west-2",
         additional_terms=terms,
+        model_id="noaa-gfs",
+        description_summary="test summary",
+        reformatter_url="https://example.com/reformatter.py",
+        examples=(DatasetExample(title="Example", code="import xarray"),),
     )
     result = CollectionInput.from_dataset(item, _synthetic_dataset())
     assert result.additional_terms == terms

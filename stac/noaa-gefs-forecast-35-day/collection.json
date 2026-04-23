@@ -53,6 +53,18 @@
   ],
   "attribution": "NOAA NWS NCEP GEFS data processed by dynamical.org from NOAA Open Data Dissemination archives.",
   "version": "0.2.0",
+  "model_id": "noaa-gefs",
+  "model_name": "NOAA GEFS",
+  "description_summary": "This dataset is an archive of past and present GEFS forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run as well as by the `ensemble_member`. Each forecast has a 3 hourly forecast step along the `lead_time` dimension. This dataset contains only the 00 hour UTC initialization times which produce the full length, 35 day forecast.",
+  "description_details": "### Interpolation\n\nSource data is available at both 0.25-degree and 0.5-degree resolutions. All variables except the 100m wind components are derived from a 0.25-degree grid for the first 240 hours of each forecast and from a 0.5-degree grid for the remainder. 100m wind components are derived from a 0.5-degree grid for all lead times. Bilinear interpolation is used to convert 0.5-degree data to a 0.25-degree grid. The original 0.5-degree values can be retrieved by selecting every other pixel starting from offset 0 in both the latitude and longitude dimensions (e.g. `array[::2, ::2]`).\n\n### Source\n\nThe source grib files this archive is constructed from are provided by\n[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination)\nand accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gefs/).\nOperational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/gefs/common_gefs_template_config.py).",
+  "description_model": "The Global Ensemble Forecast System (GEFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) weather forecast model. GEFS creates 31 separate forecasts (ensemble members) to describe the range of forecast uncertainty.",
+  "examples": [
+    {
+      "title": "Maximum temperature in ensemble forecast",
+      "code": "import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\nds = xr.open_zarr(\"https://data.dynamical.org/noaa/gefs/forecast-35-day/latest.zarr\")\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", latitude=0, longitude=0).max().compute()",
+      "language": "python"
+    }
+  ],
   "cube:dimensions": {
     "ensemble_member": {
       "type": "other",
@@ -102,6 +114,20 @@
     }
   },
   "cube:variables": {
+    "categorical_freezing_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical freezing rain",
+      "short_name": "cfrzr",
+      "comment": "0=no; 1=yes"
+    },
     "categorical_ice_pellets_surface": {
       "dimensions": [
         "init_time",
@@ -144,6 +170,36 @@
       "short_name": "csnow",
       "comment": "0=no; 1=yes"
     },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf",
+      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf",
+      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+    },
     "geopotential_height_500hpa": {
       "dimensions": [
         "init_time",
@@ -171,50 +227,6 @@
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
       "short_name": "gh"
-    },
-    "categorical_freezing_rain_surface": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "1",
-      "long_name": "Categorical freezing rain",
-      "short_name": "cfrzr",
-      "comment": "0=no; 1=yes"
-    },
-    "downward_short_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward short-wave radiation flux",
-      "standard_name": "surface_downwelling_shortwave_flux_in_air",
-      "short_name": "sdswrf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
-    },
-    "downward_long_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward long-wave radiation flux",
-      "standard_name": "surface_downwelling_longwave_flux_in_air",
-      "short_name": "sdlwrf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
     },
     "maximum_temperature_2m": {
       "dimensions": [
@@ -272,6 +284,35 @@
       "standard_name": "atmosphere_mass_content_of_water_vapor",
       "short_name": "pwat"
     },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
     "pressure_surface": {
       "dimensions": [
         "init_time",
@@ -314,7 +355,7 @@
       "standard_name": "air_temperature",
       "short_name": "2t"
     },
-    "pressure_reduced_to_mean_sea_level": {
+    "total_cloud_cover_atmosphere": {
       "dimensions": [
         "init_time",
         "ensemble_member",
@@ -323,25 +364,11 @@
         "longitude"
       ],
       "type": "data",
-      "unit": "Pa",
-      "long_name": "Pressure reduced to MSL",
-      "standard_name": "air_pressure_at_mean_sea_level",
-      "short_name": "prmsl"
-    },
-    "precipitation_surface": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc",
+      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
     },
     "wind_u_100m": {
       "dimensions": [
@@ -370,21 +397,6 @@
       "long_name": "10 metre U wind component",
       "standard_name": "eastward_wind",
       "short_name": "10u"
-    },
-    "total_cloud_cover_atmosphere": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "percent",
-      "long_name": "Total cloud cover",
-      "standard_name": "cloud_area_fraction",
-      "short_name": "tcc",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
     },
     "wind_v_100m": {
       "dimensions": [

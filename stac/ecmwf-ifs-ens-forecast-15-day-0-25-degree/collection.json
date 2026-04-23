@@ -59,6 +59,18 @@
   ],
   "attribution": "ECMWF IFS ENS forecast data processed by dynamical.org from ECMWF Open Data.",
   "version": "0.1.0",
+  "model_id": "ecmwf-ifs-ens",
+  "model_name": "ECMWF IFS ENS",
+  "description_summary": "This dataset is an archive of past and present ECMWF IFS ENS forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, as well as by the `ensemble_member`. Along the `lead_time` dimension, each forecast begins at a 3 hourly forecast step (0-144 hours) and switches to a 6 hourly step for days 6 through 15 of the forecast (hours 144-360). This dataset contains the 00 UTC initialization times only.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\nECMWF does not provide user support for the free & open datasets. Users should refer to the public [User Forum](https://forum.ecmwf.int/) for any questions related to the source material.\n\n### Data availability\n\nThis dataset contains only forecasts initialized on or after 2024-04-01, which are available at the open data 0.25 degree (~20km) resolution. All variables are available for the full period, save for `precipitation_surface`, which is filled with NaNs before 2024-11-13 UTC.\n\n### Ensemble members\n\nEach forecast contains 51 ensemble members, including a control member (0) and 50 perturbed members (1-50). The control forecast is produced with the best available data and unperturbed models. The other 50 members are each produced with slight perturbations of initial conditions and of the models. Taken together, ensemble of 51 forecasts shows the range of possible outcomes and the likelihood of their occurrence.\n\n### Model updates\n\nIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/ifs_ens/forecast_15_day_0_25_degree/template_config.py).",
+  "description_model": "The Integrated Forecasting System (IFS) is a global forecast model developed by ECMWF. ENS is an ensemble configuration of IFS, containing 51 ensemble members. IFS consists of a numerical model of the Earth system, which includes an atmospheric model at its heart, coupled with models of other Earth system components such as the ocean. The data assimilation system combines the latest weather observations with a recent forecast to obtain the best possible estimate of the current state of the Earth system.",
+  "examples": [
+    {
+      "title": "Maximum temperature in ensemble",
+      "code": "import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\nds = xr.open_zarr(\"https://data.dynamical.org/ecmwf/ifs-ens/forecast-15-day-0-25-degree/latest.zarr\")\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", latitude=0, longitude=0).max().compute()",
+      "language": "python"
+    }
+  ],
   "cube:dimensions": {
     "ensemble_member": {
       "type": "other",
@@ -122,6 +134,20 @@
       "short_name": "ptype",
       "comment": "0=No precipitation; 1=Rain; 2=Thunderstorm; 3=Freezing rain; 4=Mixed/ice; 5=Snow; 6=Wet snow; 7=Mixture of rain and snow; 8=Ice pellets; 9=Graupel; 10=Hail; 11=Drizzle; 12=Freezing drizzle; 13=Hail (less than 5 mm); 14=Hail (greater than or equal to 5 mm); 15-191=Reserved; 192-254=Reserved for local use; 255=Missing"
     },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
     "downward_long_wave_radiation_flux_surface": {
       "dimensions": [
         "init_time",
@@ -135,6 +161,34 @@
       "long_name": "Surface downward long-wave radiation flux",
       "standard_name": "surface_downwelling_longwave_flux_in_air",
       "short_name": "sdlwrf"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf"
+    },
+    "geopotential_height_500hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
     },
     "geopotential_height_850hpa": {
       "dimensions": [
@@ -164,48 +218,6 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
-    "geopotential_height_500hpa": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m",
-      "long_name": "Geopotential height",
-      "standard_name": "geopotential_height",
-      "short_name": "gh"
-    },
-    "dew_point_temperature_2m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre dewpoint temperature",
-      "standard_name": "dew_point_temperature",
-      "short_name": "2d"
-    },
-    "downward_short_wave_radiation_flux_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward short-wave radiation flux",
-      "standard_name": "surface_downwelling_shortwave_flux_in_air",
-      "short_name": "sdswrf"
-    },
     "precipitation_surface": {
       "dimensions": [
         "init_time",
@@ -220,6 +232,20 @@
       "standard_name": "precipitation_flux",
       "short_name": "prate",
       "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
     },
     "pressure_surface": {
       "dimensions": [
@@ -249,7 +275,7 @@
       "standard_name": "air_temperature",
       "short_name": "2t"
     },
-    "temperature_925hpa": {
+    "temperature_850hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -263,7 +289,7 @@
       "standard_name": "air_temperature",
       "short_name": "t"
     },
-    "temperature_850hpa": {
+    "temperature_925hpa": {
       "dimensions": [
         "init_time",
         "lead_time",
@@ -290,34 +316,6 @@
       "long_name": "Total cloud cover",
       "standard_name": "cloud_area_fraction",
       "short_name": "tcc"
-    },
-    "pressure_reduced_to_mean_sea_level": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "Pa",
-      "long_name": "Pressure reduced to MSL",
-      "standard_name": "air_pressure_at_mean_sea_level",
-      "short_name": "prmsl"
-    },
-    "wind_u_10m": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "ensemble_member",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "m s-1",
-      "long_name": "10 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "10u"
     },
     "wind_gust_10m": {
       "dimensions": [
@@ -346,6 +344,20 @@
       "long_name": "100 metre U wind component",
       "standard_name": "eastward_wind",
       "short_name": "100u"
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
     },
     "wind_v_100m": {
       "dimensions": [

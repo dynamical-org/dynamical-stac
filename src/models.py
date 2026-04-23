@@ -9,7 +9,13 @@ import pystac
 import xarray as xr
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
-from catalog import AdditionalTerms, CatalogItem, DatasetLicense
+from catalog import (
+    MODELS,
+    AdditionalTerms,
+    CatalogItem,
+    DatasetExample,
+    DatasetLicense,
+)
 
 LICENSE_URLS: dict[DatasetLicense, str] = {
     DatasetLicense.CC_BY_4_0: "https://creativecommons.org/licenses/by/4.0/",
@@ -151,6 +157,12 @@ class CollectionInput(BaseModel):
     version: str = Field(min_length=1)
     summaries: dict[str, str] = Field(default_factory=dict)
     additional_terms: AdditionalTerms | None = None
+    model_id: str = Field(min_length=1)
+    model_name: str = Field(min_length=1)
+    description_summary: str = Field(min_length=1)
+    description_details: str = Field(min_length=1)
+    description_model: str = Field(min_length=1)
+    examples: tuple[DatasetExample, ...] = Field(min_length=1)
 
     @field_validator("bbox")
     @classmethod
@@ -205,8 +217,12 @@ class CollectionInput(BaseModel):
             for name in sorted(ds.dims)
             if name in ds.coords
         }
+        # Sort by variable name so regeneration is deterministic; xarray's
+        # `data_vars` iteration order depends on zarr store internals and
+        # silently reshuffles across generator runs otherwise.
         variables: dict[str, CubeVariable] = {}
-        for name, da in ds.data_vars.items():
+        for name in sorted(ds.data_vars):
+            da = ds.data_vars[name]
             variables[str(name)] = CubeVariable(
                 dimensions=list(da.dims),
                 unit=_str_or_none(da.attrs.get("units") or da.attrs.get("unit")),
@@ -215,6 +231,7 @@ class CollectionInput(BaseModel):
                 short_name=_str_or_none(da.attrs.get("short_name")),
                 comment=_str_or_none(da.attrs.get("comment")),
             )
+        model = MODELS[item.model_id]
         return cls(
             id=item.id,
             name=ds.attrs["name"],
@@ -230,6 +247,12 @@ class CollectionInput(BaseModel):
             version=ds.attrs["dataset_version"],
             summaries={k: ds.attrs[k] for k in _SUMMARY_ATTRS if k in ds.attrs},
             additional_terms=item.additional_terms,
+            model_id=item.model_id,
+            model_name=model.name,
+            description_summary=item.description_summary,
+            description_details=item.description_details,
+            description_model=model.description,
+            examples=item.examples,
         )
 
     def to_pystac_collection(self) -> pystac.Collection:
@@ -247,6 +270,12 @@ class CollectionInput(BaseModel):
         collection.stac_extensions = list(STAC_EXTENSIONS)
         collection.extra_fields["attribution"] = self.attribution
         collection.extra_fields["version"] = self.version
+        collection.extra_fields["model_id"] = self.model_id
+        collection.extra_fields["model_name"] = self.model_name
+        collection.extra_fields["description_summary"] = self.description_summary
+        collection.extra_fields["description_details"] = self.description_details
+        collection.extra_fields["description_model"] = self.description_model
+        collection.extra_fields["examples"] = [e.model_dump() for e in self.examples]
 
         summaries: dict[str, list[str]] = {k: [v] for k, v in self.summaries.items()}
         summaries["cube:variables"] = sorted(self.cube_variables)
