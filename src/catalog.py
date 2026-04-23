@@ -9,6 +9,16 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 PROSE_DIR = pathlib.Path(__file__).parent / "prose"
 
+REFORMATTERS_ROOT = (
+    "https://github.com/dynamical-org/reformatters/blob/main/src/reformatters"
+)
+REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
+
+# Prepended to every example snippet so users see the required package versions.
+_XARRAY_IMPORT = (
+    "import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support"
+)
+
 
 class DatasetLicense(StrEnum):
     CC_BY_4_0 = "CC-BY-4.0"
@@ -39,96 +49,85 @@ class DatasetExample(BaseModel):
     language: Literal["python"] = "python"
 
 
+def _example(title: str, body: str) -> DatasetExample:
+    """Build an example, prepending the standard xarray import preamble."""
+    return DatasetExample(title=title, code=f"{_XARRAY_IMPORT}\n\n{body}")
+
+
 # Shared prose fragments, substituted into markdown files via {{ name }} tokens.
-
-STORAGE = (
-    "Storage for this dataset is generously provided by "
-    "[Source Cooperative](https://source.coop/), "
-    "a [Radiant Earth](https://radiant.earth/) initiative. "
-    "Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/)."
-)
-
-NODD_SOURCE_GFS = (
-    "The source grib files this archive is constructed from are provided by "
-    "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
-    "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gfs-bdp-pds/). "
-    "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
-)
-
-NODD_SOURCE_GEFS = (
-    "The source grib files this archive is constructed from are provided by "
-    "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
-    "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gefs/). "
-    "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
-)
-
-NODD_SOURCE_HRRR = (
-    "The source grib files this archive is constructed from are provided by "
-    "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
-    "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). "
-    "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
-)
-
-NODD_SOURCE_MRMS = (
-    "The source files this archive is constructed from are provided by "
-    "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
-    "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-mrms-pds/). "
-    "Operational data is additionally accessed from [NCEP](https://mrms.ncep.noaa.gov/)."
-)
-
-ECMWF_SOURCE = (
-    "The source grib files this archive is constructed from are provided by "
-    "[ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) "
-    "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\n"
-    "ECMWF does not provide user support for the free & open datasets. Users should refer to the public "
-    "[User Forum](https://forum.ecmwf.int/) for any questions related to the source material."
-)
-
-ECMWF_MODEL_UPDATES = (
-    "AIFS is updated regularly. Find details of recent and upcoming "
-    "[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system) "
-    "on the ECMWF website."
-)
-
-ECMWF_MODEL_UPDATES_IFS = (
-    "IFS is updated regularly. Find details of recent and upcoming "
-    "[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system) "
-    "on the ECMWF website."
-)
-
-# Compression references {{ reformatter_url }} — supplied per-dataset at load time.
-COMPRESSION = (
-    "The data values in this dataset have been rounded in their binary "
-    "floating point representation to improve compression. See "
-    "[Klöwer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) "
-    "for more information on this approach. The exact number of rounded bits "
-    "can be found in our [reformatting code]({{ reformatter_url }})."
-)
-
+# Each value is inlined here (rather than a named module-level constant) because
+# the markdown files are the only consumers.
 FRAGMENTS: dict[str, str] = {
-    "storage": STORAGE,
-    "nodd_source_gfs": NODD_SOURCE_GFS,
-    "nodd_source_gefs": NODD_SOURCE_GEFS,
-    "nodd_source_hrrr": NODD_SOURCE_HRRR,
-    "nodd_source_mrms": NODD_SOURCE_MRMS,
-    "ecmwf_source": ECMWF_SOURCE,
-    "ecmwf_model_updates": ECMWF_MODEL_UPDATES,
-    "ecmwf_model_updates_ifs": ECMWF_MODEL_UPDATES_IFS,
-    "compression": COMPRESSION,
+    "storage": (
+        "Storage for this dataset is generously provided by "
+        "[Source Cooperative](https://source.coop/), "
+        "a [Radiant Earth](https://radiant.earth/) initiative. "
+        "Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/)."
+    ),
+    "nodd_source_gfs": (
+        "The source grib files this archive is constructed from are provided by "
+        "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
+        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gfs-bdp-pds/). "
+        "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
+    ),
+    "nodd_source_gefs": (
+        "The source grib files this archive is constructed from are provided by "
+        "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
+        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gefs/). "
+        "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
+    ),
+    "nodd_source_hrrr": (
+        "The source grib files this archive is constructed from are provided by "
+        "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
+        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). "
+        "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
+    ),
+    "nodd_source_mrms": (
+        "The source files this archive is constructed from are provided by "
+        "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
+        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-mrms-pds/). "
+        "Operational data is additionally accessed from [NCEP](https://mrms.ncep.noaa.gov/)."
+    ),
+    "ecmwf_source": (
+        "The source grib files this archive is constructed from are provided by "
+        "[ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) "
+        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\n"
+        "ECMWF does not provide user support for the free & open datasets. Users should refer to the public "
+        "[User Forum](https://forum.ecmwf.int/) for any questions related to the source material."
+    ),
+    "ecmwf_model_updates": (
+        "AIFS is updated regularly. Find details of recent and upcoming "
+        "[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system) "
+        "on the ECMWF website."
+    ),
+    "ecmwf_model_updates_ifs": (
+        "IFS is updated regularly. Find details of recent and upcoming "
+        "[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system) "
+        "on the ECMWF website."
+    ),
+    # References {{ reformatter_url }} — supplied per-dataset at load time.
+    "compression": (
+        "The data values in this dataset have been rounded in their binary "
+        "floating point representation to improve compression. See "
+        "[Klöwer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) "
+        "for more information on this approach. The exact number of rounded bits "
+        "can be found in our [reformatting code]({{ reformatter_url }})."
+    ),
 }
 
 
 def _load_prose(path: str, **extra: str) -> str:
     """Read a prose file and expand ``{{ name }}`` tokens.
 
-    Two-pass so a fragment can reference another token — e.g. ``{{ compression }}``
-    itself contains ``{{ reformatter_url }}``, supplied per-dataset via ``extra``.
+    Fragments are expanded first; any ``{{ name }}`` tokens introduced by the
+    fragment text (e.g. ``{{ reformatter_url }}`` inside ``{{ compression }}``)
+    are then expanded from ``extra`` in a second pass.
     """
     text = (PROSE_DIR / path).read_text().strip()
-    fragments = {**FRAGMENTS, **extra}
-    for _ in range(2):
-        for name, value in fragments.items():
-            text = text.replace(f"{{{{ {name} }}}}", value)
+    for name, value in FRAGMENTS.items():
+        text = text.replace(f"{{{{ {name} }}}}", value)
+    for name, value in extra.items():
+        text = text.replace(f"{{{{ {name} }}}}", value)
     return text
 
 
@@ -158,7 +157,7 @@ class CatalogItem(BaseModel):
     icechunk_region: str = Field(min_length=1)
     model_id: str = Field(min_length=1)
     description_summary: str = Field(min_length=1)
-    description_details: str = Field(min_length=1)
+    reformatter_url: str = Field(min_length=1)
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
     additional_terms: AdditionalTerms | None = None
 
@@ -169,6 +168,13 @@ class CatalogItem(BaseModel):
     @property
     def icechunk_prefix(self) -> str:
         return urlparse(self.icechunk_href).path.lstrip("/")
+
+    @property
+    def description_details(self) -> str:
+        """Long-form prose, loaded from ``prose/datasets/{id}.md``."""
+        return _load_prose(
+            f"datasets/{self.id}.md", reformatter_url=self.reformatter_url
+        )
 
     @model_validator(mode="after")
     def _id_matches_href_path(self) -> CatalogItem:
@@ -196,10 +202,6 @@ ECMWF_TERMS = AdditionalTerms(
 )
 
 
-def _details(dataset_id: str, reformatter_url: str) -> str:
-    return _load_prose(f"datasets/{dataset_id}.md", reformatter_url=reformatter_url)
-
-
 CATALOG_ITEMS: list[CatalogItem] = [
     CatalogItem(
         id="noaa-gfs-analysis",
@@ -212,18 +214,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "hours of each historical forecast to provide a dataset with "
             "dimensions time, latitude, and longitude."
         ),
-        description_details=_details(
-            "noaa-gfs-analysis",
-            "https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/gfs/analysis/template_config.py",
-        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/analysis/template_config.py",
         examples=(
-            DatasetExample(
-                title="Temperature at a specific place and time",
-                code=(
-                    'import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\n'
-                    'ds = xr.open_zarr("https://data.dynamical.org/noaa/gfs/analysis/latest.zarr")\n'
-                    'ds["temperature_2m"].sel(time="2026-01-01T00", latitude=0, longitude=0).compute()'
-                ),
+            _example(
+                "Temperature at a specific place and time",
+                'ds = xr.open_zarr("https://data.dynamical.org/noaa/gfs/analysis/latest.zarr")\n'
+                'ds["temperature_2m"].sel(time="2026-01-01T00", latitude=0, longitude=0).compute()',
             ),
         ),
     ),
@@ -238,18 +234,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "denoting the start time of the model run. Each forecast steps "
             "forward in time along the `lead_time` dimension."
         ),
-        description_details=_details(
-            "noaa-gfs-forecast",
-            "https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/gfs/forecast/template_config.py",
-        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/forecast/template_config.py",
         examples=(
-            DatasetExample(
-                title="Maximum temperature in a forecast",
-                code=(
-                    'import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\n'
-                    'ds = xr.open_zarr("https://data.dynamical.org/noaa/gfs/forecast/latest.zarr")\n'
-                    'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()'
-                ),
+            _example(
+                "Maximum temperature in a forecast",
+                'ds = xr.open_zarr("https://data.dynamical.org/noaa/gfs/forecast/latest.zarr")\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
     ),
@@ -267,18 +257,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "00 hour UTC initialization times which produce the full length, "
             "35 day forecast."
         ),
-        description_details=_details(
-            "noaa-gefs-forecast-35-day",
-            "https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/gefs/common_gefs_template_config.py",
-        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/common_gefs_template_config.py",
         examples=(
-            DatasetExample(
-                title="Maximum temperature in ensemble forecast",
-                code=(
-                    'import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\n'
-                    'ds = xr.open_zarr("https://data.dynamical.org/noaa/gefs/forecast-35-day/latest.zarr")\n'
-                    'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()'
-                ),
+            _example(
+                "Maximum temperature in ensemble forecast",
+                'ds = xr.open_zarr("https://data.dynamical.org/noaa/gefs/forecast-35-day/latest.zarr")\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
     ),
@@ -293,18 +277,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "hours of each historical forecast to provide a dataset with "
             "dimensions time, latitude, and longitude."
         ),
-        description_details=_details(
-            "noaa-gefs-analysis",
-            "https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/gefs/common_gefs_template_config.py",
-        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/common_gefs_template_config.py",
         examples=(
-            DatasetExample(
-                title="Temperature at a specific place and time",
-                code=(
-                    'import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\n'
-                    'ds = xr.open_zarr("https://data.dynamical.org/noaa/gefs/analysis/latest.zarr")\n'
-                    'ds["temperature_2m"].sel(time="2025-01-01T00", latitude=0, longitude=0).compute()'
-                ),
+            _example(
+                "Temperature at a specific place and time",
+                'ds = xr.open_zarr("https://data.dynamical.org/noaa/gefs/analysis/latest.zarr")\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00", latitude=0, longitude=0).compute()',
             ),
         ),
     ),
@@ -325,18 +303,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest."
         ),
-        description_details=_details(
-            "noaa-hrrr-forecast-48-hour",
-            "https://github.com/dynamical-org/reformatters/",
-        ),
+        reformatter_url=REFORMATTERS_REPO,
         examples=(
-            DatasetExample(
-                title="Maximum temperature in a forecast",
-                code=(
-                    'import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\n'
-                    'ds = xr.open_zarr("https://data.dynamical.org/noaa/hrrr/forecast-48-hour/latest.zarr")\n'
-                    'ds["temperature_2m"].sel(init_time="2025-01-01T00", x=0, y=0, method="nearest").max().compute()'
-                ),
+            _example(
+                "Maximum temperature in a forecast",
+                'ds = xr.open_zarr("https://data.dynamical.org/noaa/hrrr/forecast-48-hour/latest.zarr")\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", x=0, y=0, method="nearest").max().compute()',
             ),
         ),
     ),
@@ -355,18 +327,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "embedded spatial reference to select geographic areas of "
             "interest."
         ),
-        description_details=_details(
-            "noaa-hrrr-analysis",
-            "https://github.com/dynamical-org/reformatters/",
-        ),
+        reformatter_url=REFORMATTERS_REPO,
         examples=(
-            DatasetExample(
-                title="Temperature at a specific place and time",
-                code=(
-                    'import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\n'
-                    'ds = xr.open_zarr("https://data.dynamical.org/noaa/hrrr/analysis/latest.zarr")\n'
-                    'ds["temperature_2m"].sel(time="2025-01-01T00", x=0, y=0, method="nearest").compute()'
-                ),
+            _example(
+                "Temperature at a specific place and time",
+                'ds = xr.open_zarr("https://data.dynamical.org/noaa/hrrr/analysis/latest.zarr")\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00", x=0, y=0, method="nearest").compute()',
             ),
         ),
     ),
@@ -380,18 +346,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "multi-sensor precipitation and weather analyses over the "
             "contiguous United States (CONUS)."
         ),
-        description_details=_details(
-            "noaa-mrms-conus-analysis-hourly",
-            "https://github.com/dynamical-org/reformatters/",
-        ),
+        reformatter_url=REFORMATTERS_REPO,
         examples=(
-            DatasetExample(
-                title="Precipitation at a place and time",
-                code=(
-                    'import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\n'
-                    'ds = xr.open_zarr("https://data.dynamical.org/noaa/mrms/conus-analysis-hourly/latest.zarr")\n'
-                    'ds["precipitation_surface"].sel(time="2026-01-01T00", latitude=40, longitude=-90, method="nearest").compute()'
-                ),
+            _example(
+                "Precipitation at a place and time",
+                'ds = xr.open_zarr("https://data.dynamical.org/noaa/mrms/conus-analysis-hourly/latest.zarr")\n'
+                'ds["precipitation_surface"].sel(time="2026-01-01T00", latitude=40, longitude=-90, method="nearest").compute()',
             ),
         ),
     ),
@@ -407,18 +367,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "forecast steps forward in time along the `lead_time` dimension, "
             "from 0 to 360 hours (15 days) at a 6 hourly step."
         ),
-        description_details=_details(
-            "ecmwf-aifs-single-forecast",
-            "https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/aifs_single/forecast/template_config.py",
-        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_single/forecast/template_config.py",
         examples=(
-            DatasetExample(
-                title="Maximum temperature in a forecast",
-                code=(
-                    'import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\n'
-                    'ds = xr.open_zarr("https://data.dynamical.org/ecmwf/aifs-single/forecast/latest.zarr")\n'
-                    'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()'
-                ),
+            _example(
+                "Maximum temperature in a forecast",
+                'ds = xr.open_zarr("https://data.dynamical.org/ecmwf/aifs-single/forecast/latest.zarr")\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
         additional_terms=ECMWF_TERMS,
@@ -438,18 +392,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "forecast (hours 144-360). This dataset contains the 00 UTC "
             "initialization times only."
         ),
-        description_details=_details(
-            "ecmwf-ifs-ens-forecast-15-day-0-25-degree",
-            "https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/ifs_ens/forecast_15_day_0_25_degree/template_config.py",
-        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_15_day_0_25_degree/template_config.py",
         examples=(
-            DatasetExample(
-                title="Maximum temperature in ensemble",
-                code=(
-                    'import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\n'
-                    'ds = xr.open_zarr("https://data.dynamical.org/ecmwf/ifs-ens/forecast-15-day-0-25-degree/latest.zarr")\n'
-                    'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()'
-                ),
+            _example(
+                "Maximum temperature in ensemble",
+                'ds = xr.open_zarr("https://data.dynamical.org/ecmwf/ifs-ens/forecast-15-day-0-25-degree/latest.zarr")\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
         additional_terms=ECMWF_TERMS,

@@ -69,30 +69,34 @@ def test_about_url_and_icechunk_href() -> None:
     assert c.icechunk_href == "s3://b/p/"
 
 
+# Use a real catalog id so ``CatalogItem.description_details`` can resolve its
+# matching prose file; these tests don't inspect description content.
+_TEST_ID = "noaa-gfs-analysis"
+
 _PROSE_KWARGS: dict[str, object] = {
     "model_id": "noaa-gfs",
     "description_summary": "summary",
-    "description_details": "### Section\n\ndetails",
+    "reformatter_url": "https://example.com/reformatter.py",
     "examples": (DatasetExample(title="Example", code="import xarray"),),
 }
 
 
 def test_catalog_item_derives_bucket_and_prefix_from_href() -> None:
     item = CatalogItem(
-        id="ds",
-        icechunk_href="s3://dynamical-noaa-gfs/ds/v1.0.icechunk/",
+        id=_TEST_ID,
+        icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.0.icechunk/",
         icechunk_region="us-west-2",
         **_PROSE_KWARGS,  # type: ignore[arg-type]
     )
     assert item.icechunk_bucket == "dynamical-noaa-gfs"
-    assert item.icechunk_prefix == "ds/v1.0.icechunk/"
+    assert item.icechunk_prefix == f"{_TEST_ID}/v1.0.icechunk/"
 
 
 def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
     with pytest.raises(pydantic.ValidationError):
         CatalogItem(
-            id="ds",
-            icechunk_href="https://not-s3/ds/",
+            id=_TEST_ID,
+            icechunk_href=f"https://not-s3/{_TEST_ID}/",
             icechunk_region="us-west-2",
             **_PROSE_KWARGS,  # type: ignore[arg-type]
         )
@@ -101,8 +105,8 @@ def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
 def test_catalog_item_rejects_unknown_model_id() -> None:
     with pytest.raises(pydantic.ValidationError, match="not registered in MODELS"):
         CatalogItem(
-            id="ds",
-            icechunk_href="s3://bucket/ds/v1.icechunk/",
+            id=_TEST_ID,
+            icechunk_href=f"s3://bucket/{_TEST_ID}/v1.icechunk/",
             icechunk_region="us-west-2",
             **{**_PROSE_KWARGS, "model_id": "unknown-model"},  # type: ignore[arg-type]
         )
