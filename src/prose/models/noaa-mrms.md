@@ -1,0 +1,1 @@
+The NOAA Multi-Radar/Multi-Sensor System (MRMS) integrates data from multiple radars and radar networks, surface observations, numerical weather prediction (NWP) models, and climatology to generate seamless, high spatio-temporal resolution mosaics at low latency focused on hail, wind, tornado, quantitative precipitation estimations, convection, icing, and turbulence.
