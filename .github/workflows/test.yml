@@ -43,13 +43,17 @@ jobs:
   # canary rather than a merge blocker.
   compat:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.allow-failure }}
     strategy:
       fail-fast: false
       matrix:
-        dynamical-catalog-target:
-          - "0.3.0"
-          - "0.4.0"
-          - "main"
+        include:
+          - dynamical-catalog-target: "0.3.0"
+            allow-failure: false
+          - dynamical-catalog-target: "0.4.0"
+            allow-failure: false
+          - dynamical-catalog-target: "main"
+            allow-failure: true
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
