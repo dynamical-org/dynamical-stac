@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from catalog import AdditionalTerms, CatalogItem
+from catalog import AdditionalTerms, CatalogItem, DatasetExample
 from models import CollectionInput, _dim_entry
 
 
@@ -19,6 +19,10 @@ def _catalog_item(
         id=item_id,
         icechunk_href=icechunk_href,
         icechunk_region="us-west-2",
+        model_id="noaa-gfs",
+        description_summary="test summary",
+        description_details="### Section\n\ntest details",
+        examples=(DatasetExample(title="Example", code="import xarray"),),
     )
 
 
@@ -164,6 +168,10 @@ def test_from_dataset_passes_additional_terms_through() -> None:
         icechunk_href="s3://test-bucket/test-dataset/v0.icechunk/",
         icechunk_region="us-west-2",
         additional_terms=terms,
+        model_id="noaa-gfs",
+        description_summary="test summary",
+        description_details="### Section\n\ntest details",
+        examples=(DatasetExample(title="Example", code="import xarray"),),
     )
     result = CollectionInput.from_dataset(item, _synthetic_dataset())
     assert result.additional_terms == terms

@@ -7,7 +7,7 @@ import pydantic
 import pytest
 import xarray as xr
 
-from catalog import AdditionalTerms, CatalogItem, DatasetLicense
+from catalog import AdditionalTerms, CatalogItem, DatasetExample, DatasetLicense
 from models import CollectionInput, CubeDimension, CubeVariable, _dim_entry
 
 
@@ -37,6 +37,12 @@ def _valid_input(**overrides: object) -> CollectionInput:
         "icechunk_region": "us-west-2",
         "attribution": "Test Attribution",
         "version": "v0.0.0",
+        "model_id": "noaa-gfs",
+        "model_name": "NOAA GFS",
+        "description_summary": "Test summary",
+        "description_details": "### Section\n\ntest details",
+        "description_model": "Test model description",
+        "examples": (DatasetExample(title="Example", code="import xarray"),),
     }
     defaults.update(overrides)
     return CollectionInput(**defaults)  # type: ignore[arg-type]
@@ -63,11 +69,20 @@ def test_about_url_and_icechunk_href() -> None:
     assert c.icechunk_href == "s3://b/p/"
 
 
+_PROSE_KWARGS: dict[str, object] = {
+    "model_id": "noaa-gfs",
+    "description_summary": "summary",
+    "description_details": "### Section\n\ndetails",
+    "examples": (DatasetExample(title="Example", code="import xarray"),),
+}
+
+
 def test_catalog_item_derives_bucket_and_prefix_from_href() -> None:
     item = CatalogItem(
         id="ds",
         icechunk_href="s3://dynamical-noaa-gfs/ds/v1.0.icechunk/",
         icechunk_region="us-west-2",
+        **_PROSE_KWARGS,  # type: ignore[arg-type]
     )
     assert item.icechunk_bucket == "dynamical-noaa-gfs"
     assert item.icechunk_prefix == "ds/v1.0.icechunk/"
@@ -79,6 +94,17 @@ def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
             id="ds",
             icechunk_href="https://not-s3/ds/",
             icechunk_region="us-west-2",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_rejects_unknown_model_id() -> None:
+    with pytest.raises(pydantic.ValidationError, match="not registered in MODELS"):
+        CatalogItem(
+            id="ds",
+            icechunk_href="s3://bucket/ds/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **{**_PROSE_KWARGS, "model_id": "unknown-model"},  # type: ignore[arg-type]
         )
 
 

@@ -53,6 +53,18 @@
   ],
   "attribution": "NOAA NWS NCEP MRMS data processed by dynamical.org from NOAA NCEP, NOAA Open Data Dissemination and Iowa Mesonet archives.",
   "version": "0.3.0",
+  "model_id": "noaa-mrms",
+  "model_name": "NOAA MRMS",
+  "description_summary": "This analysis dataset is an archive of MRMS radar and multi-sensor precipitation and weather analyses over the contiguous United States (CONUS).",
+  "description_details": "### Spatial coverage\n\nUse this dataset over the land areas of the contiguous United States. Radar-only and precipitation type variables contain `NaN` values beyond the range of US radar. `precipitation_pass_1_surface` and `precipitation_pass_2_surface` extend further into the ocean, but still contain `NaN` values in the southeast corner of the domain over the Atlantic.\n\n### Temporal coverage\n\n`precipitation_surface` combines multiple MRMS products to minimize missing values. Despite this, some hours (particularly early in the record) contain `NaN` values where data is unavailable.\n\n`precipitation_pass_2_surface` and `precipitation_pass_1_surface` are available starting 2020-10-15. For timestamps prior to this date, these variables are filled with `NaN`.\n\n### Source\n\nThe source files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-mrms-pds/). Operational data is additionally accessed from [NCEP](https://mrms.ncep.noaa.gov/).\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/).",
+  "description_model": "The NOAA Multi-Radar/Multi-Sensor System (MRMS) integrates data from multiple radars and radar networks, surface observations, numerical weather prediction (NWP) models, and climatology to generate seamless, high spatio-temporal resolution mosaics at low latency focused on hail, wind, tornado, quantitative precipitation estimations, convection, icing, and turbulence.",
+  "examples": [
+    {
+      "title": "Precipitation at a place and time",
+      "code": "import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\nds = xr.open_zarr(\"https://data.dynamical.org/noaa/mrms/conus-analysis-hourly/latest.zarr\")\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\").compute()",
+      "language": "python"
+    }
+  ],
   "cube:dimensions": {
     "latitude": {
       "type": "spatial",
@@ -96,44 +108,6 @@
       "short_name": "ptype",
       "comment": "Precipitation type flag. 0=no precipitation, 1=warm stratiform rain, 3=snow, 6=convective, 7=hail, 10=cold stratiform rain, 91=tropical."
     },
-    "flash_qpe_ffg_max_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "percent",
-      "long_name": "FLASH QPE-to-FFG percentage maximum",
-      "short_name": "FLASH_QPE_FFGMAX",
-      "comment": "Maximum percentage of Quantitative Precipitation Estimate (QPE) to Flash Flood Guidance (FFG) from the FLASH system. Percentage where values > 100 indicate QPE exceeds FFG. Available from October 2020 onward."
-    },
-    "precipitation_pass_2_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate over the previous hour, pass 2 (higher latency, more gauges). Derived from MultiSensor_QPE_01H_Pass2. Available from October 2020 onward. Units equivalent to mm/s."
-    },
-    "precipitation_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate over the previous hour. Derived from MultiSensor_QPE_01H_Pass2 from October 2020, GaugeCorr_QPE_01H before. If primary product is unavailable, falls back to MultiSensor_QPE_01H_Pass1 and then RadarOnly_QPE_01H. Units equivalent to mm/s."
-    },
     "precipitation_radar_only_surface": {
       "dimensions": [
         "time",
@@ -159,6 +133,44 @@
       "standard_name": "precipitation_flux",
       "short_name": "prate",
       "comment": "Average precipitation rate over the previous hour, pass 1 (lower latency, fewer gauges). Derived from MultiSensor_QPE_01H_Pass1. Available from October 2020 onward. Units equivalent to mm/s."
+    },
+    "flash_qpe_ffg_max_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "FLASH QPE-to-FFG percentage maximum",
+      "short_name": "FLASH_QPE_FFGMAX",
+      "comment": "Maximum percentage of Quantitative Precipitation Estimate (QPE) to Flash Flood Guidance (FFG) from the FLASH system. Percentage where values > 100 indicate QPE exceeds FFG. Available from October 2020 onward."
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous hour. Derived from MultiSensor_QPE_01H_Pass2 from October 2020, GaugeCorr_QPE_01H before. If primary product is unavailable, falls back to MultiSensor_QPE_01H_Pass1 and then RadarOnly_QPE_01H. Units equivalent to mm/s."
+    },
+    "precipitation_pass_2_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous hour, pass 2 (higher latency, more gauges). Derived from MultiSensor_QPE_01H_Pass2. Available from October 2020 onward. Units equivalent to mm/s."
     }
   },
   "title": "NOAA MRMS CONUS analysis, hourly",
