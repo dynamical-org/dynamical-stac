@@ -33,7 +33,7 @@ jobs:
 
   # Per-target compatibility checks. Each matrix entry shows up as its own
   # PR status check (via the job-level `name:` template) so a breaking
-  # change surfaces as `compat (0.3.0) ❌` rather than hiding inside the
+  # change surfaces as `compat (0.4.0) ❌` rather than hiding inside the
   # main test job.
   #
   # Each `include` entry carries two fields:
@@ -57,9 +57,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: "0.3.0"
-            id: "0_3_0"
-            allow-failure: false
           - target: "0.4.0"
             id: "0_4_0"
             allow-failure: false
