@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import concurrent.futures
 import pathlib
 
 import icechunk
@@ -46,12 +47,19 @@ def generate(output_dir: pathlib.Path, root_href: str = ROOT_HREF) -> None:
         title=CATALOG_TITLE,
         description="Cloud-optimized weather and climate datasets from dynamical.org",
     )
-    for item in CATALOG_ITEMS:
+
+    def _load(item: CatalogItem) -> tuple[CatalogItem, xr.Dataset]:
         print(f"{item.id}: opening icechunk store")  # noqa: T201
         ds = _open_icechunk(item)
         _verify_read(ds)
-        collection_input = CollectionInput.from_dataset(item, ds)
-        catalog.add_child(collection_input.to_pystac_collection())
+        return item, ds
+
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=len(CATALOG_ITEMS)
+    ) as executor:
+        for item, ds in executor.map(_load, CATALOG_ITEMS):
+            collection_input = CollectionInput.from_dataset(item, ds)
+            catalog.add_child(collection_input.to_pystac_collection())
 
     catalog.normalize_hrefs(root_href)
     _set_self_link_titles(catalog)
