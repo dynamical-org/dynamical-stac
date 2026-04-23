@@ -61,7 +61,7 @@
   "examples": [
     {
       "title": "Maximum temperature in a forecast",
-      "code": "import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\nds = xr.open_zarr(\"https://data.dynamical.org/noaa/hrrr/forecast-48-hour/latest.zarr\")\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", x=0, y=0, method=\"nearest\").max().compute()",
+      "code": "import dynamical_catalog  # dynamical-catalog>=0.4.0\n\nds = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour\")\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", x=0, y=0, method=\"nearest\").max().compute()",
       "language": "python"
     }
   ],

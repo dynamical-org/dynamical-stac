@@ -61,7 +61,7 @@
   "examples": [
     {
       "title": "Precipitation at a place and time",
-      "code": "import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support\n\nds = xr.open_zarr(\"https://data.dynamical.org/noaa/mrms/conus-analysis-hourly/latest.zarr\")\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\").compute()",
+      "code": "import dynamical_catalog  # dynamical-catalog>=0.4.0\n\nds = dynamical_catalog.open(\"noaa-mrms-conus-analysis-hourly\")\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\").compute()",
       "language": "python"
     }
   ],
@@ -207,14 +207,6 @@
     ],
     "time_resolution": [
       "1 hour"
-    ],
-    "cube:variables": [
-      "categorical_precipitation_type_surface",
-      "flash_qpe_ffg_max_surface",
-      "precipitation_pass_1_surface",
-      "precipitation_pass_2_surface",
-      "precipitation_radar_only_surface",
-      "precipitation_surface"
     ]
   },
   "assets": {

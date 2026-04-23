@@ -15,9 +15,7 @@ REFORMATTERS_ROOT = (
 REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 
 # Prepended to every example snippet so users see the required package versions.
-_XARRAY_IMPORT = (
-    "import xarray as xr  # xarray>=2025.1.2 and zarr>=3.0.8 for zarr v3 support"
-)
+_DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.4.0"
 
 
 class DatasetLicense(StrEnum):
@@ -50,8 +48,8 @@ class DatasetExample(BaseModel):
 
 
 def _example(title: str, body: str) -> DatasetExample:
-    """Build an example, prepending the standard xarray import preamble."""
-    return DatasetExample(title=title, code=f"{_XARRAY_IMPORT}\n\n{body}")
+    """Build an example, prepending the standard dynamical_catalog import preamble."""
+    return DatasetExample(title=title, code=f"{_DYNAMICAL_CATALOG_IMPORT}\n\n{body}")
 
 
 # Shared prose fragments, substituted into markdown files via {{ name }} tokens.
@@ -249,7 +247,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Temperature at a specific place and time",
-                'ds = xr.open_zarr("https://data.dynamical.org/noaa/gfs/analysis/latest.zarr")\n'
+                'ds = dynamical_catalog.open("noaa-gfs-analysis")\n'
                 'ds["temperature_2m"].sel(time="2026-01-01T00", latitude=0, longitude=0).compute()',
             ),
         ),
@@ -269,7 +267,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in a forecast",
-                'ds = xr.open_zarr("https://data.dynamical.org/noaa/gfs/forecast/latest.zarr")\n'
+                'ds = dynamical_catalog.open("noaa-gfs-forecast")\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
@@ -292,7 +290,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in ensemble forecast",
-                'ds = xr.open_zarr("https://data.dynamical.org/noaa/gefs/forecast-35-day/latest.zarr")\n'
+                'ds = dynamical_catalog.open("noaa-gefs-forecast-35-day")\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
@@ -312,7 +310,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Temperature at a specific place and time",
-                'ds = xr.open_zarr("https://data.dynamical.org/noaa/gefs/analysis/latest.zarr")\n'
+                'ds = dynamical_catalog.open("noaa-gefs-analysis")\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00", latitude=0, longitude=0).compute()',
             ),
         ),
@@ -338,7 +336,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in a forecast",
-                'ds = xr.open_zarr("https://data.dynamical.org/noaa/hrrr/forecast-48-hour/latest.zarr")\n'
+                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour")\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", x=0, y=0, method="nearest").max().compute()',
             ),
         ),
@@ -362,7 +360,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Temperature at a specific place and time",
-                'ds = xr.open_zarr("https://data.dynamical.org/noaa/hrrr/analysis/latest.zarr")\n'
+                'ds = dynamical_catalog.open("noaa-hrrr-analysis")\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00", x=0, y=0, method="nearest").compute()',
             ),
         ),
@@ -381,7 +379,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Precipitation at a place and time",
-                'ds = xr.open_zarr("https://data.dynamical.org/noaa/mrms/conus-analysis-hourly/latest.zarr")\n'
+                'ds = dynamical_catalog.open("noaa-mrms-conus-analysis-hourly")\n'
                 'ds["precipitation_surface"].sel(time="2026-01-01T00", latitude=40, longitude=-90, method="nearest").compute()',
             ),
         ),
@@ -402,7 +400,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in a forecast",
-                'ds = xr.open_zarr("https://data.dynamical.org/ecmwf/aifs-single/forecast/latest.zarr")\n'
+                'ds = dynamical_catalog.open("ecmwf-aifs-single-forecast")\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
@@ -427,7 +425,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in ensemble",
-                'ds = xr.open_zarr("https://data.dynamical.org/ecmwf/ifs-ens/forecast-15-day-0-25-degree/latest.zarr")\n'
+                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree")\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),

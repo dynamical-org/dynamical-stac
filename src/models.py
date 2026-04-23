@@ -277,8 +277,12 @@ class CollectionInput(BaseModel):
         collection.extra_fields["description_model"] = self.description_model
         collection.extra_fields["examples"] = [e.model_dump() for e in self.examples]
 
+        # Don't mirror cube:variables into summaries. STAC Browser renders the
+        # summary's flat name list in place of the top-level dict, collapsing
+        # the variable table to its first entry. pystac.Summaries also silently
+        # drops lists >25 items, so the mirror was inconsistent across
+        # collections (HRRR has 26 vars and was already being dropped).
         summaries: dict[str, list[str]] = {k: [v] for k, v in self.summaries.items()}
-        summaries["cube:variables"] = sorted(self.cube_variables)
         collection.summaries = pystac.Summaries(summaries)
 
         collection.extra_fields["cube:dimensions"] = {
