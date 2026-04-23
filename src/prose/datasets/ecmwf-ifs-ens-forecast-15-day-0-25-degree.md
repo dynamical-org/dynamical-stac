@@ -12,7 +12,9 @@ Each forecast contains 51 ensemble members, including a control member (0) and 5
 
 ### Model updates
 
-{{ ecmwf_model_updates_ifs }}
+IFS is updated regularly. Find details of recent and upcoming
+[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)
+on the ECMWF website.
 
 ### Storage
 

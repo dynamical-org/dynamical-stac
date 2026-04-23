@@ -4,7 +4,10 @@ Source data is available at both 0.25-degree and 0.5-degree resolutions. All var
 
 ### Source
 
-{{ nodd_source_gefs }}
+The source grib files this archive is constructed from are provided by
+[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination)
+and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gefs/).
+Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).
 
 ### Storage
 

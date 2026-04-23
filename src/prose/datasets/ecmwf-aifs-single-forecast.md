@@ -4,7 +4,9 @@
 
 ### Model updates
 
-{{ ecmwf_model_updates }}
+AIFS is updated regularly. Find details of recent and upcoming
+[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)
+on the ECMWF website.
 
 ### Storage
 

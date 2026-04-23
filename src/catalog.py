@@ -70,23 +70,11 @@ FRAGMENTS: dict[str, str] = {
         "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gfs-bdp-pds/). "
         "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
     ),
-    "nodd_source_gefs": (
-        "The source grib files this archive is constructed from are provided by "
-        "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
-        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gefs/). "
-        "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
-    ),
     "nodd_source_hrrr": (
         "The source grib files this archive is constructed from are provided by "
         "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
         "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). "
         "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
-    ),
-    "nodd_source_mrms": (
-        "The source files this archive is constructed from are provided by "
-        "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
-        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-mrms-pds/). "
-        "Operational data is additionally accessed from [NCEP](https://mrms.ncep.noaa.gov/)."
     ),
     "ecmwf_source": (
         "The source grib files this archive is constructed from are provided by "
@@ -94,16 +82,6 @@ FRAGMENTS: dict[str, str] = {
         "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\n"
         "ECMWF does not provide user support for the free & open datasets. Users should refer to the public "
         "[User Forum](https://forum.ecmwf.int/) for any questions related to the source material."
-    ),
-    "ecmwf_model_updates": (
-        "AIFS is updated regularly. Find details of recent and upcoming "
-        "[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system) "
-        "on the ECMWF website."
-    ),
-    "ecmwf_model_updates_ifs": (
-        "IFS is updated regularly. Find details of recent and upcoming "
-        "[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system) "
-        "on the ECMWF website."
     ),
     # References {{ reformatter_url }} — supplied per-dataset at load time.
     "compression": (

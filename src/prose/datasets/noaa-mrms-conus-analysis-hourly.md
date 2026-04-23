@@ -10,7 +10,10 @@ Use this dataset over the land areas of the contiguous United States. Radar-only
 
 ### Source
 
-{{ nodd_source_mrms }}
+The source files this archive is constructed from are provided by
+[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination)
+and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-mrms-pds/).
+Operational data is additionally accessed from [NCEP](https://mrms.ncep.noaa.gov/).
 
 ### Storage
 
