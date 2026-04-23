@@ -34,12 +34,19 @@ def _serve(directory: pathlib.Path) -> Iterator[int]:
             httpd.shutdown()
 
 
-@pytest.fixture
-def served_catalog(tmp_path: pathlib.Path) -> Iterator[tuple[pathlib.Path, str]]:
-    """Generate the catalog into tmp_path and serve it over HTTP.
+@pytest.fixture(scope="session")
+def served_catalog(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Iterator[tuple[pathlib.Path, str]]:
+    """Generate the catalog once per session and serve it over HTTP.
 
-    Yields (catalog_dir, root_url).
+    `generate()` opens all 9 icechunk stores from S3 and fetches every STAC
+    extension schema. That's ~40s of network and it's identical for every
+    integration test that needs a catalog — so we do it once and share.
+
+    Yields (catalog_dir, root_url). Consumers must treat both as read-only.
     """
+    tmp_path = tmp_path_factory.mktemp("served_catalog")
     with _serve(tmp_path) as port:
         root_url = f"http://127.0.0.1:{port}"
         generate(tmp_path, root_href=root_url)
