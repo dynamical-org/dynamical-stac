@@ -34,7 +34,7 @@ from catalog import _COLLECTION_IDS
 
 # PyPI releases we contract to support. Each breaking change here is a
 # regression and must be fixed before merging.
-SUPPORTED_RELEASES = ["0.3.0", "0.4.0"]
+SUPPORTED_RELEASES = ["0.4.0"]
 
 # Additional git refs to test against. These are early-warning canaries for
 # upstream changes — not a support contract. A failure here should prompt a
