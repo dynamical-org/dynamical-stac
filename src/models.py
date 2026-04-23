@@ -26,7 +26,38 @@ LICENSE_URLS: dict[DatasetLicense, str] = {
 STAC_EXTENSIONS = [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
     "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json",
 ]
+
+ProviderRole = Literal["producer", "processor", "licensor", "host"]
+
+DYNAMICAL_PROVIDER_NAME = "dynamical.org"
+DYNAMICAL_PROVIDER_URL = "https://dynamical.org/"
+AWS_PROVIDER_NAME = "Amazon Web Services"
+AWS_PROVIDER_URL = "https://aws.amazon.com/"
+
+_ORIGIN_PROVIDERS: dict[str, tuple[str, str]] = {
+    "noaa": (
+        "NOAA National Centers for Environmental Prediction",
+        "https://www.ncep.noaa.gov/",
+    ),
+    "ecmwf": (
+        "European Centre for Medium-Range Weather Forecasts",
+        "https://www.ecmwf.int/",
+    ),
+}
+
+_NWP_MODEL_KEYWORDS = {
+    "gfs": "GFS",
+    "gefs": "GEFS",
+    "hrrr": "HRRR",
+    "aifs": "AIFS",
+    "ifs": "IFS",
+}
+
+_OTHER_MODEL_KEYWORDS = {"mrms": "MRMS"}
+
+_AGENCY_KEYWORDS = {"noaa": "NOAA", "ecmwf": "ECMWF"}
 
 _SUMMARY_ATTRS = (
     "spatial_domain",
@@ -36,6 +67,63 @@ _SUMMARY_ATTRS = (
     "forecast_domain",
     "forecast_resolution",
 )
+
+
+class Provider(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    name: str = Field(min_length=1)
+    roles: list[ProviderRole] = Field(min_length=1)
+    url: HttpUrl | None = None
+    description: str | None = None
+
+
+def _providers_for(item_id: str) -> list[Provider]:
+    origin = item_id.split("-", 1)[0]
+    if origin not in _ORIGIN_PROVIDERS:
+        raise ValueError(
+            f"Unknown data origin {origin!r} for id {item_id!r}; expected one of "
+            f"{sorted(_ORIGIN_PROVIDERS)}"
+        )
+    origin_name, origin_url = _ORIGIN_PROVIDERS[origin]
+    return [
+        Provider(
+            name=origin_name,
+            roles=["producer", "licensor"],
+            url=origin_url,  # type: ignore[arg-type]
+        ),
+        Provider(
+            name=DYNAMICAL_PROVIDER_NAME,
+            roles=["processor"],
+            url=DYNAMICAL_PROVIDER_URL,  # type: ignore[arg-type]
+        ),
+        Provider(
+            name=AWS_PROVIDER_NAME,
+            roles=["host"],
+            url=AWS_PROVIDER_URL,  # type: ignore[arg-type]
+        ),
+    ]
+
+
+def _keywords_for(item_id: str) -> list[str]:
+    tokens = set(item_id.split("-"))
+    keywords: set[str] = {"weather", "zarr", "icechunk"}
+    if "forecast" in tokens:
+        keywords.add("forecast")
+    if "analysis" in tokens:
+        keywords.add("analysis")
+    if "ens" in tokens:
+        keywords.add("ensemble")
+    if "mrms" in tokens:
+        keywords.update({"radar", "precipitation"})
+    for token in tokens:
+        if token in _NWP_MODEL_KEYWORDS:
+            keywords.update({_NWP_MODEL_KEYWORDS[token], "NWP"})
+        if token in _OTHER_MODEL_KEYWORDS:
+            keywords.add(_OTHER_MODEL_KEYWORDS[token])
+        if token in _AGENCY_KEYWORDS:
+            keywords.add(_AGENCY_KEYWORDS[token])
+    return sorted(keywords)
 
 
 class CubeDimension(BaseModel):
@@ -158,8 +246,9 @@ class CollectionInput(BaseModel):
     # TODO(temporary): drop the `zarr` asset once all dynamical-catalog
     # consumers are on the icechunk-only release.
     zarr_href: HttpUrl
-    attribution: str = Field(min_length=1)
     version: str = Field(min_length=1)
+    providers: list[Provider] = Field(min_length=1)
+    keywords: list[str] = Field(min_length=1)
     summaries: dict[str, str] = Field(default_factory=dict)
     additional_terms: AdditionalTerms | None = None
 
@@ -226,10 +315,11 @@ class CollectionInput(BaseModel):
                 short_name=_str_or_none(da.attrs.get("short_name")),
                 comment=_str_or_none(da.attrs.get("comment")),
             )
+        description = f"{ds.attrs['description']}\n\nAttribution: {ds.attrs['attribution']}"
         return cls(
             id=item.id,
             name=ds.attrs["name"],
-            description=ds.attrs["description"],
+            description=description,
             license=ds.attrs["license"],
             bbox=_bbox(ds),
             temporal_start=t0,
@@ -238,8 +328,9 @@ class CollectionInput(BaseModel):
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
             zarr_href=item.zarr_href,
-            attribution=ds.attrs["attribution"],
             version=ds.attrs["dataset_version"],
+            providers=_providers_for(item.id),
+            keywords=_keywords_for(item.id),
             summaries={k: ds.attrs[k] for k in _SUMMARY_ATTRS if k in ds.attrs},
             additional_terms=item.additional_terms,
         )
@@ -255,9 +346,18 @@ class CollectionInput(BaseModel):
             description=self.description,
             license=self.license,
             extent=extent,
+            keywords=list(self.keywords),
+            providers=[
+                pystac.Provider(
+                    name=p.name,
+                    roles=list(p.roles),
+                    url=str(p.url) if p.url else None,
+                    description=p.description,
+                )
+                for p in self.providers
+            ],
         )
         collection.stac_extensions = list(STAC_EXTENSIONS)
-        collection.extra_fields["attribution"] = self.attribution
         collection.extra_fields["version"] = self.version
 
         summaries: dict[str, list[str]] = {k: [v] for k, v in self.summaries.items()}

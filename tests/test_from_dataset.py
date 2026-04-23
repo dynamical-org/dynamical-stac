@@ -12,8 +12,8 @@ from models import CollectionInput, _dim_entry
 
 
 def _catalog_item(
-    item_id: str = "test-dataset",
-    icechunk_href: str = "s3://test-bucket/test-dataset/v0.icechunk/",
+    item_id: str = "noaa-test-dataset",
+    icechunk_href: str = "s3://test-bucket/noaa-test-dataset/v0.icechunk/",
 ) -> CatalogItem:
     return CatalogItem(
         id=item_id,
@@ -24,7 +24,7 @@ def _catalog_item(
 
 
 def _synthetic_dataset(
-    dataset_id: str = "test-dataset",
+    dataset_id: str = "noaa-test-dataset",
     time_dim: str = "time",
     extra_var_attrs: dict[str, str] | None = None,
     ds_attrs_overrides: dict[str, object] | None = None,
@@ -95,7 +95,7 @@ def test_from_dataset_prefers_init_time_over_time() -> None:
             "longitude": lons,
         },
         attrs={
-            "dataset_id": "test-dataset",
+            "dataset_id": "noaa-test-dataset",
             "name": "Test Dataset",
             "description": "desc",
             "license": "CC-BY-4.0",
@@ -147,6 +147,39 @@ def test_from_dataset_requires_attribution() -> None:
         CollectionInput.from_dataset(item, ds)
 
 
+def test_from_dataset_appends_attribution_to_description() -> None:
+    item = CatalogItem(
+        id="noaa-gfs-forecast",
+        icechunk_href="s3://test-bucket/noaa-gfs-forecast/v0.icechunk/",
+        icechunk_region="us-west-2",
+        zarr_href="https://data.example.com/test/latest.zarr",  # type: ignore[arg-type]
+    )
+    ds = _synthetic_dataset(
+        dataset_id="noaa-gfs-forecast",
+        ds_attrs_overrides={
+            "description": "Base description.",
+            "attribution": "Produced by NOAA.",
+        },
+    )
+    result = CollectionInput.from_dataset(item, ds)
+    assert result.description.startswith("Base description.")
+    assert "Attribution: Produced by NOAA." in result.description
+
+
+def test_from_dataset_derives_providers_and_keywords() -> None:
+    item = CatalogItem(
+        id="noaa-gfs-forecast",
+        icechunk_href="s3://test-bucket/noaa-gfs-forecast/v0.icechunk/",
+        icechunk_region="us-west-2",
+        zarr_href="https://data.example.com/test/latest.zarr",  # type: ignore[arg-type]
+    )
+    ds = _synthetic_dataset(dataset_id="noaa-gfs-forecast")
+    result = CollectionInput.from_dataset(item, ds)
+    assert any("producer" in p.roles for p in result.providers)
+    assert any(p.roles == ["host"] for p in result.providers)
+    assert "GFS" in result.keywords
+
+
 def test_from_dataset_requires_dataset_version() -> None:
     item = _catalog_item()
     ds = _synthetic_dataset()
@@ -161,8 +194,8 @@ def test_from_dataset_passes_additional_terms_through() -> None:
         title="Extra Terms",
     )
     item = CatalogItem(
-        id="test-dataset",
-        icechunk_href="s3://test-bucket/test-dataset/v0.icechunk/",
+        id="noaa-test-dataset",
+        icechunk_href="s3://test-bucket/noaa-test-dataset/v0.icechunk/",
         icechunk_region="us-west-2",
         zarr_href="https://data.example.com/test-dataset/latest.zarr",  # type: ignore[arg-type]
         additional_terms=terms,

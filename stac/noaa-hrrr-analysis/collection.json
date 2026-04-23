@@ -2,7 +2,7 @@
   "type": "Collection",
   "id": "noaa-hrrr-analysis",
   "stac_version": "1.1.0",
-  "description": "Analysis data from the High-Resolution Rapid Refresh (HRRR) model operated by NOAA NWS NCEP.",
+  "description": "Analysis data from the High-Resolution Rapid Refresh (HRRR) model operated by NOAA NWS NCEP.\n\nAttribution: NOAA NWS NCEP HRRR data processed by dynamical.org from NOAA Open Data Dissemination archives.",
   "links": [
     {
       "rel": "root",
@@ -49,9 +49,9 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
   ],
-  "attribution": "NOAA NWS NCEP HRRR data processed by dynamical.org from NOAA Open Data Dissemination archives.",
   "version": "0.2.0",
   "cube:dimensions": {
     "time": {
@@ -84,6 +84,18 @@
     }
   },
   "cube:variables": {
+    "categorical_ice_pellets_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical ice pellets",
+      "short_name": "cicep",
+      "comment": "0=no; 1=yes"
+    },
     "categorical_freezing_rain_surface": {
       "dimensions": [
         "time",
@@ -107,31 +119,7 @@
       "long_name": "Maximum/Composite radar reflectivity",
       "short_name": "refc"
     },
-    "dew_point_temperature_2m": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "degree_Celsius",
-      "long_name": "2 metre dewpoint temperature",
-      "standard_name": "dew_point_temperature",
-      "short_name": "2d"
-    },
-    "categorical_rain_surface": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "1",
-      "long_name": "Categorical rain",
-      "short_name": "crain",
-      "comment": "0=no; 1=yes"
-    },
-    "downward_short_wave_radiation_flux_surface": {
+    "downward_long_wave_radiation_flux_surface": {
       "dimensions": [
         "time",
         "y",
@@ -139,21 +127,9 @@
       ],
       "type": "data",
       "unit": "W m-2",
-      "long_name": "Surface downward short-wave radiation flux",
-      "standard_name": "surface_downwelling_shortwave_flux_in_air",
-      "short_name": "sdswrf"
-    },
-    "categorical_snow_surface": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "1",
-      "long_name": "Categorical snow",
-      "short_name": "csnow",
-      "comment": "0=no; 1=yes"
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf"
     },
     "geopotential_height_cloud_ceiling": {
       "dimensions": [
@@ -167,19 +143,7 @@
       "standard_name": "geopotential_height",
       "short_name": "gh"
     },
-    "downward_long_wave_radiation_flux_surface": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "W m-2",
-      "long_name": "Surface downward long-wave radiation flux",
-      "standard_name": "surface_downwelling_longwave_flux_in_air",
-      "short_name": "sdlwrf"
-    },
-    "categorical_ice_pellets_surface": {
+    "categorical_rain_surface": {
       "dimensions": [
         "time",
         "y",
@@ -187,9 +151,45 @@
       ],
       "type": "data",
       "unit": "1",
-      "long_name": "Categorical ice pellets",
-      "short_name": "cicep",
+      "long_name": "Categorical rain",
+      "short_name": "crain",
       "comment": "0=no; 1=yes"
+    },
+    "categorical_snow_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Categorical snow",
+      "short_name": "csnow",
+      "comment": "0=no; 1=yes"
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf"
     },
     "percent_frozen_precipitation_surface": {
       "dimensions": [
@@ -202,19 +202,7 @@
       "long_name": "Percent frozen precipitation",
       "short_name": "cpofp"
     },
-    "precipitable_water_atmosphere": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "kg m-2",
-      "long_name": "Precipitable water",
-      "standard_name": "atmosphere_mass_content_of_water_vapor",
-      "short_name": "pwat"
-    },
-    "pressure_surface": {
+    "pressure_reduced_to_mean_sea_level": {
       "dimensions": [
         "time",
         "y",
@@ -222,9 +210,9 @@
       ],
       "type": "data",
       "unit": "Pa",
-      "long_name": "Surface pressure",
-      "standard_name": "surface_air_pressure",
-      "short_name": "sp"
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
     },
     "precipitation_surface": {
       "dimensions": [
@@ -238,6 +226,42 @@
       "standard_name": "precipitation_flux",
       "short_name": "prate",
       "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "precipitable_water_atmosphere": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "kg m-2",
+      "long_name": "Precipitable water",
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "short_name": "pwat"
+    },
+    "snow_area_fraction_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Snow cover",
+      "standard_name": "surface_snow_area_fraction",
+      "short_name": "snowc"
     },
     "relative_humidity_2m": {
       "dimensions": [
@@ -263,30 +287,6 @@
       "standard_name": "surface_snow_thickness",
       "short_name": "sde"
     },
-    "pressure_reduced_to_mean_sea_level": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "Pa",
-      "long_name": "Pressure reduced to MSL",
-      "standard_name": "air_pressure_at_mean_sea_level",
-      "short_name": "prmsl"
-    },
-    "snow_area_fraction_surface": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "1",
-      "long_name": "Snow cover",
-      "standard_name": "surface_snow_area_fraction",
-      "short_name": "snowc"
-    },
     "snow_water_equivalent_surface": {
       "dimensions": [
         "time",
@@ -298,18 +298,6 @@
       "long_name": "Snow depth water equivalent",
       "standard_name": "lwe_thickness_of_surface_snow_amount",
       "short_name": "sd"
-    },
-    "snowfall_surface": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "m s-1",
-      "long_name": "Total snowfall rate",
-      "short_name": "tsrate",
-      "comment": "Average snowfall rate since the previous forecast step."
     },
     "temperature_2m": {
       "dimensions": [
@@ -323,7 +311,7 @@
       "standard_name": "air_temperature",
       "short_name": "2t"
     },
-    "wind_gust_surface": {
+    "snowfall_surface": {
       "dimensions": [
         "time",
         "y",
@@ -331,9 +319,9 @@
       ],
       "type": "data",
       "unit": "m s-1",
-      "long_name": "Wind speed (gust)",
-      "standard_name": "wind_speed_of_gust",
-      "short_name": "gust"
+      "long_name": "Total snowfall rate",
+      "short_name": "tsrate",
+      "comment": "Average snowfall rate since the previous forecast step."
     },
     "total_cloud_cover_atmosphere": {
       "dimensions": [
@@ -343,33 +331,9 @@
       ],
       "type": "data",
       "unit": "percent",
-      "long_name": "Total Cloud Cover",
+      "long_name": "Total cloud cover",
       "standard_name": "cloud_area_fraction",
       "short_name": "tcc"
-    },
-    "wind_u_80m": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "m s-1",
-      "long_name": "80 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "80u"
-    },
-    "wind_v_80m": {
-      "dimensions": [
-        "time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "unit": "m s-1",
-      "long_name": "80 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "80v"
     },
     "wind_u_10m": {
       "dimensions": [
@@ -383,6 +347,18 @@
       "standard_name": "eastward_wind",
       "short_name": "10u"
     },
+    "wind_u_80m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "80 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "80u"
+    },
     "wind_v_10m": {
       "dimensions": [
         "time",
@@ -394,6 +370,30 @@
       "long_name": "10 metre V wind component",
       "standard_name": "northward_wind",
       "short_name": "10v"
+    },
+    "wind_gust_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "Wind speed (gust)",
+      "standard_name": "wind_speed_of_gust",
+      "short_name": "gust"
+    },
+    "wind_v_80m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "80 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "80v"
     }
   },
   "title": "NOAA HRRR analysis",
@@ -418,6 +418,39 @@
     }
   },
   "license": "CC-BY-4.0",
+  "keywords": [
+    "HRRR",
+    "NOAA",
+    "NWP",
+    "analysis",
+    "icechunk",
+    "weather",
+    "zarr"
+  ],
+  "providers": [
+    {
+      "name": "NOAA National Centers for Environmental Prediction",
+      "roles": [
+        "producer",
+        "licensor"
+      ],
+      "url": "https://www.ncep.noaa.gov/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor"
+      ],
+      "url": "https://dynamical.org/"
+    },
+    {
+      "name": "Amazon Web Services",
+      "roles": [
+        "host"
+      ],
+      "url": "https://aws.amazon.com/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Continental United States"

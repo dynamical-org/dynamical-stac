@@ -8,7 +8,15 @@ import pytest
 import xarray as xr
 
 from catalog import AdditionalTerms, CatalogItem, DatasetLicense
-from models import CollectionInput, CubeDimension, CubeVariable, _dim_entry
+from models import (
+    CollectionInput,
+    CubeDimension,
+    CubeVariable,
+    Provider,
+    _dim_entry,
+    _keywords_for,
+    _providers_for,
+)
 
 
 def _valid_input(**overrides: object) -> CollectionInput:
@@ -36,8 +44,15 @@ def _valid_input(**overrides: object) -> CollectionInput:
         "icechunk_href": "s3://test-bucket/test-prefix/",
         "icechunk_region": "us-west-2",
         "zarr_href": "https://data.example.com/test-dataset/latest.zarr",
-        "attribution": "Test Attribution",
         "version": "v0.0.0",
+        "providers": [
+            Provider(
+                name="NOAA",
+                roles=["producer", "licensor"],
+                url="https://www.noaa.gov/",  # type: ignore[arg-type]
+            ),
+        ],
+        "keywords": ["weather", "zarr"],
     }
     defaults.update(overrides)
     return CollectionInput(**defaults)  # type: ignore[arg-type]
@@ -193,3 +208,64 @@ def test_collection_input_renders_additional_terms_as_extra_license_link() -> No
 def test_additional_terms_rejects_empty_title() -> None:
     with pytest.raises(pydantic.ValidationError):
         AdditionalTerms(href="https://example.org/terms", title="")  # type: ignore[arg-type]
+
+
+def test_providers_for_noaa_has_producer_processor_host() -> None:
+    providers = _providers_for("noaa-gfs-forecast")
+    roles_by_name = {p.name: p.roles for p in providers}
+    assert any("NOAA" in name for name in roles_by_name)
+    producer = next(p for p in providers if "producer" in p.roles)
+    assert "licensor" in producer.roles
+    assert any(p.name == "dynamical.org" and p.roles == ["processor"] for p in providers)
+    assert any(p.name == "Amazon Web Services" and p.roles == ["host"] for p in providers)
+
+
+def test_providers_for_ecmwf_uses_ecmwf_producer() -> None:
+    providers = _providers_for("ecmwf-aifs-single-forecast")
+    producer = next(p for p in providers if "producer" in p.roles)
+    assert "ECMWF" in producer.name or "European Centre" in producer.name
+
+
+def test_providers_for_unknown_origin_raises() -> None:
+    with pytest.raises(ValueError, match="Unknown data origin"):
+        _providers_for("mystery-dataset")
+
+
+def test_keywords_for_forecast_includes_nwp_and_model() -> None:
+    kws = _keywords_for("noaa-gfs-forecast")
+    assert "forecast" in kws
+    assert "NWP" in kws
+    assert "GFS" in kws
+    assert "NOAA" in kws
+    assert "zarr" in kws
+    assert "icechunk" in kws
+
+
+def test_keywords_for_mrms_includes_radar() -> None:
+    kws = _keywords_for("noaa-mrms-conus-analysis-hourly")
+    assert "MRMS" in kws
+    assert "radar" in kws
+    assert "analysis" in kws
+
+
+def test_keywords_for_ens_includes_ensemble() -> None:
+    kws = _keywords_for("ecmwf-ifs-ens-forecast-15-day-0-25-degree")
+    assert "ensemble" in kws
+    assert "IFS" in kws
+    assert "ECMWF" in kws
+
+
+def test_collection_has_providers_and_keywords() -> None:
+    collection = _valid_input().to_pystac_collection()
+    assert collection.providers
+    assert collection.keywords
+
+
+def test_collection_declares_version_extension() -> None:
+    collection = _valid_input().to_pystac_collection()
+    assert any("version" in ext for ext in collection.stac_extensions)
+
+
+def test_collection_does_not_emit_attribution_field() -> None:
+    collection = _valid_input().to_pystac_collection()
+    assert "attribution" not in collection.extra_fields

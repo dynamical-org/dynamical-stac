@@ -2,7 +2,7 @@
   "type": "Collection",
   "id": "noaa-mrms-conus-analysis-hourly",
   "stac_version": "1.1.0",
-  "description": "Hourly precipitation analysis from the Multi-Radar Multi-Sensor (MRMS) system operated by NOAA NWS NCEP.",
+  "description": "Hourly precipitation analysis from the Multi-Radar Multi-Sensor (MRMS) system operated by NOAA NWS NCEP.\n\nAttribution: NOAA NWS NCEP MRMS data processed by dynamical.org from NOAA NCEP, NOAA Open Data Dissemination and Iowa Mesonet archives.",
   "links": [
     {
       "rel": "root",
@@ -49,9 +49,9 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
   ],
-  "attribution": "NOAA NWS NCEP MRMS data processed by dynamical.org from NOAA NCEP, NOAA Open Data Dissemination and Iowa Mesonet archives.",
   "version": "0.3.0",
   "cube:dimensions": {
     "latitude": {
@@ -84,56 +84,17 @@
     }
   },
   "cube:variables": {
-    "precipitation_pass_1_surface": {
+    "flash_qpe_ffg_max_surface": {
       "dimensions": [
         "time",
         "latitude",
         "longitude"
       ],
       "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate over the previous hour, pass 1 (lower latency, fewer gauges). Derived from MultiSensor_QPE_01H_Pass1. Available from October 2020 onward. Units equivalent to mm/s."
-    },
-    "precipitation_radar_only_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate from radar",
-      "standard_name": "precipitation_flux",
-      "short_name": "rdpr",
-      "comment": "Average radar-only precipitation rate over the previous hour (no gauge correction). Derived from RadarOnly_QPE_01H. Units equivalent to mm/s."
-    },
-    "categorical_precipitation_type_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "1",
-      "long_name": "Precipitation type",
-      "short_name": "ptype",
-      "comment": "Precipitation type flag. 0=no precipitation, 1=warm stratiform rain, 3=snow, 6=convective, 7=hail, 10=cold stratiform rain, 91=tropical."
-    },
-    "precipitation_surface": {
-      "dimensions": [
-        "time",
-        "latitude",
-        "longitude"
-      ],
-      "type": "data",
-      "unit": "kg m-2 s-1",
-      "long_name": "Precipitation rate",
-      "standard_name": "precipitation_flux",
-      "short_name": "prate",
-      "comment": "Average precipitation rate over the previous hour. Derived from MultiSensor_QPE_01H_Pass2 from October 2020, GaugeCorr_QPE_01H before. If primary product is unavailable, falls back to MultiSensor_QPE_01H_Pass1 and then RadarOnly_QPE_01H. Units equivalent to mm/s."
+      "unit": "percent",
+      "long_name": "FLASH QPE-to-FFG percentage maximum",
+      "short_name": "FLASH_QPE_FFGMAX",
+      "comment": "Maximum percentage of Quantitative Precipitation Estimate (QPE) to Flash Flood Guidance (FFG) from the FLASH system. Percentage where values > 100 indicate QPE exceeds FFG. Available from October 2020 onward."
     },
     "precipitation_pass_2_surface": {
       "dimensions": [
@@ -148,17 +109,56 @@
       "short_name": "prate",
       "comment": "Average precipitation rate over the previous hour, pass 2 (higher latency, more gauges). Derived from MultiSensor_QPE_01H_Pass2. Available from October 2020 onward. Units equivalent to mm/s."
     },
-    "flash_qpe_ffg_max_surface": {
+    "precipitation_surface": {
       "dimensions": [
         "time",
         "latitude",
         "longitude"
       ],
       "type": "data",
-      "unit": "percent",
-      "long_name": "FLASH QPE-to-FFG percentage maximum",
-      "short_name": "FLASH_QPE_FFGMAX",
-      "comment": "Maximum percentage of Quantitative Precipitation Estimate (QPE) to Flash Flood Guidance (FFG) from the FLASH system. Percentage where values > 100 indicate QPE exceeds FFG. Available from October 2020 onward."
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous hour. Derived from MultiSensor_QPE_01H_Pass2 from October 2020, GaugeCorr_QPE_01H before. If primary product is unavailable, falls back to MultiSensor_QPE_01H_Pass1 and then RadarOnly_QPE_01H. Units equivalent to mm/s."
+    },
+    "precipitation_radar_only_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate from radar",
+      "standard_name": "precipitation_flux",
+      "short_name": "rdpr",
+      "comment": "Average radar-only precipitation rate over the previous hour (no gauge correction). Derived from RadarOnly_QPE_01H. Units equivalent to mm/s."
+    },
+    "precipitation_pass_1_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous hour, pass 1 (lower latency, fewer gauges). Derived from MultiSensor_QPE_01H_Pass1. Available from October 2020 onward. Units equivalent to mm/s."
+    },
+    "categorical_precipitation_type_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "1",
+      "long_name": "Precipitation type",
+      "short_name": "ptype",
+      "comment": "Precipitation type flag. 0=no precipitation, 1=warm stratiform rain, 3=snow, 6=convective, 7=hail, 10=cold stratiform rain, 91=tropical."
     }
   },
   "title": "NOAA MRMS CONUS analysis, hourly",
@@ -183,6 +183,40 @@
     }
   },
   "license": "CC-BY-4.0",
+  "keywords": [
+    "MRMS",
+    "NOAA",
+    "analysis",
+    "icechunk",
+    "precipitation",
+    "radar",
+    "weather",
+    "zarr"
+  ],
+  "providers": [
+    {
+      "name": "NOAA National Centers for Environmental Prediction",
+      "roles": [
+        "producer",
+        "licensor"
+      ],
+      "url": "https://www.ncep.noaa.gov/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor"
+      ],
+      "url": "https://dynamical.org/"
+    },
+    {
+      "name": "Amazon Web Services",
+      "roles": [
+        "host"
+      ],
+      "url": "https://aws.amazon.com/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Continental United States"
