@@ -15,7 +15,21 @@ from catalog import (
     CatalogItem,
     DatasetExample,
     DatasetLicense,
+    DatasetNotebook,
 )
+
+NOTEBOOKS_REPO_BASE = "https://github.com/dynamical-org/notebooks/blob/main"
+
+
+def _github_notebook_url(slug: str) -> str:
+    return f"{NOTEBOOKS_REPO_BASE}/{slug}.ipynb"
+
+
+def _colab_notebook_url(slug: str) -> str:
+    return _github_notebook_url(slug).replace(
+        "https://github.com/", "https://colab.research.google.com/github/"
+    )
+
 
 LICENSE_URLS: dict[DatasetLicense, str] = {
     DatasetLicense.CC_BY_4_0: "https://creativecommons.org/licenses/by/4.0/",
@@ -163,6 +177,7 @@ class CollectionInput(BaseModel):
     description_details: str = Field(min_length=1)
     description_model: str = Field(min_length=1)
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
+    notebooks: tuple[DatasetNotebook, ...] = Field(min_length=1)
 
     @field_validator("bbox")
     @classmethod
@@ -182,18 +197,6 @@ class CollectionInput(BaseModel):
         if v.tzinfo is None:
             raise ValueError("temporal_start must be timezone-aware")
         return v.astimezone(dt.UTC)
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def github_notebook_url(self) -> str:
-        return f"https://github.com/dynamical-org/notebooks/blob/main/{self.id}.ipynb"
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def colab_notebook_url(self) -> str:
-        return self.github_notebook_url.replace(
-            "https://github.com/", "https://colab.research.google.com/github/"
-        )
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -253,6 +256,7 @@ class CollectionInput(BaseModel):
             description_details=item.description_details,
             description_model=model.description,
             examples=item.examples,
+            notebooks=item.notebooks,
         )
 
     def to_pystac_collection(self) -> pystac.Collection:
@@ -334,22 +338,23 @@ class CollectionInput(BaseModel):
                 title="Dataset documentation",
             )
         )
-        collection.add_link(
-            pystac.Link(
-                rel="example",
-                target=self.github_notebook_url,
-                media_type="application/x-ipynb+json",
-                title="Example notebook (GitHub)",
+        for notebook in self.notebooks:
+            collection.add_link(
+                pystac.Link(
+                    rel="example",
+                    target=_github_notebook_url(notebook.slug),
+                    media_type="application/x-ipynb+json",
+                    title=f"{notebook.title} (GitHub)",
+                )
             )
-        )
-        collection.add_link(
-            pystac.Link(
-                rel="example",
-                target=self.colab_notebook_url,
-                media_type="text/html",
-                title="Example notebook (Colab)",
+            collection.add_link(
+                pystac.Link(
+                    rel="example",
+                    target=_colab_notebook_url(notebook.slug),
+                    media_type="text/html",
+                    title=f"{notebook.title} (Colab)",
+                )
             )
-        )
         return collection
 
 

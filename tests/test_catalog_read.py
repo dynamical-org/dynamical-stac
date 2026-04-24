@@ -8,7 +8,11 @@ import urllib.request
 
 import pytest
 
-from catalog import _COLLECTION_IDS
+from catalog import _COLLECTION_IDS, CATALOG_ITEMS
+
+_NOTEBOOK_SLUGS = sorted(
+    {notebook.slug for item in CATALOG_ITEMS for notebook in item.notebooks}
+)
 
 
 def _point_value(ds: object, name: str) -> object:
@@ -46,9 +50,16 @@ def test_noaa_gfs_forecast_temperature_2m_reads(
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("collection_id", _COLLECTION_IDS)
-def test_notebook_url_exists(collection_id: str) -> None:
-    url = f"https://github.com/dynamical-org/notebooks/blob/main/{collection_id}.ipynb"
+@pytest.mark.parametrize("notebook_slug", _NOTEBOOK_SLUGS)
+def test_notebook_url_exists(notebook_slug: str) -> None:
+    # Use raw.githubusercontent.com so 404s actually return 404 — the
+    # github.com/<repo>/blob/<ref>/<path> page always returns 200 (the SPA
+    # renders "Page not found" client-side), which makes it useless for
+    # existence checks.
+    url = (
+        "https://raw.githubusercontent.com/dynamical-org/notebooks"
+        f"/main/{notebook_slug}.ipynb"
+    )
     req = urllib.request.Request(url, method="HEAD")  # noqa: S310
     req.add_header("User-Agent", "dynamical-stac-tests")
     try:

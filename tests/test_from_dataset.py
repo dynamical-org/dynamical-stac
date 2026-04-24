@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from catalog import AdditionalTerms, CatalogItem, DatasetExample
+from catalog import AdditionalTerms, CatalogItem, DatasetExample, DatasetNotebook
 from models import CollectionInput, _dim_entry
 
 # Use a real id so ``CatalogItem.description_details`` can resolve the
@@ -28,6 +28,7 @@ def _catalog_item(
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
         examples=(DatasetExample(title="Example", code="import xarray"),),
+        notebooks=(DatasetNotebook(slug=item_id, title="Quickstart"),),
     )
 
 
@@ -174,6 +175,7 @@ def test_from_dataset_passes_additional_terms_through() -> None:
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
         examples=(DatasetExample(title="Example", code="import xarray"),),
+        notebooks=(DatasetNotebook(slug=_TEST_ID, title="Quickstart"),),
     )
     result = CollectionInput.from_dataset(item, _synthetic_dataset())
     assert result.additional_terms == terms
