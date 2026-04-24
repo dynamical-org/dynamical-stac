@@ -51,3 +51,17 @@ def served_catalog(
         root_url = f"http://127.0.0.1:{port}"
         generate(tmp_path, root_href=root_url)
         yield tmp_path, root_url
+
+
+@pytest.fixture(scope="session")
+def dynamical_catalog_fixture(
+    served_catalog: tuple[pathlib.Path, str],
+) -> object:
+    """dynamical_catalog module redirected at the locally-served STAC catalog."""
+    dynamical_catalog = pytest.importorskip("dynamical_catalog")
+    from dynamical_catalog import _stac  # noqa: PLC0415
+
+    _, root_url = served_catalog
+    _stac.STAC_CATALOG_URL = f"{root_url}/catalog.json"
+    _stac.clear_cache()
+    return dynamical_catalog

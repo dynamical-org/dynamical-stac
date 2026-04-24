@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import pathlib
 import urllib.error
 import urllib.request
 
@@ -15,19 +14,6 @@ from catalog import _COLLECTION_IDS
 def _point_value(ds: object, name: str) -> object:
     da = ds[name]  # type: ignore[index]
     return da.isel(dict.fromkeys(da.dims, 0)).load().item()
-
-
-@pytest.fixture(scope="session")
-def dynamical_catalog_fixture(
-    served_catalog: tuple[pathlib.Path, str],
-) -> object:
-    dynamical_catalog = pytest.importorskip("dynamical_catalog")
-    from dynamical_catalog import _stac  # noqa: PLC0415
-
-    _, root_url = served_catalog
-    _stac.STAC_CATALOG_URL = f"{root_url}/catalog.json"
-    _stac.clear_cache()
-    return dynamical_catalog
 
 
 @pytest.mark.integration

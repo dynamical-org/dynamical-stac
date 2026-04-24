@@ -10,6 +10,10 @@ from catalog import _COLLECTION_IDS
 
 
 @pytest.mark.integration
+@pytest.mark.filterwarnings(
+    "ignore::pystac_client.warnings.NoConformsTo",
+    "ignore::pystac_client.warnings.FallbackToPystac",
+)
 def test_browse_with_pystac_client(
     served_catalog: tuple[pathlib.Path, str],
 ) -> None:

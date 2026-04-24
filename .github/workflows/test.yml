@@ -24,10 +24,7 @@ jobs:
       - run: uv sync --group integration
       - run: uv run ruff check
       - run: uv run ruff format --check
-      - run: uv run pytest tests/ -m "not integration"
-        env:
-          REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
-      - run: uv run pytest tests/ -m integration --ignore=tests/test_released_catalog_read.py
+      - run: uv run pytest tests/ --ignore=tests/test_released_catalog_read.py
         env:
           REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
 
