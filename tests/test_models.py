@@ -7,7 +7,13 @@ import pydantic
 import pytest
 import xarray as xr
 
-from catalog import AdditionalTerms, CatalogItem, DatasetExample, DatasetLicense
+from catalog import (
+    AdditionalTerms,
+    CatalogItem,
+    DatasetExample,
+    DatasetLicense,
+    DatasetNotebook,
+)
 from models import CollectionInput, CubeDimension, CubeVariable, _dim_entry
 
 
@@ -43,24 +49,33 @@ def _valid_input(**overrides: object) -> CollectionInput:
         "description_details": "### Section\n\ntest details",
         "description_model": "Test model description",
         "examples": (DatasetExample(title="Example", code="import xarray"),),
+        "notebooks": (DatasetNotebook(slug="test-dataset", title="Quickstart"),),
     }
     defaults.update(overrides)
     return CollectionInput(**defaults)  # type: ignore[arg-type]
 
 
-def test_colab_url_is_derived_from_github_url() -> None:
-    c = _valid_input(id="my-dataset")
-    assert (
-        c.github_notebook_url
-        == "https://github.com/dynamical-org/notebooks/blob/main/my-dataset.ipynb"
+def test_notebook_links_pair_github_and_colab_per_notebook() -> None:
+    c = _valid_input(
+        notebooks=(
+            DatasetNotebook(slug="alpha", title="Quickstart"),
+            DatasetNotebook(slug="beta+gamma", title="Cross comparison"),
+        ),
     )
-    assert (
-        c.colab_notebook_url
-        == "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/my-dataset.ipynb"
-    )
-    assert c.colab_notebook_url == c.github_notebook_url.replace(
-        "https://github.com/", "https://colab.research.google.com/github/"
-    )
+    collection = c.to_pystac_collection()
+    examples = [link for link in collection.links if link.rel == "example"]
+    assert [link.target for link in examples] == [
+        "https://github.com/dynamical-org/notebooks/blob/main/alpha.ipynb",
+        "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/alpha.ipynb",
+        "https://github.com/dynamical-org/notebooks/blob/main/beta+gamma.ipynb",
+        "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/beta+gamma.ipynb",
+    ]
+    assert [link.title for link in examples] == [
+        "Quickstart (GitHub)",
+        "Quickstart (Colab)",
+        "Cross comparison (GitHub)",
+        "Cross comparison (Colab)",
+    ]
 
 
 def test_about_url_and_icechunk_href() -> None:
@@ -78,6 +93,7 @@ _PROSE_KWARGS: dict[str, object] = {
     "description_summary": "summary",
     "reformatter_url": "https://example.com/reformatter.py",
     "examples": (DatasetExample(title="Example", code="import xarray"),),
+    "notebooks": (DatasetNotebook(slug=_TEST_ID, title="Quickstart"),),
 }
 
 
@@ -110,6 +126,36 @@ def test_catalog_item_rejects_unknown_model_id() -> None:
             icechunk_region="us-west-2",
             **{**_PROSE_KWARGS, "model_id": "unknown-model"},  # type: ignore[arg-type]
         )
+
+
+def test_catalog_item_rejects_quickstart_slug_not_matching_id() -> None:
+    bad_notebook = DatasetNotebook(slug="some-other-slug", title="Quickstart")
+    with pytest.raises(
+        pydantic.ValidationError, match="Quickstart notebook slug"
+    ):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **{**_PROSE_KWARGS, "notebooks": (bad_notebook,)},  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_allows_non_quickstart_notebook_with_any_slug() -> None:
+    extra = DatasetNotebook(slug="some+other-slug", title="Cross-model comparison")
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+        icechunk_region="us-west-2",
+        **{  # type: ignore[arg-type]
+            **_PROSE_KWARGS,
+            "notebooks": (
+                DatasetNotebook(slug=_TEST_ID, title="Quickstart"),
+                extra,
+            ),
+        },
+    )
+    assert item.notebooks[1] == extra
 
 
 def test_bbox_validation_rejects_out_of_range() -> None:

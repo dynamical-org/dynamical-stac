@@ -47,6 +47,23 @@ class DatasetExample(BaseModel):
     language: Literal["python"] = "python"
 
 
+_QUICKSTART_TITLE = "Quickstart"
+
+
+class DatasetNotebook(BaseModel):
+    """A Jupyter notebook hosted under dynamical-org/notebooks.
+
+    ``slug`` is the notebook filename (without the ``.ipynb`` suffix), used to
+    build the GitHub and Colab URLs. ``title`` is the human label shown next
+    to the link on dataset pages.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    slug: str = Field(min_length=1, pattern=r"^[A-Za-z0-9._+\-]+$")
+    title: str = Field(min_length=1)
+
+
 def _example(title: str, body: str) -> DatasetExample:
     """Build an example, prepending the standard dynamical_catalog import preamble."""
     return DatasetExample(title=title, code=f"{_DYNAMICAL_CATALOG_IMPORT}\n\n{body}")
@@ -197,6 +214,7 @@ class CatalogItem(BaseModel):
     description_summary: str = Field(min_length=1)
     reformatter_url: str = Field(min_length=1)
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
+    notebooks: tuple[DatasetNotebook, ...] = Field(min_length=1)
     additional_terms: AdditionalTerms | None = None
 
     @property
@@ -213,6 +231,16 @@ class CatalogItem(BaseModel):
         return _load_prose(
             f"datasets/{self.id}.md", reformatter_url=self.reformatter_url
         )
+
+    @model_validator(mode="after")
+    def _quickstart_slug_matches_id(self) -> CatalogItem:
+        for notebook in self.notebooks:
+            if notebook.title == _QUICKSTART_TITLE and notebook.slug != self.id:
+                raise ValueError(
+                    f"Quickstart notebook slug {notebook.slug!r} must equal "
+                    f"CatalogItem id {self.id!r}"
+                )
+        return self
 
     @model_validator(mode="after")
     def _id_matches_href_path(self) -> CatalogItem:
@@ -239,6 +267,21 @@ ECMWF_TERMS = AdditionalTerms(
     title="ECMWF Terms of Use (additional terms)",
 )
 
+# Cross-model notebook referenced by multiple datasets.
+_GFS_AIFS_HDD_NOTEBOOK = DatasetNotebook(
+    slug="noaa-gfs+ecmwf-aifs-hdd",
+    title="Heating degree days: GFS vs AIFS",
+)
+
+
+def _quickstart_notebook(slug: str) -> DatasetNotebook:
+    """Build the default per-dataset ``{id}.ipynb`` notebook.
+
+    ``CatalogItem._quickstart_slug_matches_id`` enforces that the slug passed
+    here matches the owning ``CatalogItem.id``.
+    """
+    return DatasetNotebook(slug=slug, title=_QUICKSTART_TITLE)
+
 
 CATALOG_ITEMS: list[CatalogItem] = [
     CatalogItem(
@@ -260,6 +303,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(time="2026-01-01T00", latitude=0, longitude=0).compute()',
             ),
         ),
+        notebooks=(_quickstart_notebook("noaa-gfs-analysis"),),
     ),
     CatalogItem(
         id="noaa-gfs-forecast",
@@ -279,6 +323,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds = dynamical_catalog.open("noaa-gfs-forecast")\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
+        ),
+        notebooks=(
+            _quickstart_notebook("noaa-gfs-forecast"),
+            _GFS_AIFS_HDD_NOTEBOOK,
         ),
     ),
     CatalogItem(
@@ -303,6 +351,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
+        notebooks=(_quickstart_notebook("noaa-gefs-forecast-35-day"),),
     ),
     CatalogItem(
         id="noaa-gefs-analysis",
@@ -323,6 +372,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(time="2025-01-01T00", latitude=0, longitude=0).compute()',
             ),
         ),
+        notebooks=(_quickstart_notebook("noaa-gefs-analysis"),),
     ),
     CatalogItem(
         id="noaa-hrrr-forecast-48-hour",
@@ -349,6 +399,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", x=0, y=0, method="nearest").max().compute()',
             ),
         ),
+        notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour"),),
     ),
     CatalogItem(
         id="noaa-hrrr-analysis",
@@ -373,6 +424,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(time="2025-01-01T00", x=0, y=0, method="nearest").compute()',
             ),
         ),
+        notebooks=(_quickstart_notebook("noaa-hrrr-analysis"),),
     ),
     CatalogItem(
         id="noaa-mrms-conus-analysis-hourly",
@@ -392,6 +444,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["precipitation_surface"].sel(time="2026-01-01T00", latitude=40, longitude=-90, method="nearest").compute()',
             ),
         ),
+        notebooks=(_quickstart_notebook("noaa-mrms-conus-analysis-hourly"),),
     ),
     CatalogItem(
         id="ecmwf-aifs-single-forecast",
@@ -412,6 +465,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds = dynamical_catalog.open("ecmwf-aifs-single-forecast")\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
+        ),
+        notebooks=(
+            _quickstart_notebook("ecmwf-aifs-single-forecast"),
+            _GFS_AIFS_HDD_NOTEBOOK,
         ),
         additional_terms=ECMWF_TERMS,
     ),
@@ -438,6 +495,9 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
+        notebooks=(
+            _quickstart_notebook("ecmwf-ifs-ens-forecast-15-day-0-25-degree"),
+        ),
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
@@ -461,6 +521,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(init_time="2026-04-01T00", latitude=50, longitude=10).max().compute()',
             ),
         ),
+        notebooks=(_quickstart_notebook("dwd-icon-eu-forecast-5-day"),),
     ),
 ]
 

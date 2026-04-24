@@ -32,13 +32,13 @@
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-15-day-0-25-degree.ipynb",
       "type": "application/x-ipynb+json",
-      "title": "Example notebook (GitHub)"
+      "title": "Quickstart (GitHub)"
     },
     {
       "rel": "example",
       "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-15-day-0-25-degree.ipynb",
       "type": "text/html",
-      "title": "Example notebook (Colab)"
+      "title": "Quickstart (Colab)"
     },
     {
       "rel": "self",

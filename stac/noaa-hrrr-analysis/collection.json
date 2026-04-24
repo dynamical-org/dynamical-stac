@@ -26,13 +26,13 @@
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-hrrr-analysis.ipynb",
       "type": "application/x-ipynb+json",
-      "title": "Example notebook (GitHub)"
+      "title": "Quickstart (GitHub)"
     },
     {
       "rel": "example",
       "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-hrrr-analysis.ipynb",
       "type": "text/html",
-      "title": "Example notebook (Colab)"
+      "title": "Quickstart (Colab)"
     },
     {
       "rel": "self",
