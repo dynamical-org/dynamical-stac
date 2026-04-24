@@ -30,6 +30,7 @@ def _colab_notebook_url(slug: str) -> str:
         "https://github.com/", "https://colab.research.google.com/github/"
     )
 
+
 LICENSE_URLS: dict[DatasetLicense, str] = {
     DatasetLicense.CC_BY_4_0: "https://creativecommons.org/licenses/by/4.0/",
 }

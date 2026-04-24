@@ -495,9 +495,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
             ),
         ),
-        notebooks=(
-            _quickstart_notebook("ecmwf-ifs-ens-forecast-15-day-0-25-degree"),
-        ),
+        notebooks=(_quickstart_notebook("ecmwf-ifs-ens-forecast-15-day-0-25-degree"),),
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(

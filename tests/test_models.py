@@ -130,9 +130,7 @@ def test_catalog_item_rejects_unknown_model_id() -> None:
 
 def test_catalog_item_rejects_quickstart_slug_not_matching_id() -> None:
     bad_notebook = DatasetNotebook(slug="some-other-slug", title="Quickstart")
-    with pytest.raises(
-        pydantic.ValidationError, match="Quickstart notebook slug"
-    ):
+    with pytest.raises(pydantic.ValidationError, match="Quickstart notebook slug"):
         CatalogItem(
             id=_TEST_ID,
             icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",

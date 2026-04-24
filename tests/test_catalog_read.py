@@ -8,7 +8,7 @@ import urllib.request
 
 import pytest
 
-from catalog import CATALOG_ITEMS, _COLLECTION_IDS
+from catalog import _COLLECTION_IDS, CATALOG_ITEMS
 
 _NOTEBOOK_SLUGS = sorted(
     {notebook.slug for item in CATALOG_ITEMS for notebook in item.notebooks}
