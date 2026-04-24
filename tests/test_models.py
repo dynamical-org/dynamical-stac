@@ -67,8 +67,8 @@ def test_notebook_links_pair_github_and_colab_per_notebook() -> None:
     assert [link.target for link in examples] == [
         "https://github.com/dynamical-org/notebooks/blob/main/alpha.ipynb",
         "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/alpha.ipynb",
-        "https://github.com/dynamical-org/notebooks/blob/main/beta+gamma.ipynb",
-        "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/beta+gamma.ipynb",
+        "https://github.com/dynamical-org/notebooks/blob/main/beta%2Bgamma.ipynb",
+        "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/beta%2Bgamma.ipynb",
     ]
     assert [link.title for link in examples] == [
         "Quickstart (GitHub)",
