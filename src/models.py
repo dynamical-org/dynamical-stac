@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from typing import Literal
+from urllib.parse import quote
 
 import numpy as np
 import pandas as pd
@@ -22,7 +23,12 @@ NOTEBOOKS_REPO_BASE = "https://github.com/dynamical-org/notebooks/blob/main"
 
 
 def _github_notebook_url(slug: str) -> str:
-    return f"{NOTEBOOKS_REPO_BASE}/{slug}.ipynb"
+    # Percent-encode the slug. Colab's URL parser decodes a literal ``+`` in the
+    # path as a space (query-string rule applied to the path), so e.g.
+    # ``noaa-gfs+ecmwf-aifs-hdd.ipynb`` gets fetched as
+    # ``noaa-gfs ecmwf-aifs-hdd.ipynb`` and 404s. ``%2B`` sidesteps it on both
+    # github.com and colab.
+    return f"{NOTEBOOKS_REPO_BASE}/{quote(slug, safe='')}.ipynb"
 
 
 def _colab_notebook_url(slug: str) -> str:
