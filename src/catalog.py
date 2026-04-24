@@ -15,7 +15,7 @@ REFORMATTERS_ROOT = (
 REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 
 # Prepended to every example snippet so users see the required package versions.
-_DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.4.0"
+_DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.5.0"
 
 
 class DatasetLicense(StrEnum):

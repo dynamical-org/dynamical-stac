@@ -61,7 +61,7 @@
   "examples": [
     {
       "title": "Temperature at a specific place and time",
-      "code": "import dynamical_catalog  # dynamical-catalog>=0.4.0\n\nds = dynamical_catalog.open(\"noaa-hrrr-analysis\")\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\", x=0, y=0, method=\"nearest\").compute()",
+      "code": "import dynamical_catalog  # dynamical-catalog>=0.5.0\n\nds = dynamical_catalog.open(\"noaa-hrrr-analysis\")\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\", x=0, y=0, method=\"nearest\").compute()",
       "language": "python"
     }
   ],

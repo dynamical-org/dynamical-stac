@@ -61,7 +61,7 @@
   "examples": [
     {
       "title": "Temperature at a specific place and time",
-      "code": "import dynamical_catalog  # dynamical-catalog>=0.4.0\n\nds = dynamical_catalog.open(\"noaa-gfs-analysis\")\nds[\"temperature_2m\"].sel(time=\"2026-01-01T00\", latitude=0, longitude=0).compute()",
+      "code": "import dynamical_catalog  # dynamical-catalog>=0.5.0\n\nds = dynamical_catalog.open(\"noaa-gfs-analysis\")\nds[\"temperature_2m\"].sel(time=\"2026-01-01T00\", latitude=0, longitude=0).compute()",
       "language": "python"
     }
   ],

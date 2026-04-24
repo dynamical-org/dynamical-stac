@@ -68,7 +68,7 @@
       "rel": "child",
       "href": "https://stac.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json",
       "type": "application/json",
-      "title": "DWD ICON-EU forecast, 5 Day"
+      "title": "DWD ICON-EU forecast, 5 day"
     },
     {
       "rel": "self",

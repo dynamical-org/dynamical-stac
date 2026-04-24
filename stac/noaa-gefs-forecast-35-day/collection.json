@@ -61,7 +61,7 @@
   "examples": [
     {
       "title": "Maximum temperature in ensemble forecast",
-      "code": "import dynamical_catalog  # dynamical-catalog>=0.4.0\n\nds = dynamical_catalog.open(\"noaa-gefs-forecast-35-day\")\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", latitude=0, longitude=0).max().compute()",
+      "code": "import dynamical_catalog  # dynamical-catalog>=0.5.0\n\nds = dynamical_catalog.open(\"noaa-gefs-forecast-35-day\")\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", latitude=0, longitude=0).max().compute()",
       "language": "python"
     }
   ],
