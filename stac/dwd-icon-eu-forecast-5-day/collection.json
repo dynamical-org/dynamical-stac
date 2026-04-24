@@ -38,7 +38,7 @@
       "rel": "self",
       "href": "https://stac.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json",
       "type": "application/json",
-      "title": "DWD ICON-EU forecast, 5 Day"
+      "title": "DWD ICON-EU forecast, 5 day"
     },
     {
       "rel": "parent",
@@ -61,7 +61,7 @@
   "examples": [
     {
       "title": "Maximum temperature in a forecast",
-      "code": "import dynamical_catalog  # dynamical-catalog>=0.4.0\n\nds = dynamical_catalog.open(\"dwd-icon-eu-forecast-5-day\")\nds[\"temperature_2m\"].sel(init_time=\"2026-04-01T00\", latitude=50, longitude=10).max().compute()",
+      "code": "import dynamical_catalog  # dynamical-catalog>=0.5.0\n\nds = dynamical_catalog.open(\"dwd-icon-eu-forecast-5-day\")\nds[\"temperature_2m\"].sel(init_time=\"2026-04-01T00\", latitude=50, longitude=10).max().compute()",
       "language": "python"
     }
   ],
@@ -359,7 +359,7 @@
       "short_name": "10v"
     }
   },
-  "title": "DWD ICON-EU forecast, 5 Day",
+  "title": "DWD ICON-EU forecast, 5 day",
   "extent": {
     "spatial": {
       "bbox": [
