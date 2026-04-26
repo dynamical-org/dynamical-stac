@@ -62,6 +62,15 @@ jobs:
           - target: "main"
             id: "main"
             allow-failure: true
+          # icechunk-2 is the dev branch currently pinned in
+          # [tool.uv.sources] — i.e. the version dynamical-stac itself
+          # ships against. Running a fresh `uv run --with` install here
+          # complements the in-process `dynamical_catalog_fixture` (which
+          # only exercises the already-imported module). Drop this entry
+          # when the [tool.uv.sources] pin is dropped.
+          - target: "icechunk-2"
+            id: "icechunk_2"
+            allow-failure: true
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5

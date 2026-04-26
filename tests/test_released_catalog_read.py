@@ -39,12 +39,27 @@ SUPPORTED_RELEASES = ["0.4.0"]
 # Additional git refs to test against. These are early-warning canaries for
 # upstream changes — not a support contract. A failure here should prompt a
 # fix (in dynamical-stac or dynamical-catalog) rather than blocking merges.
-TRACKED_REFS = ["main"]
+#
+# `icechunk-2` is the branch currently pinned in `[tool.uv.sources]`
+# (pyproject.toml), i.e. the *current* dynamical-catalog the project ships
+# against. test_catalog_read.py exercises that ref in-process via the
+# `dynamical_catalog_fixture`, but that path monkey-patches `STAC_CATALOG_URL`
+# on an already-imported module — it can't catch issues that only manifest
+# during a clean install (e.g. dependency resolution failures, removed
+# imports, packaging metadata regressions).
+#
+# Including it here runs the same end-to-end open+read flow against a fresh
+# `uv run --with` install, which is the closest CI gets to a real end-user
+# `pip install dynamical-catalog` experience. Keep this entry in sync with
+# pyproject.toml — `test_tracked_refs_includes_pyproject_pinned_dev_branch`
+# enforces that.
+TRACKED_REFS = ["main", "icechunk-2"]
 
 _ALL_TARGETS = [*SUPPORTED_RELEASES, *TRACKED_REFS]
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 TEST_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "test.yml"
+PYPROJECT = REPO_ROOT / "pyproject.toml"
 _DYNAMICAL_CATALOG_REPO = "https://github.com/dynamical-org/dynamical-catalog"
 
 
@@ -186,3 +201,32 @@ def test_tracked_refs_are_plausible_git_refs() -> None:
     pattern = re.compile(r"^[A-Za-z0-9._/-]+$")
     bad = [r for r in TRACKED_REFS if not pattern.match(r)]
     assert not bad, f"Suspicious git refs in TRACKED_REFS: {bad}"
+
+
+def test_tracked_refs_includes_pyproject_pinned_dev_branch() -> None:
+    """If `[tool.uv.sources]` pins `dynamical-catalog` to a git branch, that
+    branch must appear in TRACKED_REFS so the compat job runs a fresh
+    `uv run --with` install of it.
+
+    Otherwise the only thing exercising the pinned dev branch is the
+    in-process `dynamical_catalog_fixture` — which can't surface
+    install-time issues like packaging metadata changes, removed deps, or
+    Python version drops. When the upstream branch lands and the
+    `[tool.uv.sources]` pin is dropped, this assertion becomes a no-op
+    and the corresponding entry in TRACKED_REFS should be removed.
+    """
+    tomllib = pytest.importorskip("tomllib")
+    cfg = tomllib.loads(PYPROJECT.read_text())
+    sources = cfg.get("tool", {}).get("uv", {}).get("sources", {})
+    pinned = sources.get("dynamical-catalog")
+    if not isinstance(pinned, dict) or "branch" not in pinned:
+        pytest.skip(
+            "dynamical-catalog is not pinned to a git branch in [tool.uv.sources]"
+        )
+    branch = pinned["branch"]
+    assert branch in TRACKED_REFS, (
+        f"[tool.uv.sources].dynamical-catalog.branch={branch!r} is not in "
+        f"TRACKED_REFS={TRACKED_REFS!r}. Either add {branch!r} to TRACKED_REFS "
+        f"(and the compat workflow matrix), or drop the [tool.uv.sources] "
+        f"pin if the version on PyPI is good enough."
+    )
