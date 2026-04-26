@@ -30,47 +30,42 @@ jobs:
 
   # Per-target compatibility checks. Each matrix entry shows up as its own
   # PR status check (via the job-level `name:` template) so a breaking
-  # change surfaces as `compat (0.4.0) ❌` rather than hiding inside the
+  # change surfaces as `compat (0.5.0) ❌` rather than hiding inside the
   # main test job.
   #
-  # Each `include` entry carries two fields:
-  #   target: the human-readable thing we're testing (PyPI version or git
-  #           ref), shown in the status check name.
-  #   id:     the shell-safe pytest parametrize id used for the -k filter.
-  #           Keeping `[`, `]`, and `.` out of the filter expression avoids
-  #           edge cases in pytest's -k parser.
+  # The matrix is built fresh on every run by scripts/compat_matrix.py:
+  # every non-yanked stable dynamical-catalog release on PyPI (>= the
+  # MIN_VERSION floor in that script) plus every entry in CANARY_REFS.
+  # That means a newly-published release lands in the matrix on the
+  # next CI run with no edits here or in the test file.
   #
-  # Entries must stay in sync with SUPPORTED_RELEASES + TRACKED_REFS in
-  # tests/test_released_catalog_read.py — test_compat_matrix_matches_targets
-  # fails if they diverge. Released versions (e.g. "0.4.0") install from
-  # PyPI; non-semver entries (e.g. "main") install from the matching git ref
-  # on dynamical-org/dynamical-catalog, and should be treated as an advisory
-  # canary rather than a merge blocker.
+  # Each `include` entry the script emits carries:
+  #   target:        the human-readable thing we're testing (PyPI version
+  #                  or git ref), shown in the status check name.
+  #   id:            the shell-safe pytest parametrize id used for the -k
+  #                  filter — alphanumerics + underscore only, so `[`/`.`
+  #                  in semver versions can't trip pytest's -k parser.
+  #   allow-failure: false for PyPI releases (support contract); true for
+  #                  canary refs like `main`, where a dynamical-catalog
+  #                  breakage shouldn't block dynamical-stac PRs.
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # Stdlib-only script; no `uv sync` needed, runs in ~1 second.
+      - id: build
+        run: python scripts/compat_matrix.py >> "$GITHUB_OUTPUT"
+
   compat:
+    needs: discover
     name: "compat (${{ matrix.target }})"
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.allow-failure }}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - target: "0.4.0"
-            id: "0_4_0"
-            allow-failure: false
-          # main is a canary, not a support contract; allow-failure so a
-          # dynamical-catalog breakage doesn't block dynamical-stac PRs.
-          - target: "main"
-            id: "main"
-            allow-failure: true
-          # icechunk-2 is the dev branch currently pinned in
-          # [tool.uv.sources] — i.e. the version dynamical-stac itself
-          # ships against. Running a fresh `uv run --with` install here
-          # complements the in-process `dynamical_catalog_fixture` (which
-          # only exercises the already-imported module). Drop this entry
-          # when the [tool.uv.sources] pin is dropped.
-          - target: "icechunk-2"
-            id: "icechunk_2"
-            allow-failure: true
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
