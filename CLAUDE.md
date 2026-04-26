@@ -20,20 +20,6 @@ access and takes ~20s.
 under `src/`, then `git add stac/` before committing.** Skipping this step
 ships a stale catalog and breaks `test_stac_drift.py` in CI.
 
-## Pre-commit hook (prek)
-
-`.pre-commit-config.yaml` runs `scripts/generate` whenever a staged file is
-under `src/`. We use [prek](https://github.com/j178/prek), a Rust drop-in
-for `pre-commit` that reads the same config. Install once per clone:
-
-```
-uv tool install prek
-prek install
-```
-
-If the hook produces a diff, the commit aborts — `git add stac/` and
-re-commit.
-
 ## Adding a new `CatalogItem`
 
 Adding a new dataset typically requires all of:
