@@ -22,28 +22,17 @@ ships a stale catalog and breaks `test_stac_drift.py` in CI.
 
 ## Pre-commit hook (prek)
 
-To make it hard to forget the regeneration step, this repo ships a
-`.pre-commit-config.yaml` that runs `scripts/generate` automatically when any
-file under `src/` is staged. We use [prek](https://github.com/j178/prek), a
-fast Rust reimplementation of `pre-commit` that consumes the same config.
-
-Install once per clone (uv-based environment):
+`.pre-commit-config.yaml` runs `scripts/generate` whenever a staged file is
+under `src/`. We use [prek](https://github.com/j178/prek), a Rust drop-in
+for `pre-commit` that reads the same config. Install once per clone:
 
 ```
 uv tool install prek
 prek install
 ```
 
-`uv tool install` puts the `prek` binary on your `PATH` (no Python runtime
-required at the call site); `prek install` wires it into `.git/hooks/`.
-
-After that, every `git commit` that touches `src/` will regenerate `stac/`.
-If the hook produces a diff, the commit aborts so you can `git add stac/` and
-re-commit. The hook is a no-op for commits that don't touch `src/`.
-
-You still need to run `./scripts/generate` manually when committing through a
-client that bypasses hooks, or when you want to inspect the diff before
-staging.
+If the hook produces a diff, the commit aborts — `git add stac/` and
+re-commit.
 
 ## Adding a new `CatalogItem`
 
