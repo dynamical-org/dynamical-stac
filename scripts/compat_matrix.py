@@ -35,9 +35,9 @@ PACKAGE = "dynamical-catalog"
 
 # Drop releases older than this. Bump when we stop guaranteeing backwards
 # compatibility for an older `dynamical-catalog` (e.g. when its consumers
-# are extinct in the wild). 0.3.0 is the current floor because 0.2.0
-# predates the icechunk-asset format we ship today.
-MIN_VERSION = "0.3.0"
+# are extinct in the wild). 0.5.0 is the current floor — that's the first
+# release we officially announced as a supported access method.
+MIN_VERSION = "0.5.0"
 
 # Long-lived non-PyPI refs to also exercise. `main` catches breakage in
 # unreleased dynamical-catalog before it ships to users — but it's a canary,
