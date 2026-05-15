@@ -64,13 +64,22 @@ def _all_committed_files() -> set[pathlib.Path]:
 
 
 @pytest.mark.integration
-def test_pystac_round_trip_walks_every_collection() -> None:
+def test_pystac_round_trip_walks_every_collection(
+    served_catalog: tuple[pathlib.Path, str],
+) -> None:
     """`pystac.read_file()` followed by `get_children()` reaches every
     declared collection. This is the most common Python STAC client usage
     pattern; if it can't traverse the tree, neither can downstream tools
     that build on pystac (pystac-client, stactools, odc-stac).
+
+    Reads from the freshly-generated, locally-served catalog rather than
+    the committed tree — the committed tree carries absolute
+    `https://stac.dynamical.org/...` hrefs that pystac would follow over
+    the network, so a PR adding a new collection would always fail here
+    until the deploy lands.
     """
-    catalog = pystac.read_file(str(COMMITTED_STAC / "catalog.json"))
+    _, root_url = served_catalog
+    catalog = pystac.read_file(f"{root_url}/catalog.json")
     assert isinstance(catalog, pystac.Catalog)
 
     children = list(catalog.get_children())
