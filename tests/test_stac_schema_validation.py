@@ -61,15 +61,20 @@ def test_committed_stac_validates_against_schemas(json_path: pathlib.Path) -> No
 
 
 @pytest.mark.integration
-def test_committed_catalog_validate_all_recursively() -> None:
+def test_committed_catalog_validate_all_recursively(
+    served_catalog: tuple[pathlib.Path, str],
+) -> None:
     """`Catalog.validate_all()` walks every child/item and validates each.
 
-    This mirrors what `generate()` does at build time but runs against the
-    committed tree, so it catches drift between what was generated last and
-    what's actually shipped — the case where the committed `stac/` is stale
-    relative to the schemas available today.
+    Reads from the freshly-generated, locally-served catalog rather than
+    the committed tree — `pystac.read_file` would otherwise follow the
+    committed tree's absolute `https://stac.dynamical.org/...` hrefs over
+    the network, so a PR adding a new collection would always fail here
+    until the deploy lands. `test_stac_drift.py` already enforces that
+    the regenerated tree equals the committed tree, so this is equivalent.
     """
-    catalog = pystac.read_file(str(COMMITTED_STAC / "catalog.json"))
+    _, root_url = served_catalog
+    catalog = pystac.read_file(f"{root_url}/catalog.json")
     assert isinstance(catalog, pystac.Catalog)
     catalog.make_all_asset_hrefs_absolute()
     try:
