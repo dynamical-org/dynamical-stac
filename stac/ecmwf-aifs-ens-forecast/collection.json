@@ -1,0 +1,424 @@
+{
+  "type": "Collection",
+  "id": "ecmwf-aifs-ens-forecast",
+  "stac_version": "1.1.0",
+  "description": "Ensemble weather forecasts from the ECMWF Artificial Intelligence Forecasting System (AIFS) ENS model.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "license",
+      "href": "https://apps.ecmwf.int/datasets/licences/general/",
+      "type": "text/html",
+      "title": "ECMWF Terms of Use (additional terms)"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ecmwf-aifs-ens-forecast/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-aifs-ens-forecast.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "Quickstart (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ecmwf-aifs-ens-forecast.ipynb",
+      "type": "text/html",
+      "title": "Quickstart (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.dynamical.org/ecmwf-aifs-ens-forecast/collection.json",
+      "type": "application/json",
+      "title": "ECMWF AIFS ENS forecast"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "ECMWF AIFS ENS forecast data processed by dynamical.org from ECMWF Open Data.",
+  "version": "0.1.0",
+  "model_id": "ecmwf-aifs-ens",
+  "model_name": "ECMWF AIFS ENS",
+  "description_summary": "This dataset is an archive of past and present ECMWF AIFS ENS forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, as well as by the `ensemble_member`. Each forecast steps forward in time along the `lead_time` dimension.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\nECMWF does not provide user support for the free & open datasets. Users should refer to the public [User Forum](https://forum.ecmwf.int/) for any questions related to the source material.\n\n### Model updates\n\nAIFS ENS is updated annually. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/aifs_ens/forecast/template_config.py).",
+  "description_model": "The Artificial Intelligence Forecasting System (AIFS) is a data driven forecast model developed by the European Centre for Medium-Range Weather Forecasts (ECMWF). AIFS-ENS is the ensemble configuration of AIFS, containing 51 ensemble members. AIFS is trained on ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) analyses.",
+  "examples": [
+    {
+      "title": "Maximum temperature in ensemble",
+      "code": "import dynamical_catalog  # dynamical-catalog>=0.5.0\n\nds = dynamical_catalog.open(\"ecmwf-aifs-ens-forecast\")\nds[\"temperature_2m\"].sel(init_time=\"2025-08-01T00\", latitude=0, longitude=0).max().compute()",
+      "language": "python"
+    }
+  ],
+  "cube:dimensions": {
+    "ensemble_member": {
+      "type": "other",
+      "extent": [
+        null,
+        null
+      ],
+      "unit": "1",
+      "size": 51
+    },
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2025-07-02T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        -90.0,
+        90.0
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 721
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        1296000
+      ],
+      "unit": "seconds",
+      "size": 61
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -180.0,
+        179.75
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 1440
+    }
+  },
+  "cube:variables": {
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf"
+    },
+    "geopotential_height_500hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "geopotential_height_850hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "geopotential_height_925hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "temperature_850hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
+    },
+    "temperature_925hpa": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
+    },
+    "wind_u_100m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "100 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "100u"
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
+    },
+    "wind_v_100m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
+    }
+  },
+  "title": "ECMWF AIFS ENS forecast",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -180.0,
+          -90.0,
+          179.75,
+          90.0
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2025-07-02T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Global"
+    ],
+    "spatial_resolution": [
+      "0.25 degrees (~20km)"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2025-07-02 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-360 hours (0-15 days) ahead"
+    ],
+    "forecast_resolution": [
+      "6 hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-ecmwf-aifs-ens/ecmwf-aifs-ens-forecast/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

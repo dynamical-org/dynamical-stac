@@ -79,6 +79,10 @@ FRAGMENTS: dict[str, str] = {
         "a [Radiant Earth](https://radiant.earth/) initiative. "
         "Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/)."
     ),
+    "storage_aws_open_data": (
+        "Storage for this dataset is generously provided by "
+        "[AWS Open Data](https://aws.amazon.com/opendata/)."
+    ),
     "nodd_source_gfs": (
         "The source grib files this archive is constructed from are provided by "
         "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
@@ -177,6 +181,17 @@ MODELS: dict[str, Model] = {
             "developed by the European Centre for Medium-Range Weather Forecasts (ECMWF). This is the "
             "non-ensemble configuration of AIFS that produces a single forecast trace. AIFS is trained "
             "on ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) "
+            "analyses."
+        ),
+    ),
+    "ecmwf-aifs-ens": Model(
+        id="ecmwf-aifs-ens",
+        name="ECMWF AIFS ENS",
+        description=(
+            "The Artificial Intelligence Forecasting System (AIFS) is a data driven forecast model "
+            "developed by the European Centre for Medium-Range Weather Forecasts (ECMWF). AIFS-ENS is "
+            "the ensemble configuration of AIFS, containing 51 ensemble members. AIFS is trained on "
+            "ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) "
             "analyses."
         ),
     ),
@@ -470,6 +485,29 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _quickstart_notebook("ecmwf-aifs-single-forecast"),
             _GFS_AIFS_HDD_NOTEBOOK,
         ),
+        additional_terms=ECMWF_TERMS,
+    ),
+    CatalogItem(
+        id="ecmwf-aifs-ens-forecast",
+        icechunk_href="s3://dynamical-ecmwf-aifs-ens/ecmwf-aifs-ens-forecast/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="ecmwf-aifs-ens",
+        description_summary=(
+            "This dataset is an archive of past and present ECMWF AIFS ENS "
+            "forecasts. Forecasts are identified by an initialization time "
+            "(`init_time`) denoting the start time of the model run, as well "
+            "as by the `ensemble_member`. Each forecast steps forward in time "
+            "along the `lead_time` dimension."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_ens/forecast/template_config.py",
+        examples=(
+            _example(
+                "Maximum temperature in ensemble",
+                'ds = dynamical_catalog.open("ecmwf-aifs-ens-forecast")\n'
+                'ds["temperature_2m"].sel(init_time="2025-08-01T00", latitude=0, longitude=0).max().compute()',
+            ),
+        ),
+        notebooks=(_quickstart_notebook("ecmwf-aifs-ens-forecast"),),
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
