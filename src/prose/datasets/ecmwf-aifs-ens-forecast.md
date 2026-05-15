@@ -10,7 +10,7 @@ on the ECMWF website.
 
 ### Storage
 
-{{ storage }}
+{{ storage_aws_open_data }}
 
 ### Compression
 

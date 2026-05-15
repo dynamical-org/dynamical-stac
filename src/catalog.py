@@ -79,6 +79,10 @@ FRAGMENTS: dict[str, str] = {
         "a [Radiant Earth](https://radiant.earth/) initiative. "
         "Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/)."
     ),
+    "storage_aws_open_data": (
+        "Storage for this dataset is generously provided by "
+        "[AWS Open Data](https://aws.amazon.com/opendata/)."
+    ),
     "nodd_source_gfs": (
         "The source grib files this archive is constructed from are provided by "
         "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
@@ -493,8 +497,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "forecasts. Forecasts are identified by an initialization time "
             "(`init_time`) denoting the start time of the model run, as well "
             "as by the `ensemble_member`. Each forecast steps forward in time "
-            "along the `lead_time` dimension, from 0 to 360 hours (15 days) "
-            "at a 6 hourly step."
+            "along the `lead_time` dimension."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_ens/forecast/template_config.py",
         examples=(
