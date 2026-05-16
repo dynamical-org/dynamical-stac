@@ -4,7 +4,7 @@
 
 ### Data availability
 
-This dataset contains only forecasts initialized on or after 2024-04-01, which are available at the open data 0.25 degree (~20km) resolution. All variables are available for the full period, save for `precipitation_surface`, which is filled with NaNs before 2024-11-13 UTC.
+This dataset contains only forecasts initialized on or after 2024-04-01, which are available at the open data 0.25 degree (~20km) resolution. All variables are available for the full period, save for `categorical_precipitation_type_surface` and `wind_gust_10m`, which are filled with NaNs before 2024-11-13 UTC, and `total_cloud_cover_atmosphere`, which is filled with NaNs before 2025-11-21 UTC.
 
 ### Ensemble members
 
