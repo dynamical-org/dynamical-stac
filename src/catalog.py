@@ -189,7 +189,7 @@ MODELS: dict[str, Model] = {
         name="ECMWF AIFS ENS",
         description=(
             "The Artificial Intelligence Forecasting System (AIFS) is a data driven forecast model "
-            "developed by the European Centre for Medium-Range Weather Forecasts (ECMWF). AIFS-ENS is "
+            "developed by the European Centre for Medium-Range Weather Forecasts (ECMWF). AIFS ENS is "
             "the ensemble configuration of AIFS, containing 51 ensemble members. AIFS is trained on "
             "ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) "
             "analyses."
