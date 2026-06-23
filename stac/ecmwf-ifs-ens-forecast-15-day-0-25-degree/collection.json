@@ -62,7 +62,7 @@
   "model_id": "ecmwf-ifs-ens",
   "model_name": "ECMWF IFS ENS",
   "description_summary": "This dataset is an archive of past and present ECMWF IFS ENS forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, as well as by the `ensemble_member`. Along the `lead_time` dimension, each forecast begins at a 3 hourly forecast step (0-144 hours) and switches to a 6 hourly step for days 6 through 15 of the forecast (hours 144-360). This dataset contains the 00 UTC initialization times only.",
-  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\nECMWF does not provide user support for the free & open datasets. Users should refer to the public [User Forum](https://forum.ecmwf.int/) for any questions related to the source material.\n\n### Data availability\n\nThis dataset contains only forecasts initialized on or after 2024-04-01, which are available at the open data 0.25 degree (~20km) resolution. All variables are available for the full period, save for `categorical_precipitation_type_surface` and `wind_gust_10m`, which are filled with NaNs before 2024-11-13 UTC, and `total_cloud_cover_atmosphere`, which is filled with NaNs before 2025-11-21 UTC.\n\n### Ensemble members\n\nEach forecast contains 51 ensemble members, including a control member (0) and 50 perturbed members (1-50). The control forecast is produced with the best available data and unperturbed models. The other 50 members are each produced with slight perturbations of initial conditions and of the models. Taken together, ensemble of 51 forecasts shows the range of possible outcomes and the likelihood of their occurrence.\n\n### Model updates\n\nIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/ifs_ens/forecast_15_day_0_25_degree/template_config.py).",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\nECMWF does not provide user support for the free & open datasets. Users should refer to the public [User Forum](https://forum.ecmwf.int/) for any questions related to the source material.\n\n### Data availability\n\nThis dataset contains only forecasts initialized on or after 2024-04-01, which are available at the open data 0.25 degree (~20km) resolution. All variables are available for the full period, save for `categorical_precipitation_type_surface` and `wind_gust_10m`, which are filled with NaNs before 2024-11-13 UTC, and `total_cloud_cover_atmosphere`, which is filled with NaNs before 2025-11-21 UTC.\n\n### Ensemble members\n\nEach forecast contains 51 ensemble members, including a control member (0) and 50 perturbed members (1-50). The control forecast is produced with the best available data and unperturbed models. The other 50 members are each produced with slight perturbations of initial conditions and of the models. Taken together, ensemble of 51 forecasts shows the range of possible outcomes and the likelihood of their occurrence.\n\n### Model updates\n\nIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks & shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a regular grid of **chunks** \u2014 the smallest unit read from storage. Reading a single value fetches and decompresses its entire chunk, so queries that stay within a chunk's footprint are fastest. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets.\n\nThe exact chunk and shard shapes for this dataset \u2014 the number of elements along each dimension, the span each covers in coordinate units (e.g. days or degrees), and the uncompressed size \u2014 are published in the `dynamical:chunking` field of this dataset's [STAC collection metadata](https://stac.dynamical.org).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/ifs_ens/forecast_15_day_0_25_degree/template_config.py).",
   "description_model": "The Integrated Forecasting System (IFS) is a global forecast model developed by ECMWF. ENS is an ensemble configuration of IFS, containing 51 ensemble members. IFS consists of a numerical model of the Earth system, which includes an atmospheric model at its heart, coupled with models of other Earth system components such as the ocean. The data assimilation system combines the latest weather observations with a recent forecast to obtain the best possible estimate of the current state of the Earth system.",
   "examples": [
     {
@@ -129,6 +129,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "1",
       "long_name": "Precipitation type",
       "short_name": "ptype",
@@ -143,6 +157,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "degree_Celsius",
       "long_name": "2 metre dewpoint temperature",
       "standard_name": "dew_point_temperature",
@@ -157,6 +185,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "W m-2",
       "long_name": "Surface downward long-wave radiation flux",
       "standard_name": "surface_downwelling_longwave_flux_in_air",
@@ -171,6 +213,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "W m-2",
       "long_name": "Surface downward short-wave radiation flux",
       "standard_name": "surface_downwelling_shortwave_flux_in_air",
@@ -185,6 +241,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
@@ -199,6 +269,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
@@ -213,6 +297,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
@@ -227,6 +325,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "kg m-2 s-1",
       "long_name": "Precipitation rate",
       "standard_name": "precipitation_flux",
@@ -242,6 +354,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "Pa",
       "long_name": "Pressure reduced to MSL",
       "standard_name": "air_pressure_at_mean_sea_level",
@@ -256,6 +382,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "Pa",
       "long_name": "Surface pressure",
       "standard_name": "surface_air_pressure",
@@ -270,6 +410,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "degree_Celsius",
       "long_name": "2 metre temperature",
       "standard_name": "air_temperature",
@@ -284,6 +438,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "degree_Celsius",
       "long_name": "Temperature",
       "standard_name": "air_temperature",
@@ -298,6 +466,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "degree_Celsius",
       "long_name": "Temperature",
       "standard_name": "air_temperature",
@@ -312,6 +494,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "percent",
       "long_name": "Total cloud cover",
       "standard_name": "cloud_area_fraction",
@@ -326,6 +522,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "m s-1",
       "long_name": "Maximum 10 metre wind gust since previous post-processing",
       "standard_name": "wind_speed_of_gust",
@@ -340,6 +550,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "m s-1",
       "long_name": "100 metre U wind component",
       "standard_name": "eastward_wind",
@@ -354,6 +578,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "m s-1",
       "long_name": "10 metre U wind component",
       "standard_name": "eastward_wind",
@@ -368,6 +606,20 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "m s-1",
       "long_name": "100 metre V wind component",
       "standard_name": "northward_wind",
@@ -382,10 +634,75 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "shards": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
       "unit": "m s-1",
       "long_name": "10 metre V wind component",
       "standard_name": "northward_wind",
       "short_name": "10v"
+    }
+  },
+  "dynamical:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        85,
+        51,
+        32,
+        32
+      ],
+      "lengths": {
+        "init_time": "1 day",
+        "lead_time": "363 hours",
+        "latitude": "8\u00b0",
+        "longitude": "8\u00b0"
+      },
+      "uncompressed_size_bytes": 17756160,
+      "uncompressed_size": "16.9 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        85,
+        51,
+        320,
+        320
+      ],
+      "lengths": {
+        "init_time": "1 day",
+        "lead_time": "363 hours",
+        "latitude": "80\u00b0",
+        "longitude": "80\u00b0"
+      },
+      "uncompressed_size_bytes": 1775616000,
+      "uncompressed_size": "1.7 GiB"
     }
   },
   "title": "ECMWF IFS ENS forecast, 15 day, 0.25 degree",

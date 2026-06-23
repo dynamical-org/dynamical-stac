@@ -56,7 +56,7 @@
   "model_id": "noaa-hrrr",
   "model_name": "NOAA HRRR",
   "description_summary": "This dataset is an archive of past and present HRRR forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run. Each forecast has an hourly forecast step along the `lead_time` dimension. This dataset contains only the 00, 06, 12, and 18 hour UTC initialization times which produce the full length, 48 hour forecast.\n\nThis dataset uses the native HRRR Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.",
-  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Data availability\n\nForecasts initialized through 2020-12-02T06 UTC include data only for the first 36 hours; steps 37\u201348 are filled with NaNs. Starting with the 2020-12-02T12 UTC initialization, forecasts cover the full 48 hours.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/).",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Data availability\n\nForecasts initialized through 2020-12-02T06 UTC include data only for the first 36 hours; steps 37\u201348 are filled with NaNs. Starting with the 2020-12-02T12 UTC initialization, forecasts cover the full 48 hours.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks & shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a regular grid of **chunks** \u2014 the smallest unit read from storage. Reading a single value fetches and decompresses its entire chunk, so queries that stay within a chunk's footprint are fastest. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets.\n\nThe exact chunk and shard shapes for this dataset \u2014 the number of elements along each dimension, the span each covers in coordinate units (e.g. days or degrees), and the uncompressed size \u2014 are published in the `dynamical:chunking` field of this dataset's [STAC collection metadata](https://stac.dynamical.org).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/).",
   "description_model": "The High-Resolution Rapid Refresh (HRRR) is a NOAA real-time 3-km resolution, hourly updated, cloud-resolving, convection-allowing atmospheric model, initialized by 3km grids with 3km radar assimilation. Radar data is assimilated in the HRRR every 15 min over a 1-h period adding further detail to that provided by the hourly data assimilation from the 13km radar-enhanced Rapid Refresh.",
   "examples": [
     {
@@ -113,6 +113,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "1",
       "long_name": "Categorical freezing rain",
       "short_name": "cfrzr",
@@ -126,6 +138,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "1",
       "long_name": "Categorical ice pellets",
       "short_name": "cicep",
@@ -139,6 +163,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "1",
       "long_name": "Categorical rain",
       "short_name": "crain",
@@ -152,6 +188,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "1",
       "long_name": "Categorical snow",
       "short_name": "csnow",
@@ -165,6 +213,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "dBZ",
       "long_name": "Maximum/Composite radar reflectivity",
       "short_name": "refc"
@@ -177,6 +237,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "degree_Celsius",
       "long_name": "2 metre dewpoint temperature",
       "standard_name": "dew_point_temperature",
@@ -190,6 +262,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "W m-2",
       "long_name": "Surface downward long-wave radiation flux",
       "standard_name": "surface_downwelling_longwave_flux_in_air",
@@ -203,6 +287,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "W m-2",
       "long_name": "Surface downward short-wave radiation flux",
       "standard_name": "surface_downwelling_shortwave_flux_in_air",
@@ -216,6 +312,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
@@ -229,6 +337,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "percent",
       "long_name": "Percent frozen precipitation",
       "short_name": "cpofp"
@@ -241,6 +361,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "kg m-2",
       "long_name": "Precipitable water",
       "standard_name": "atmosphere_mass_content_of_water_vapor",
@@ -254,6 +386,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "kg m-2 s-1",
       "long_name": "Precipitation rate",
       "standard_name": "precipitation_flux",
@@ -268,6 +412,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "Pa",
       "long_name": "Pressure reduced to MSL",
       "standard_name": "air_pressure_at_mean_sea_level",
@@ -281,6 +437,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "Pa",
       "long_name": "Surface pressure",
       "standard_name": "surface_air_pressure",
@@ -294,6 +462,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "percent",
       "long_name": "2 metre relative humidity",
       "standard_name": "relative_humidity",
@@ -307,6 +487,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "1",
       "long_name": "Snow cover",
       "standard_name": "surface_snow_area_fraction",
@@ -320,6 +512,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "m",
       "long_name": "Snow depth",
       "standard_name": "surface_snow_thickness",
@@ -333,6 +537,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "m",
       "long_name": "Snow depth water equivalent",
       "standard_name": "lwe_thickness_of_surface_snow_amount",
@@ -346,6 +562,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "m s-1",
       "long_name": "Total snowfall rate",
       "short_name": "tsrate",
@@ -359,6 +587,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "degree_Celsius",
       "long_name": "2 metre temperature",
       "standard_name": "air_temperature",
@@ -372,6 +612,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "percent",
       "long_name": "Total cloud cover",
       "standard_name": "cloud_area_fraction",
@@ -385,6 +637,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "m s-1",
       "long_name": "Wind speed (gust)",
       "standard_name": "wind_speed_of_gust",
@@ -398,6 +662,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "m s-1",
       "long_name": "10 metre U wind component",
       "standard_name": "eastward_wind",
@@ -411,6 +687,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "m s-1",
       "long_name": "80 metre U wind component",
       "standard_name": "eastward_wind",
@@ -424,6 +712,18 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "m s-1",
       "long_name": "10 metre V wind component",
       "standard_name": "northward_wind",
@@ -437,10 +737,69 @@
         "x"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
       "unit": "m s-1",
       "long_name": "80 metre V wind component",
       "standard_name": "northward_wind",
       "short_name": "80v"
+    }
+  },
+  "dynamical:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "49 hours",
+        "y": "795 km",
+        "x": "900 km"
+      },
+      "uncompressed_size_bytes": 15582000,
+      "uncompressed_size": "14.9 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "49 hours",
+        "y": "3177 km",
+        "x": "5397 km"
+      },
+      "uncompressed_size_bytes": 373968000,
+      "uncompressed_size": "356.6 MiB"
     }
   },
   "title": "NOAA HRRR forecast, 48 hour",

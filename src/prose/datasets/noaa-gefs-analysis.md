@@ -27,6 +27,10 @@ For most of the time range of the archive the source data is available at 0.25-d
 
 {{ storage }}
 
+### Chunks & shards
+
+{{ chunking }}
+
 ### Compression
 
 {{ compression }}

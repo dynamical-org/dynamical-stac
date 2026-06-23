@@ -74,7 +74,7 @@
   "model_id": "ecmwf-aifs-single",
   "model_name": "ECMWF AIFS Single",
   "description_summary": "This dataset is an archive of past and present ECMWF AIFS Single forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run. Each forecast steps forward in time along the `lead_time` dimension, from 0 to 360 hours (15 days) at a 6 hourly step.",
-  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\nECMWF does not provide user support for the free & open datasets. Users should refer to the public [User Forum](https://forum.ecmwf.int/) for any questions related to the source material.\n\n### Model updates\n\nAIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/aifs_single/forecast/template_config.py).",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/).\n\nECMWF does not provide user support for the free & open datasets. Users should refer to the public [User Forum](https://forum.ecmwf.int/) for any questions related to the source material.\n\n### Model updates\n\nAIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks & shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a regular grid of **chunks** \u2014 the smallest unit read from storage. Reading a single value fetches and decompresses its entire chunk, so queries that stay within a chunk's footprint are fastest. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets.\n\nThe exact chunk and shard shapes for this dataset \u2014 the number of elements along each dimension, the span each covers in coordinate units (e.g. days or degrees), and the uncompressed size \u2014 are published in the `dynamical:chunking` field of this dataset's [STAC collection metadata](https://stac.dynamical.org).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/aifs_single/forecast/template_config.py).",
   "description_model": "The Artificial Intelligence Forecasting System (AIFS) is a data driven forecast model developed by the European Centre for Medium-Range Weather Forecasts (ECMWF). This is the non-ensemble configuration of AIFS that produces a single forecast trace. AIFS is trained on ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) analyses.",
   "examples": [
     {
@@ -131,6 +131,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "degree_Celsius",
       "long_name": "2 metre dewpoint temperature",
       "standard_name": "dew_point_temperature",
@@ -144,6 +156,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "W m-2",
       "long_name": "Surface downward long-wave radiation flux",
       "standard_name": "surface_downwelling_longwave_flux_in_air",
@@ -157,6 +181,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "W m-2",
       "long_name": "Surface downward short-wave radiation flux",
       "standard_name": "surface_downwelling_shortwave_flux_in_air",
@@ -170,6 +206,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
@@ -183,6 +231,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
@@ -196,6 +256,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
@@ -209,6 +281,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "kg m-2 s-1",
       "long_name": "Precipitation rate",
       "standard_name": "precipitation_flux",
@@ -223,6 +307,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "Pa",
       "long_name": "Pressure reduced to MSL",
       "standard_name": "air_pressure_at_mean_sea_level",
@@ -236,6 +332,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "Pa",
       "long_name": "Surface pressure",
       "standard_name": "surface_air_pressure",
@@ -249,6 +357,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "degree_Celsius",
       "long_name": "2 metre temperature",
       "standard_name": "air_temperature",
@@ -262,6 +382,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "degree_Celsius",
       "long_name": "Temperature",
       "standard_name": "air_temperature",
@@ -275,6 +407,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "degree_Celsius",
       "long_name": "Temperature",
       "standard_name": "air_temperature",
@@ -288,6 +432,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "percent",
       "long_name": "Total cloud cover",
       "standard_name": "cloud_area_fraction",
@@ -301,6 +457,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "m s-1",
       "long_name": "100 metre U wind component",
       "standard_name": "eastward_wind",
@@ -314,6 +482,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "m s-1",
       "long_name": "10 metre U wind component",
       "standard_name": "eastward_wind",
@@ -327,6 +507,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "m s-1",
       "long_name": "100 metre V wind component",
       "standard_name": "northward_wind",
@@ -340,10 +532,69 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "shards": [
+        1,
+        61,
+        723,
+        1440
+      ],
       "unit": "m s-1",
       "long_name": "10 metre V wind component",
       "standard_name": "northward_wind",
       "short_name": "10v"
+    }
+  },
+  "dynamical:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        61,
+        241,
+        240
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "366 hours",
+        "latitude": "60.25\u00b0",
+        "longitude": "60\u00b0"
+      },
+      "uncompressed_size_bytes": 14112960,
+      "uncompressed_size": "13.5 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        61,
+        723,
+        1440
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "366 hours",
+        "latitude": "180.25\u00b0",
+        "longitude": "360\u00b0"
+      },
+      "uncompressed_size_bytes": 254033280,
+      "uncompressed_size": "242.3 MiB"
     }
   },
   "title": "ECMWF AIFS Single forecast",

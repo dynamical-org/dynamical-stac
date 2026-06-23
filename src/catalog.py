@@ -102,6 +102,20 @@ FRAGMENTS: dict[str, str] = {
         "ECMWF does not provide user support for the free & open datasets. Users should refer to the public "
         "[User Forum](https://forum.ecmwf.int/) for any questions related to the source material."
     ),
+    "chunking": (
+        "This dataset is stored in [Zarr](https://zarr.dev/) format, which "
+        "splits each variable into a regular grid of **chunks** — the smallest "
+        "unit read from storage. Reading a single value fetches and decompresses "
+        "its entire chunk, so queries that stay within a chunk's footprint are "
+        "fastest. Chunks are grouped into larger **shards** (the objects actually "
+        "written to storage), which keeps the object count manageable for "
+        "long-archive datasets.\n\n"
+        "The exact chunk and shard shapes for this dataset — the number of "
+        "elements along each dimension, the span each covers in coordinate units "
+        "(e.g. days or degrees), and the uncompressed size — are published in the "
+        "`dynamical:chunking` field of this dataset's "
+        "[STAC collection metadata](https://stac.dynamical.org)."
+    ),
     # References {{ reformatter_url }} — supplied per-dataset at load time.
     "compression": (
         "The data values in this dataset have been rounded in their binary "

@@ -73,11 +73,51 @@ class CubeVariable(BaseModel):
 
     dimensions: list[str] = Field(min_length=1)
     type: Literal["data"] = "data"
+    # Chunk/shard element counts per dimension, ordered to match ``dimensions``.
+    # ``chunks`` follows the (unofficial but datacube-v2.2.0-valid) convention
+    # from stac-extensions/datacube#7; ``shards`` mirrors it for zarr v3 sharding.
+    chunks: list[int] | None = None
+    shards: list[int] | None = None
     unit: str | None = None
     long_name: str = Field(min_length=1)
     standard_name: str | None = None
     short_name: str | None = None
     comment: str | None = None
+
+
+class ChunkGrid(BaseModel):
+    """One chunking grid (a chunk or a shard) for the dataset's data variables.
+
+    ``shape`` is the element count per dimension, ordered to match
+    ``dimensions``. ``lengths`` maps each dimension that has a physical extent
+    (spatial/temporal) to a human-readable span covered by one chunk/shard
+    (e.g. ``"30 days"``, ``"30.25°"``); dimensionless axes like
+    ``ensemble_member`` are omitted.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    dimensions: list[str] = Field(min_length=1)
+    shape: list[int] = Field(min_length=1)
+    lengths: dict[str, str] = Field(default_factory=dict)
+    uncompressed_size_bytes: int = Field(ge=0)
+    uncompressed_size: str = Field(min_length=1)
+
+
+class Chunking(BaseModel):
+    """Collection-level chunk + shard summary, shared by all data variables.
+
+    Emitted only when every data variable shares one
+    ``(dims, chunks, shards, dtype)`` signature (the case for all current
+    datasets); :func:`_build_chunking` raises otherwise so non-uniform stores
+    fail loudly at generation time rather than shipping a misleading summary.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    dtype: str = Field(min_length=1)
+    chunk: ChunkGrid
+    shard: ChunkGrid
 
 
 def _dim_entry(name: str, coord: xr.DataArray) -> CubeDimension:
@@ -142,6 +182,130 @@ def _td_seconds(value: np.timedelta64) -> int:
     return int(pd.Timedelta(value).total_seconds())
 
 
+def _num(value: float) -> str:
+    """Format a number without trailing zeros (e.g. 30.25 -> '30.25', 795 -> '795')."""
+    return f"{value:g}"
+
+
+def _human_bytes(n: int) -> str:
+    size = float(n)
+    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
+        if size < 1024 or unit == "TiB":
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    raise AssertionError("unreachable")
+
+
+def _human_timedelta(td: pd.Timedelta) -> str:
+    secs = td.total_seconds()
+    if secs % 86400 == 0:
+        days = int(secs // 86400)
+        return f"{days} day" if days == 1 else f"{days} days"
+    if secs % 3600 == 0:
+        hours = int(secs // 3600)
+        return f"{hours} hour" if hours == 1 else f"{hours} hours"
+    minutes = int(secs // 60)
+    return f"{minutes} minute" if minutes == 1 else f"{minutes} minutes"
+
+
+def _human_spatial(magnitude: float, dim: str, units: str) -> str | None:
+    """Format a spatial span as degrees or metres/km, or ``None`` if not spatial."""
+    if units in ("degree_north", "degree_east") or dim in ("latitude", "longitude"):
+        return f"{_num(magnitude)}°"
+    if units == "m" or dim in ("x", "y"):
+        if magnitude >= 1000:
+            return f"{_num(magnitude / 1000)} km"
+        return f"{_num(magnitude)} m"
+    return None
+
+
+def _coord_length(ds: xr.Dataset, dim: str, n: int) -> str | None:
+    """Human-readable span covered by ``n`` consecutive cells along ``dim``.
+
+    Returns ``None`` for dimensions without a physical extent (e.g. integer
+    ``ensemble_member``). The span is measured from the actual coordinate
+    values, so non-uniform axes (e.g. ECMWF IFS ENS ``lead_time``, which
+    switches from a 3- to a 6-hourly step) are handled correctly. When ``n``
+    reaches or exceeds the dimension size the chunk spans the whole dimension.
+    """
+    if dim not in ds.coords:
+        return None
+    coord = ds[dim]
+    values = coord.values
+    size = values.size
+    if size < 2:
+        return None
+    if n < size:
+        span = values[n] - values[0]
+    else:  # covers the full dimension; extend by one cell width
+        span = (values[-1] - values[0]) + (values[1] - values[0])
+
+    kind = values.dtype.kind
+    if kind in ("M", "m"):  # datetime64 / timedelta64
+        return _human_timedelta(pd.Timedelta(span))
+    if kind == "f":
+        units = str(coord.attrs.get("units", ""))
+        return _human_spatial(abs(float(span)), dim, units)
+    return None
+
+
+def _chunk_grid(
+    ds: xr.Dataset, dims: list[str], shape: tuple[int, ...], itemsize: int
+) -> ChunkGrid:
+    lengths = {}
+    for dim, n in zip(dims, shape, strict=True):
+        length = _coord_length(ds, dim, int(n))
+        if length is not None:
+            lengths[dim] = length
+    nbytes = int(np.prod(shape)) * itemsize
+    return ChunkGrid(
+        dimensions=dims,
+        shape=[int(n) for n in shape],
+        lengths=lengths,
+        uncompressed_size_bytes=nbytes,
+        uncompressed_size=_human_bytes(nbytes),
+    )
+
+
+def _build_chunking(ds: xr.Dataset) -> Chunking | None:
+    """Collection-level chunk/shard summary, or ``None`` if encoding lacks it.
+
+    Raises if data variables don't all share one ``(dims, chunks, shards,
+    dtype)`` signature, so a non-uniform store can't ship a misleading summary.
+    """
+    signatures: dict[
+        str, tuple[tuple[str, ...], tuple[int, ...], tuple[int, ...], str]
+    ] = {}
+    for name in ds.data_vars:
+        da = ds[name]
+        chunks = da.encoding.get("chunks")
+        shards = da.encoding.get("shards")
+        if chunks is None or shards is None:
+            continue
+        signatures[str(name)] = (
+            tuple(str(d) for d in da.dims),
+            tuple(chunks),
+            tuple(shards),
+            str(da.encoding["dtype"]),
+        )
+    if not signatures:
+        return None
+    if len(set(signatures.values())) > 1:
+        raise ValueError(
+            f"Data variables have non-uniform chunk/shard signatures, so a "
+            f"single collection-level chunking summary would be misleading: "
+            f"{signatures}"
+        )
+    dims_t, chunks, shards, dtype = next(iter(signatures.values()))
+    dims = list(dims_t)
+    itemsize = np.dtype(dtype).itemsize
+    return Chunking(
+        dtype=dtype,
+        chunk=_chunk_grid(ds, dims, chunks, itemsize),
+        shard=_chunk_grid(ds, dims, shards, itemsize),
+    )
+
+
 def _time_dim(ds: xr.Dataset) -> str:
     for candidate in ("init_time", "time"):
         if candidate in ds.dims:
@@ -171,6 +335,7 @@ class CollectionInput(BaseModel):
     temporal_start: dt.datetime
     cube_dimensions: dict[str, CubeDimension]
     cube_variables: dict[str, CubeVariable]
+    chunking: Chunking | None = None
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: str = Field(min_length=1)
     attribution: str = Field(min_length=1)
@@ -232,8 +397,12 @@ class CollectionInput(BaseModel):
         variables: dict[str, CubeVariable] = {}
         for name in sorted(ds.data_vars):
             da = ds.data_vars[name]
+            chunks = da.encoding.get("chunks")
+            shards = da.encoding.get("shards")
             variables[str(name)] = CubeVariable(
                 dimensions=list(da.dims),
+                chunks=[int(n) for n in chunks] if chunks is not None else None,
+                shards=[int(n) for n in shards] if shards is not None else None,
                 unit=_str_or_none(da.attrs.get("units") or da.attrs.get("unit")),
                 long_name=da.attrs["long_name"],
                 standard_name=_str_or_none(da.attrs.get("standard_name")),
@@ -250,6 +419,7 @@ class CollectionInput(BaseModel):
             temporal_start=t0,
             cube_dimensions=dims,
             cube_variables=variables,
+            chunking=_build_chunking(ds),
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
             attribution=ds.attrs["attribution"],
@@ -301,6 +471,8 @@ class CollectionInput(BaseModel):
         collection.extra_fields["cube:variables"] = {
             k: v.model_dump(exclude_none=True) for k, v in self.cube_variables.items()
         }
+        if self.chunking is not None:
+            collection.extra_fields["dynamical:chunking"] = self.chunking.model_dump()
 
         collection.add_asset(
             "icechunk",
