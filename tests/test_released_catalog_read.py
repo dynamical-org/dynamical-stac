@@ -92,7 +92,15 @@ _HARNESS = textwrap.dedent(
         ds = dynamical_catalog.open(cid)
         first = next(iter(ds.data_vars))
         da = ds[first]
-        value = da.isel({d: 0 for d in da.dims}).load().item()
+        # Read the data variable's own values via `.variable`, which drops the
+        # attached coordinates. A bare `.load()` would instead materialise every
+        # coordinate, and some stores carry auxiliary timedelta coordinates
+        # (e.g. ingested_forecast_length) whose unset entries use an int64
+        # sentinel with no _FillValue — decoding that overflows xarray's
+        # timedelta range check. Real query patterns (sel/reduce then compute)
+        # never materialise those coordinates, so this keeps the check faithful
+        # to actual usage while still exercising open + a real data read.
+        value = da.isel({d: 0 for d in da.dims}).variable.values.item()
         assert isinstance(value, (int, float)), f"{cid}.{first} -> {value!r}"
         if isinstance(value, float):
             assert not math.isinf(value), f"{cid}.{first} is inf"
