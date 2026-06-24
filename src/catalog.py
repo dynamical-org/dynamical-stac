@@ -110,11 +110,11 @@ FRAGMENTS: dict[str, str] = {
         "fastest. Chunks are grouped into larger **shards** (the objects actually "
         "written to storage), which keeps the object count manageable for "
         "long-archive datasets.\n\n"
-        "The exact chunk and shard shapes for this dataset — the number of "
-        "elements along each dimension, the span each covers in coordinate units "
-        "(e.g. days or degrees), and the uncompressed size — are published in the "
-        "`dynamical:chunking` field of this dataset's "
-        "[STAC collection metadata](https://stac.dynamical.org)."
+        "For this dataset, the element count and coordinate span of each chunk "
+        "and shard:\n\n"
+        "{{ chunking_table }}\n\n"
+        "The same values are published in the `dynamical-org:chunking` field of "
+        "this dataset's [STAC collection metadata](https://stac.dynamical.org)."
     ),
     # References {{ reformatter_url }} — supplied per-dataset at load time.
     "compression": (
@@ -254,12 +254,25 @@ class CatalogItem(BaseModel):
     def icechunk_prefix(self) -> str:
         return urlparse(self.icechunk_href).path.lstrip("/")
 
-    @property
-    def description_details(self) -> str:
-        """Long-form prose, loaded from ``prose/datasets/{id}.md``."""
-        return _load_prose(
+    def description_details(self, chunking_table: str | None = None) -> str:
+        """Long-form prose from ``prose/datasets/{id}.md``.
+
+        ``chunking_table`` is the rendered per-dataset chunk/shard table. If the
+        prose references it (every dataset does) but none was computed — the
+        store lacks chunk/shard encoding — this raises rather than shipping a
+        dataset page with a dangling table.
+        """
+        text = _load_prose(
             f"datasets/{self.id}.md", reformatter_url=self.reformatter_url
         )
+        if "{{ chunking_table }}" in text:
+            if chunking_table is None:
+                raise ValueError(
+                    f"{self.id} prose references the chunk/shard table but the "
+                    f"store has no chunk/shard encoding to render it"
+                )
+            text = text.replace("{{ chunking_table }}", chunking_table)
+        return text
 
     @model_validator(mode="after")
     def _quickstart_slug_matches_id(self) -> CatalogItem:

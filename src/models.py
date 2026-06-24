@@ -119,6 +119,30 @@ class Chunking(BaseModel):
     chunk: ChunkGrid
     shard: ChunkGrid
 
+    def as_markdown_table(self) -> str:
+        """Transposed Markdown table — one row per dimension (element count plus
+        its coordinate span), then an uncompressed-size row, with chunk and
+        shard columns. Transposed so high-dimensional datasets don't side-scroll
+        on narrow screens.
+        """
+
+        def cell(grid: ChunkGrid, dim: str, n: int) -> str:
+            length = grid.lengths.get(dim)
+            return f"{n} ({length})" if length is not None else str(n)
+
+        rows = ["| dimension | chunk | shard |", "|---|---|---|"]
+        for dim, c, s in zip(
+            self.chunk.dimensions, self.chunk.shape, self.shard.shape, strict=True
+        ):
+            rows.append(
+                f"| {dim} | {cell(self.chunk, dim, c)} | {cell(self.shard, dim, s)} |"
+            )
+        rows.append(
+            f"| **uncompressed** | {self.chunk.uncompressed_size} "
+            f"| {self.shard.uncompressed_size} |"
+        )
+        return "\n".join(rows)
+
 
 def _dim_entry(name: str, coord: xr.DataArray) -> CubeDimension:
     values = coord.values
@@ -208,14 +232,24 @@ def _human_timedelta(td: pd.Timedelta) -> str:
     return f"{minutes} minute" if minutes == 1 else f"{minutes} minutes"
 
 
+_SPATIAL_DIMS = frozenset({"latitude", "longitude", "x", "y"})
+
+
 def _human_spatial(magnitude: float, dim: str, units: str) -> str | None:
-    """Format a spatial span as degrees or metres/km, or ``None`` if not spatial."""
-    if units in ("degree_north", "degree_east") or dim in ("latitude", "longitude"):
+    """Format a spatial span as degrees or metres/km, or ``None`` if not spatial.
+
+    Matches purely on ``units``; the dimension name is used only to fail loudly
+    when a known spatial axis carries coordinate units we don't handle yet,
+    rather than silently dropping it from the chunk/shard summary.
+    """
+    if units in ("degree_north", "degree_east"):
         return f"{_num(magnitude)}°"
-    if units == "m" or dim in ("x", "y"):
+    if units == "m":
         if magnitude >= 1000:
             return f"{_num(magnitude / 1000)} km"
         return f"{_num(magnitude)} m"
+    if dim in _SPATIAL_DIMS:
+        raise ValueError(f"Spatial dim {dim!r} has unhandled coord units {units!r}")
     return None
 
 
@@ -237,15 +271,22 @@ def _coord_length(ds: xr.Dataset, dim: str, n: int) -> str | None:
         return None
     if n < size:
         span = values[n] - values[0]
+        # If the last n cells cover a different span than the first n, the axis
+        # is non-uniform (e.g. ECMWF IFS ENS lead_time, 3h->6h) so the single
+        # reported span is only approximate.
+        approx = (values[size - 1] - values[size - 1 - n]) != span
     else:  # covers the full dimension; extend by one cell width
         span = (values[-1] - values[0]) + (values[1] - values[0])
+        approx = False
+    prefix = "~" if approx else ""
 
     kind = values.dtype.kind
     if kind in ("M", "m"):  # datetime64 / timedelta64
-        return _human_timedelta(pd.Timedelta(span))
+        return prefix + _human_timedelta(pd.Timedelta(span))
     if kind == "f":
         units = str(coord.attrs.get("units", ""))
-        return _human_spatial(abs(float(span)), dim, units)
+        formatted = _human_spatial(abs(float(span)), dim, units)
+        return f"{prefix}{formatted}" if formatted is not None else None
     return None
 
 
@@ -410,6 +451,8 @@ class CollectionInput(BaseModel):
                 comment=_str_or_none(da.attrs.get("comment")),
             )
         model = MODELS[item.model_id]
+        chunking = _build_chunking(ds)
+        chunking_table = chunking.as_markdown_table() if chunking is not None else None
         return cls(
             id=item.id,
             name=ds.attrs["name"],
@@ -419,7 +462,7 @@ class CollectionInput(BaseModel):
             temporal_start=t0,
             cube_dimensions=dims,
             cube_variables=variables,
-            chunking=_build_chunking(ds),
+            chunking=chunking,
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
             attribution=ds.attrs["attribution"],
@@ -429,7 +472,7 @@ class CollectionInput(BaseModel):
             model_id=item.model_id,
             model_name=model.name,
             description_summary=item.description_summary,
-            description_details=item.description_details,
+            description_details=item.description_details(chunking_table),
             description_model=model.description,
             examples=item.examples,
             notebooks=item.notebooks,
@@ -472,7 +515,9 @@ class CollectionInput(BaseModel):
             k: v.model_dump(exclude_none=True) for k, v in self.cube_variables.items()
         }
         if self.chunking is not None:
-            collection.extra_fields["dynamical:chunking"] = self.chunking.model_dump()
+            collection.extra_fields["dynamical-org:chunking"] = (
+                self.chunking.model_dump()
+            )
 
         collection.add_asset(
             "icechunk",

@@ -156,15 +156,52 @@ def test_from_dataset_populates_variable_chunks_and_collection_chunking() -> Non
     assert result.chunking is not None
 
     fields = result.to_pystac_collection().extra_fields
-    assert fields["dynamical:chunking"]["chunk"]["shape"] == [1, 2, 2]
+    assert fields["dynamical-org:chunking"]["chunk"]["shape"] == [1, 2, 2]
     assert fields["cube:variables"]["var0"]["chunks"] == [1, 2, 2]
 
 
-def test_from_dataset_omits_chunking_without_encoding() -> None:
+def test_from_dataset_raises_without_encoding_when_prose_needs_table() -> None:
+    # The dataset prose references the chunk/shard table, so a store with no
+    # chunk/shard encoding (nothing to render) must fail loudly rather than
+    # ship a page with a dangling table.
     ds = _chunked_dataset()
     for name in ds.data_vars:
         ds[name].encoding = {}
-    result = CollectionInput.from_dataset(_catalog_item(), ds)
-    assert result.chunking is None
-    assert result.cube_variables["var0"].chunks is None
-    assert "dynamical:chunking" not in result.to_pystac_collection().extra_fields
+    with pytest.raises(ValueError, match="no chunk/shard encoding"):
+        CollectionInput.from_dataset(_catalog_item(), ds)
+
+
+def test_coord_length_tildes_non_uniform_span() -> None:
+    # 3-hourly for the first stretch, then 6-hourly: the first n cells span a
+    # different duration than the last n, so the reported span is approximate.
+    times = pd.to_datetime(
+        ["2020-01-01T00", "2020-01-01T03", "2020-01-01T06", "2020-01-01T12"]
+    ).to_numpy()
+    coord = xr.DataArray(times, dims="lead_time", name="lead_time")
+    ds = xr.Dataset(coords={"lead_time": coord})
+    assert _coord_length(ds, "lead_time", 2) == "~6 hours"
+
+
+def test_coord_length_raises_on_unhandled_spatial_units() -> None:
+    coord = xr.DataArray(
+        np.array([0.0, 1.0, 2.0]),
+        dims="latitude",
+        name="latitude",
+        attrs={"units": "bananas"},
+    )
+    ds = xr.Dataset(coords={"latitude": coord})
+    with pytest.raises(ValueError, match="unhandled coord units"):
+        _coord_length(ds, "latitude", 2)
+
+
+def test_chunking_as_markdown_table_is_transposed() -> None:
+    chunking = _build_chunking(_chunked_dataset(chunks=(1, 2, 2), shards=(2, 4, 4)))
+    assert chunking is not None
+    assert chunking.as_markdown_table() == (
+        "| dimension | chunk | shard |\n"
+        "|---|---|---|\n"
+        "| time | 1 (1 hour) | 2 (2 hours) |\n"
+        "| latitude | 2 (0.5°) | 4 (1°) |\n"
+        "| longitude | 2 (0.5°) | 4 (1°) |\n"
+        "| **uncompressed** | 16.0 B | 128.0 B |"
+    )

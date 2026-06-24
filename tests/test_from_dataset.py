@@ -41,7 +41,8 @@ def _synthetic_dataset(
     times = pd.date_range("2020-01-01", periods=3, freq="D").to_numpy()
     lats = np.array([-10.0, 0.0, 10.0])
     lons = np.array([100.0, 110.0, 120.0])
-    data = np.zeros((len(times), len(lats), len(lons)), dtype="float32")
+    shape = (len(times), len(lats), len(lons))
+    data = np.zeros(shape, dtype="float32")
     var_attrs = {"units": "K", "long_name": "Near-surface temperature"}
     if extra_var_attrs:
         var_attrs.update(extra_var_attrs)
@@ -55,13 +56,23 @@ def _synthetic_dataset(
     }
     if ds_attrs_overrides:
         ds_attrs.update(ds_attrs_overrides)
-    return xr.Dataset(
+    ds = xr.Dataset(
         data_vars={
             "temperature": ((time_dim, "latitude", "longitude"), data, var_attrs)
         },
-        coords={time_dim: times, "latitude": lats, "longitude": lons},
+        coords={
+            time_dim: times,
+            "latitude": ("latitude", lats, {"units": "degree_north"}),
+            "longitude": ("longitude", lons, {"units": "degree_east"}),
+        },
         attrs=ds_attrs,
     )
+    ds["temperature"].encoding = {
+        "chunks": (1, len(lats), len(lons)),
+        "shards": shape,
+        "dtype": np.dtype("float32"),
+    }
+    return ds
 
 
 def test_from_dataset_rejects_mismatched_dataset_id() -> None:
@@ -97,8 +108,8 @@ def test_from_dataset_prefers_init_time_over_time() -> None:
         coords={
             "init_time": inits,
             "time": times,
-            "latitude": lats,
-            "longitude": lons,
+            "latitude": ("latitude", lats, {"units": "degree_north"}),
+            "longitude": ("longitude", lons, {"units": "degree_east"}),
         },
         attrs={
             "dataset_id": _TEST_ID,
@@ -109,6 +120,11 @@ def test_from_dataset_prefers_init_time_over_time() -> None:
             "dataset_version": "v0.0.0",
         },
     )
+    ds["t"].encoding = {
+        "chunks": (1, 1, 2, 2),
+        "shards": (2, 2, 2, 2),
+        "dtype": np.dtype("float32"),
+    }
     result = CollectionInput.from_dataset(item, ds)
     assert result.temporal_start.year == 2022
 
