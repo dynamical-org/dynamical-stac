@@ -56,7 +56,7 @@
   "model_id": "dwd-icon-eu",
   "model_name": "DWD ICON-EU",
   "description_summary": "This dataset is an archive of past and present ICON-EU forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run and step forward in time along the `lead_time` dimension. This dataset contains only the 00, 06, 12, and 18 hour UTC initialization times which produce the full length, 5 day forecast.",
-  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by\n[DWD Open Data](https://www.dwd.de/EN/ourservices/opendata/opendata.html)\nand the [dynamical.org DWD ICON grib archive](https://source.coop/dynamical/dwd-icon-grib)\non [Source Cooperative](https://source.coop/).\n\n### Storage\n\nIcechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\nStorage for the dynamical.org DWD ICON-EU grib archive is generously provided by\n[Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/dwd/icon_eu/forecast_5_day/template_config.py).",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by\n[DWD Open Data](https://www.dwd.de/EN/ourservices/opendata/opendata.html)\nand the [dynamical.org DWD ICON grib archive](https://source.coop/dynamical/dwd-icon-grib)\non [Source Cooperative](https://source.coop/).\n\n### Storage\n\nIcechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\nStorage for the dynamical.org DWD ICON-EU grib archive is generously provided by\n[Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative.\n\n### Chunks & shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a regular grid of **chunks** \u2014 the smallest unit read from storage. Reading a single value fetches and decompresses its entire chunk, so queries that stay within a chunk's footprint are fastest. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets.\n\nFor this dataset, the element count and coordinate span of each chunk and shard:\n\n| dimension | chunk | shard |\n|---|---|---|\n| init_time | 1 (6 hours) | 1 (6 hours) |\n| lead_time | 93 (121 hours) | 93 (121 hours) |\n| latitude | 219 (13.6875\u00b0) | 657 (41.0625\u00b0) |\n| longitude | 153 (9.5625\u00b0) | 1377 (86.0625\u00b0) |\n| **uncompressed** | 11.9 MiB | 321.0 MiB |\n\nThe same values are published in the `dynamical-org:chunking` field of this dataset's [STAC collection metadata](https://stac.dynamical.org).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/dwd/icon_eu/forecast_5_day/template_config.py).",
   "description_model": "ICON-EU is a regional weather forecast model operated by Deutscher Wetterdienst (DWD), Germany's national meteorological service. ICON-EU is a nested configuration of DWD's global ICON (Icosahedral Non-hydrostatic) model that provides high-resolution forecasts over Europe.",
   "examples": [
     {
@@ -113,6 +113,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "percent",
       "long_name": "High cloud cover",
       "standard_name": "cloud_area_fraction_in_atmosphere_layer",
@@ -127,6 +139,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "percent",
       "long_name": "Low cloud cover",
       "standard_name": "cloud_area_fraction_in_atmosphere_layer",
@@ -141,6 +165,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "percent",
       "long_name": "Medium cloud cover",
       "standard_name": "cloud_area_fraction_in_atmosphere_layer",
@@ -155,6 +191,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "J kg-1",
       "long_name": "Convective available potential energy",
       "standard_name": "atmosphere_convective_available_potential_energy",
@@ -168,6 +216,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "degree_Celsius",
       "long_name": "2 metre dewpoint temperature",
       "standard_name": "dew_point_temperature",
@@ -181,6 +241,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "W m-2",
       "long_name": "Surface diffuse short-wave radiation flux",
       "standard_name": "surface_diffuse_downwelling_shortwave_flux_in_air",
@@ -194,6 +266,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "W m-2",
       "long_name": "Surface direct short-wave radiation flux",
       "standard_name": "surface_direct_downwelling_shortwave_flux_in_air",
@@ -208,6 +292,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "kg m-2",
       "long_name": "Precipitable water",
       "standard_name": "atmosphere_mass_content_of_water_vapor",
@@ -221,6 +317,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "kg m-2 s-1",
       "long_name": "Precipitation rate",
       "standard_name": "precipitation_flux",
@@ -235,6 +343,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "Pa",
       "long_name": "Pressure reduced to MSL",
       "standard_name": "air_pressure_at_mean_sea_level",
@@ -248,6 +368,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "Pa",
       "long_name": "Surface pressure",
       "standard_name": "surface_air_pressure",
@@ -261,6 +393,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "percent",
       "long_name": "2 metre relative humidity",
       "standard_name": "relative_humidity",
@@ -274,6 +418,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "m",
       "long_name": "Snow depth",
       "standard_name": "surface_snow_thickness",
@@ -287,6 +443,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "m",
       "long_name": "Snow depth water equivalent",
       "standard_name": "lwe_thickness_of_surface_snow_amount",
@@ -301,6 +469,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "degree_Celsius",
       "long_name": "2 metre temperature",
       "standard_name": "air_temperature",
@@ -314,6 +494,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "percent",
       "long_name": "Total cloud cover",
       "standard_name": "cloud_area_fraction",
@@ -327,6 +519,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "m s-1",
       "long_name": "Maximum 10 metre wind gust since previous post-processing",
       "standard_name": "wind_speed_of_gust",
@@ -340,6 +544,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "m s-1",
       "long_name": "10 metre U wind component",
       "standard_name": "eastward_wind",
@@ -353,10 +569,69 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "shards": [
+        1,
+        93,
+        657,
+        1377
+      ],
       "unit": "m s-1",
       "long_name": "10 metre V wind component",
       "standard_name": "northward_wind",
       "short_name": "10v"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        93,
+        219,
+        153
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "121 hours",
+        "latitude": "13.6875\u00b0",
+        "longitude": "9.5625\u00b0"
+      },
+      "uncompressed_size_bytes": 12464604,
+      "uncompressed_size": "11.9 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        93,
+        657,
+        1377
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "121 hours",
+        "latitude": "41.0625\u00b0",
+        "longitude": "86.0625\u00b0"
+      },
+      "uncompressed_size_bytes": 336544308,
+      "uncompressed_size": "321.0 MiB"
     }
   },
   "title": "DWD ICON-EU forecast, 5 day",

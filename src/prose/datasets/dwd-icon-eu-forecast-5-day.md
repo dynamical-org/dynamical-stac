@@ -11,6 +11,10 @@ Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/o
 Storage for the dynamical.org DWD ICON-EU grib archive is generously provided by
 [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative.
 
+### Chunks & shards
+
+{{ chunking }}
+
 ### Compression
 
 {{ compression }}

@@ -18,6 +18,10 @@ This dataset has NaN values where source data are unavailable.
 
 {{ storage }}
 
+### Chunks & shards
+
+{{ chunking }}
+
 ### Compression
 
 {{ compression }}

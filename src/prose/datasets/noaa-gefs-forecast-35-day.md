@@ -13,6 +13,10 @@ Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep
 
 {{ storage }}
 
+### Chunks & shards
+
+{{ chunking }}
+
 ### Compression
 
 {{ compression }}

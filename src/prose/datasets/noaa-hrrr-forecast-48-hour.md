@@ -10,6 +10,10 @@ Forecasts initialized through 2020-12-02T06 UTC include data only for the first 
 
 {{ storage }}
 
+### Chunks & shards
+
+{{ chunking }}
+
 ### Compression
 
 {{ compression }}

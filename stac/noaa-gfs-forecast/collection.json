@@ -68,7 +68,7 @@
   "model_id": "noaa-gfs",
   "model_name": "NOAA GFS",
   "description_summary": "This dataset is an archive of past and present GFS forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run. Each forecast steps forward in time along the `lead_time` dimension.",
-  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gfs-bdp-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/gfs/forecast/template_config.py).",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gfs-bdp-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks & shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a regular grid of **chunks** \u2014 the smallest unit read from storage. Reading a single value fetches and decompresses its entire chunk, so queries that stay within a chunk's footprint are fastest. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets.\n\nFor this dataset, the element count and coordinate span of each chunk and shard:\n\n| dimension | chunk | shard |\n|---|---|---|\n| init_time | 1 (6 hours) | 1 (6 hours) |\n| lead_time | 105 (~105 hours) | 210 (385 hours) |\n| latitude | 121 (30.25\u00b0) | 726 (180.25\u00b0) |\n| longitude | 121 (30.25\u00b0) | 726 (181.5\u00b0) |\n| **uncompressed** | 5.9 MiB | 422.2 MiB |\n\nThe same values are published in the `dynamical-org:chunking` field of this dataset's [STAC collection metadata](https://stac.dynamical.org).\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/gfs/forecast/template_config.py).",
   "description_model": "The Global Forecast System (GFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) weather forecast model that generates data for dozens of atmospheric and land-soil variables, including temperatures, winds, precipitation, soil moisture, and atmospheric ozone concentration. The system couples four separate models (atmosphere, ocean model, land/soil model, and sea ice) that work together to depict weather conditions.",
   "examples": [
     {
@@ -125,6 +125,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "1",
       "long_name": "Categorical freezing rain",
       "short_name": "cfrzr",
@@ -138,6 +150,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "1",
       "long_name": "Categorical ice pellets",
       "short_name": "cicep",
@@ -151,6 +175,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "1",
       "long_name": "Categorical rain",
       "short_name": "crain",
@@ -164,6 +200,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "1",
       "long_name": "Categorical snow",
       "short_name": "csnow",
@@ -177,6 +225,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "W m-2",
       "long_name": "Surface downward long-wave radiation flux",
       "standard_name": "surface_downwelling_longwave_flux_in_air",
@@ -191,6 +251,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "W m-2",
       "long_name": "Surface downward short-wave radiation flux",
       "standard_name": "surface_downwelling_shortwave_flux_in_air",
@@ -205,6 +277,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
@@ -218,6 +302,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "degree_Celsius",
       "long_name": "Maximum temperature",
       "standard_name": "air_temperature",
@@ -232,6 +328,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "degree_Celsius",
       "long_name": "Minimum temperature",
       "standard_name": "air_temperature",
@@ -246,6 +354,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "percent",
       "long_name": "Percent frozen precipitation",
       "short_name": "cpofp"
@@ -258,6 +378,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "kg m-2",
       "long_name": "Precipitable water",
       "standard_name": "atmosphere_mass_content_of_water_vapor",
@@ -271,6 +403,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "kg m-2 s-1",
       "long_name": "Precipitation rate",
       "standard_name": "precipitation_flux",
@@ -285,6 +429,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "Pa",
       "long_name": "Pressure reduced to MSL",
       "standard_name": "air_pressure_at_mean_sea_level",
@@ -298,6 +454,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "Pa",
       "long_name": "Surface pressure",
       "standard_name": "surface_air_pressure",
@@ -311,6 +479,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "percent",
       "long_name": "2 metre relative humidity",
       "standard_name": "relative_humidity",
@@ -324,6 +504,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "degree_Celsius",
       "long_name": "2 metre temperature",
       "standard_name": "air_temperature",
@@ -337,6 +529,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "percent",
       "long_name": "Total cloud cover",
       "standard_name": "cloud_area_fraction",
@@ -351,6 +555,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "m s-1",
       "long_name": "100 metre U wind component",
       "standard_name": "eastward_wind",
@@ -364,6 +580,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "m s-1",
       "long_name": "10 metre U wind component",
       "standard_name": "eastward_wind",
@@ -377,6 +605,18 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "m s-1",
       "long_name": "100 metre V wind component",
       "standard_name": "northward_wind",
@@ -390,10 +630,69 @@
         "longitude"
       ],
       "type": "data",
+      "chunks": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "shards": [
+        1,
+        210,
+        726,
+        726
+      ],
       "unit": "m s-1",
       "long_name": "10 metre V wind component",
       "standard_name": "northward_wind",
       "short_name": "10v"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        105,
+        121,
+        121
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "~105 hours",
+        "latitude": "30.25\u00b0",
+        "longitude": "30.25\u00b0"
+      },
+      "uncompressed_size_bytes": 6149220,
+      "uncompressed_size": "5.9 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        210,
+        726,
+        726
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "385 hours",
+        "latitude": "180.25\u00b0",
+        "longitude": "181.5\u00b0"
+      },
+      "uncompressed_size_bytes": 442743840,
+      "uncompressed_size": "422.2 MiB"
     }
   },
   "title": "NOAA GFS forecast",

@@ -20,6 +20,10 @@ on the ECMWF website.
 
 {{ storage }}
 
+### Chunks & shards
+
+{{ chunking }}
+
 ### Compression
 
 {{ compression }}

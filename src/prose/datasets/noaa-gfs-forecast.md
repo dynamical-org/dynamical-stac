@@ -6,6 +6,10 @@
 
 {{ storage }}
 
+### Chunks & shards
+
+{{ chunking }}
+
 ### Compression
 
 {{ compression }}
