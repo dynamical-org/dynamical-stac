@@ -105,9 +105,7 @@ FRAGMENTS: dict[str, str] = {
     "chunking": (
         "This dataset is stored in [Zarr](https://zarr.dev/) format, which "
         "splits each variable into a grid of **chunks** — the smallest "
-        "unit read from storage. Reading a single value fetches and decompresses "
-        "its entire chunk, so queries that stay within a chunk's footprint are "
-        "fastest. Chunks are grouped into larger **shards** (the objects actually "
+        "unit read from storage. Chunks are grouped into larger **shards** (the objects actually "
         "written to storage), which keeps the object count manageable for "
         "long-archive datasets.\n\n"
         "The element count and coordinate span of this dataset for chunks "
