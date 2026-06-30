@@ -40,16 +40,21 @@ def served_catalog(
 ) -> Iterator[tuple[pathlib.Path, str]]:
     """Generate the catalog once per session and serve it over HTTP.
 
-    `generate()` opens all 9 icechunk stores from S3 and fetches every STAC
-    extension schema. That's ~40s of network and it's identical for every
+    `generate()` opens every catalog icechunk store from S3 and fetches every
+    STAC extension schema. That's ~40s of network and it's identical for every
     integration test that needs a catalog — so we do it once and share.
+
+    Includes staging items so the served catalog covers every `CATALOG_ITEMS`
+    entry: the integration tests assert against `_COLLECTION_IDS` (which spans
+    staging items too), and staging datasets are still published to
+    stac-staging, so they must generate and read correctly here.
 
     Yields (catalog_dir, root_url). Consumers must treat both as read-only.
     """
     tmp_path = tmp_path_factory.mktemp("served_catalog")
     with _serve(tmp_path) as port:
         root_url = f"http://127.0.0.1:{port}"
-        generate(tmp_path, root_href=root_url)
+        generate(tmp_path, root_href=root_url, include_staging=True)
         yield tmp_path, root_url
 
 
