@@ -227,6 +227,7 @@
       ],
       "unit": "dBZ",
       "long_name": "Maximum/Composite radar reflectivity",
+      "standard_name": "equivalent_reflectivity_factor",
       "short_name": "refc"
     },
     "dew_point_temperature_2m": {

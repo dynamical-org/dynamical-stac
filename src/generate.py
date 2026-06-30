@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import concurrent.futures
+import os
 import pathlib
 
 import icechunk
@@ -10,7 +11,7 @@ import xarray as xr
 from catalog import CATALOG_ITEMS, CatalogItem
 from models import CollectionInput
 
-ROOT_HREF = "https://stac.dynamical.org"
+ROOT_HREF = os.environ.get("STAC_ROOT_HREF", "https://stac.dynamical.org")
 CATALOG_TITLE = "dynamical.org STAC Catalog"
 
 
