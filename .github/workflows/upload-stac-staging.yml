@@ -1,13 +1,15 @@
 name: Upload staging STAC catalog
 
-# Deploys the STAC catalog to stac-staging.dynamical.org on every push to the
-# `staging` branch. Unlike the production workflow, this REGENERATES the catalog
-# in CI (with the staging root href baked into every link) rather than uploading
-# the committed `stac/` tree, whose links are absolute and point at production.
+# Deploys the STAC catalog to stac-staging.dynamical.org from `main`. Unlike the
+# production workflow this REGENERATES the catalog with STAC_INCLUDE_STAGING=1
+# (so CatalogItem.staging=True datasets are included) and the staging root href
+# baked into every link, then uploads to the stac-staging R2 bucket. Production
+# (upload-stac.yml) leaves those datasets out.
 
 on:
   push:
-    branches: [staging]
+    branches: [main]
+    paths: ["src/**", "stac/**"]
   workflow_dispatch:
 
 permissions:
@@ -23,10 +25,11 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
-      - name: Generate catalog with staging root href
+      - name: Generate catalog (incl. staging) with staging root href
         run: uv run --locked python src/__main__.py generate
         env:
           STAC_ROOT_HREF: https://stac-staging.dynamical.org
+          STAC_INCLUDE_STAGING: "1"
       - name: Upload to staging R2 bucket
         run: uv run --locked python src/__main__.py upload stac
         env:

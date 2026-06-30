@@ -243,6 +243,9 @@ class CatalogItem(BaseModel):
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
     notebooks: tuple[DatasetNotebook, ...] = Field(min_length=1)
     additional_terms: AdditionalTerms | None = None
+    # Unreleased dataset: excluded from the production catalog, published only to
+    # stac-staging so it can be previewed before going live. See generate.py.
+    staging: bool = False
 
     @property
     def icechunk_bucket(self) -> str:

@@ -14,6 +14,19 @@ from models import CollectionInput
 ROOT_HREF = os.environ.get("STAC_ROOT_HREF", "https://stac.dynamical.org")
 CATALOG_TITLE = "dynamical.org STAC Catalog"
 
+# Staging items (CatalogItem.staging=True) are unreleased datasets: excluded
+# from the production catalog and published only to stac-staging. The staging
+# deploy sets STAC_INCLUDE_STAGING=1; everything else (prod, local, tests)
+# leaves it unset and gets the production catalog.
+INCLUDE_STAGING = os.environ.get("STAC_INCLUDE_STAGING") == "1"
+
+
+def _select_items(
+    items: list[CatalogItem], *, include_staging: bool
+) -> list[CatalogItem]:
+    """Production excludes staging items; the staging catalog includes them."""
+    return [item for item in items if include_staging or not item.staging]
+
 
 def _open_icechunk(item: CatalogItem) -> xr.Dataset:
     storage = icechunk.s3_storage(
@@ -42,12 +55,18 @@ def _set_self_link_titles(catalog: pystac.Catalog) -> None:
                 link.title = obj.title
 
 
-def generate(output_dir: pathlib.Path, root_href: str = ROOT_HREF) -> None:
+def generate(
+    output_dir: pathlib.Path,
+    root_href: str = ROOT_HREF,
+    include_staging: bool = INCLUDE_STAGING,
+) -> None:
     catalog = pystac.Catalog(
         id="dynamical-org",
         title=CATALOG_TITLE,
         description="Cloud-optimized weather and climate datasets from dynamical.org",
     )
+
+    items = _select_items(CATALOG_ITEMS, include_staging=include_staging)
 
     def _load(item: CatalogItem) -> tuple[CatalogItem, xr.Dataset]:
         print(f"{item.id}: opening icechunk store")  # noqa: T201
@@ -56,9 +75,9 @@ def generate(output_dir: pathlib.Path, root_href: str = ROOT_HREF) -> None:
         return item, ds
 
     with concurrent.futures.ThreadPoolExecutor(
-        max_workers=len(CATALOG_ITEMS)
+        max_workers=max(1, len(items))
     ) as executor:
-        for item, ds in executor.map(_load, CATALOG_ITEMS):
+        for item, ds in executor.map(_load, items):
             collection_input = CollectionInput.from_dataset(item, ds)
             catalog.add_child(collection_input.to_pystac_collection())
 
