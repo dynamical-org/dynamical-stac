@@ -443,7 +443,14 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", ensemble_member=0, lead_time="24h").compute()',
             ),
         ),
-        notebooks=(_quickstart_notebook("noaa-gefs-forecast-10-day-spatial-dev"),),
+        # Placeholder until a dedicated notebook exists: reuse the GEFS 35-day
+        # notebook. A non-"Quickstart" title sidesteps _quickstart_slug_matches_id.
+        notebooks=(
+            DatasetNotebook(
+                slug="noaa-gefs-forecast-35-day",
+                title="Example notebook (GEFS 35-day forecast)",
+            ),
+        ),
         staging=True,
     ),
     CatalogItem(
