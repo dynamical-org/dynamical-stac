@@ -4,6 +4,7 @@ import concurrent.futures
 import os
 import pathlib
 
+import gribberish.zarr  # noqa: F401 -- registers the GribberishCodec used by virtual datasets
 import icechunk
 import pystac
 import xarray as xr

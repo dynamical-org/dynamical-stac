@@ -354,12 +354,25 @@ def _time_dim(ds: xr.Dataset) -> str:
     raise ValueError(f"No time dimension found in dims {list(ds.dims)}")
 
 
+def _wrap_longitude(lon: xr.DataArray) -> xr.DataArray:
+    """Map a 0-360 longitude axis into the STAC-required [-180, 180] range.
+
+    Datasets on the native 0-360 grid (e.g. GEFS) would otherwise produce a
+    bbox east edge of ~359.75, which ``CollectionInput._check_bbox`` rejects.
+    Axes already within range are returned unchanged so the existing -180..180
+    datasets don't drift.
+    """
+    if float(lon.min()) >= -180.0 and float(lon.max()) <= 180.0:
+        return lon
+    return ((lon + 180.0) % 360.0) - 180.0
+
+
 def _bbox(ds: xr.Dataset) -> tuple[float, float, float, float]:
     if "latitude" not in ds.coords or "longitude" not in ds.coords:
         raise ValueError(
             f"Dataset missing latitude/longitude coords; has {list(ds.coords)}"
         )
-    lat, lon = ds.latitude, ds.longitude
+    lat, lon = ds.latitude, _wrap_longitude(ds.longitude)
     return (float(lon.min()), float(lat.min()), float(lon.max()), float(lat.max()))
 
 
