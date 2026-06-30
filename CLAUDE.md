@@ -34,3 +34,20 @@ Adding a new dataset typically requires all of:
   asserts HTTP 200. The Quickstart notebook's slug must equal the dataset
   `id` (enforced by `CatalogItem._quickstart_slug_matches_id`).
 - Regenerated `stac/` output (see above).
+
+## Staging datasets
+
+Set `staging=True` on a `CatalogItem` to publish it only to the staging catalog
+(`stac-staging.dynamical.org`), not production. Staging items are excluded from
+`generate()` by default and from the committed `stac/` tree; they're included
+only when `STAC_INCLUDE_STAGING=1` (set by `upload-stac-staging.yml`, which runs
+on every push to `main` and uploads to the `stac-staging` bucket). Flip the flag
+to `False` and merge to release the dataset to production.
+
+A staging dataset still needs its prose file and notebook (those tests run over
+all items). Because staging items aren't in the committed `stac/`, regenerating
+locally with `./scripts/generate` won't show them — use
+`STAC_INCLUDE_STAGING=1 ./scripts/generate` to preview the staging catalog.
+
+dynamical.org Cloudflare PR previews build against `stac-staging`, so a staging
+dataset appears in website previews while staying hidden from the live site.
