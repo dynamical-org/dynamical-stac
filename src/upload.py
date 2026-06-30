@@ -5,7 +5,7 @@ import pathlib
 
 import boto3
 
-_BUCKET = "stac"
+_BUCKET = os.environ.get("R2_BUCKET", "stac")
 
 
 def upload(stac_dir: pathlib.Path) -> None:
