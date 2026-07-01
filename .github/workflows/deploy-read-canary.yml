@@ -1,0 +1,31 @@
+name: Deploy read canary to Modal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/read_canary.py
+      - .github/workflows/deploy-read-canary.yml
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-read-canary
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # workflow_dispatch can target any branch; never expose prod Modal
+    # credentials to a deploy from anything but main.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+      # modal is a deploy-time tool, not a project dependency — pull it in
+      # ephemerally rather than adding it to pyproject/uv.lock.
+      - name: Deploy
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: uv run --no-project --with modal modal deploy scripts/read_canary.py
