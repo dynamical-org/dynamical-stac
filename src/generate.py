@@ -8,6 +8,7 @@ import gribberish.zarr  # noqa: F401 -- registers the GribberishCodec used by vi
 import icechunk
 import pystac
 import xarray as xr
+import zarr
 
 from catalog import CATALOG_ITEMS, CatalogItem
 from models import CollectionInput
@@ -29,7 +30,15 @@ def _select_items(
     return [item for item in items if include_staging or not item.staging]
 
 
-def _open_icechunk(item: CatalogItem) -> xr.Dataset:
+def _open_icechunk(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
+    """Open the store's root group plus any nested child groups.
+
+    The root dataset is opened exactly as before, so existing single-group
+    collections regenerate byte-for-byte. Child groups (e.g. the HRRR spatial
+    dataset's ``pressure_level`` / ``model_level`` vertical groups) are opened
+    separately and returned keyed by group name; ``from_dataset`` flattens their
+    variables into the collection. Single-group stores yield an empty dict.
+    """
     storage = icechunk.s3_storage(
         bucket=item.icechunk_bucket,
         prefix=item.icechunk_prefix,
@@ -38,7 +47,14 @@ def _open_icechunk(item: CatalogItem) -> xr.Dataset:
     )
     repo = icechunk.Repository.open(storage)
     session = repo.readonly_session("main")
-    return xr.open_zarr(session.store, consolidated=False, decode_timedelta=True)
+    store = session.store
+    root = xr.open_zarr(store, consolidated=False, decode_timedelta=True)
+    child_names = [name for name, _ in zarr.open_group(store, mode="r").groups()]
+    subgroups = {
+        name: xr.open_zarr(store, group=name, consolidated=False, decode_timedelta=True)
+        for name in child_names
+    }
+    return root, subgroups
 
 
 def _verify_read(ds: xr.Dataset) -> None:
@@ -69,17 +85,19 @@ def generate(
 
     items = _select_items(CATALOG_ITEMS, include_staging=include_staging)
 
-    def _load(item: CatalogItem) -> tuple[CatalogItem, xr.Dataset]:
+    def _load(
+        item: CatalogItem,
+    ) -> tuple[CatalogItem, xr.Dataset, dict[str, xr.Dataset]]:
         print(f"{item.id}: opening icechunk store")  # noqa: T201
-        ds = _open_icechunk(item)
+        ds, subgroups = _open_icechunk(item)
         _verify_read(ds)
-        return item, ds
+        return item, ds, subgroups
 
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=max(1, len(items))
     ) as executor:
-        for item, ds in executor.map(_load, items):
-            collection_input = CollectionInput.from_dataset(item, ds)
+        for item, ds, subgroups in executor.map(_load, items):
+            collection_input = CollectionInput.from_dataset(item, ds, subgroups)
             catalog.add_child(collection_input.to_pystac_collection())
 
     catalog.normalize_hrefs(root_href)
