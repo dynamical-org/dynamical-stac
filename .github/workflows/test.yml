@@ -70,7 +70,12 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - run: uv sync --group integration
-      - run: uv run pytest tests/test_released_catalog_read.py -m integration -k "${{ matrix.id }}" -v
+      # matrix.id is passed via an env var rather than interpolated into the
+      # script so a malicious value can't inject shell commands (matrix values
+      # trace back to PyPI release metadata via the discover job).
+      - run: uv run pytest tests/test_released_catalog_read.py -m integration -k "$TARGET_ID" -v
+        env:
+          TARGET_ID: ${{ matrix.id }}
 
   notify-on-failure:
     needs: test
