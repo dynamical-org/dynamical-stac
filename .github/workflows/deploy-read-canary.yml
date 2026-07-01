@@ -8,6 +8,9 @@ on:
       - .github/workflows/deploy-read-canary.yml
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-read-canary
   cancel-in-progress: true
