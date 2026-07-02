@@ -55,7 +55,7 @@ def read_canary() -> None:
     ds = dynamical_catalog.open(collection_id)
     first_var = next(iter(ds.data_vars))
     da = ds[first_var]
-    value = da.isel({dim: 0 for dim in da.dims}).load().item()
+    value = da.isel(dict.fromkeys(da.dims, 0)).load().item()
 
     # NaN is fine (sparse/unobserved corner cells), but the read must return a
     # real number — an inf or a non-numeric means the decode path is broken.
