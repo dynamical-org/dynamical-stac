@@ -481,6 +481,46 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour"),),
     ),
     CatalogItem(
+        id="noaa-hrrr-forecast-48-hour-spatial",
+        icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour-spatial/v0.5.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="noaa-hrrr",
+        description_summary=(
+            "This dataset is an archive of past and present HRRR forecasts, "
+            "optimized for spatial (map) access patterns. Forecasts are "
+            "identified by an initialization time (`init_time`) denoting the "
+            "start time of the model run, and step forward hourly along the "
+            "`lead_time` dimension out to 48 hours. This dataset contains only "
+            "the 00, 06, 12, and 18 hour UTC initialization times which produce "
+            "the full length, 48 hour forecast.\n\nThis is a virtual dataset: "
+            "each chunk references a single GRIB message in NOAA's source "
+            "archive, decoded at read time, and served on the native HRRR 3 km "
+            "Lambert Conformal Conic grid with spatial indexing along the `x` "
+            "and `y` dimensions. Alongside the surface and single-level "
+            "variables it includes `pressure_level` and `model_level` groups "
+            "holding the full vertical profiles. It is an experimental dataset "
+            "and its structure is not yet settled."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_48_hour_spatial/template_config.py",
+        examples=(
+            _example(
+                "A temperature map at one forecast step",
+                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-spatial")\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").compute()',
+            ),
+        ),
+        # Placeholder until a dedicated notebook exists: reuse the materialized
+        # HRRR 48-hour notebook. A non-"Quickstart" title sidesteps
+        # _quickstart_slug_matches_id.
+        notebooks=(
+            DatasetNotebook(
+                slug="noaa-hrrr-forecast-48-hour",
+                title="Example notebook (HRRR 48-hour forecast)",
+            ),
+        ),
+        staging=True,
+    ),
+    CatalogItem(
         id="noaa-hrrr-analysis",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-analysis/v0.2.0.icechunk/",
         icechunk_region="us-west-2",

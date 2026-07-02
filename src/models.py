@@ -376,6 +376,22 @@ def _bbox(ds: xr.Dataset) -> tuple[float, float, float, float]:
     return (float(lon.min()), float(lat.min()), float(lon.max()), float(lat.max()))
 
 
+def _cube_variable(da: xr.DataArray) -> CubeVariable:
+    """Build a datacube ``cube:variables`` entry from a data variable."""
+    chunks = da.encoding.get("chunks")
+    shards = da.encoding.get("shards")
+    return CubeVariable(
+        dimensions=list(da.dims),
+        chunks=[int(n) for n in chunks] if chunks is not None else None,
+        shards=[int(n) for n in shards] if shards is not None else None,
+        unit=_str_or_none(da.attrs.get("units") or da.attrs.get("unit")),
+        long_name=da.attrs["long_name"],
+        standard_name=_str_or_none(da.attrs.get("standard_name")),
+        short_name=_str_or_none(da.attrs.get("short_name")),
+        comment=_str_or_none(da.attrs.get("comment")),
+    )
+
+
 class CollectionInput(BaseModel):
     """Typed, validated input used to construct a STAC Collection."""
 
@@ -429,7 +445,23 @@ class CollectionInput(BaseModel):
         return f"https://dynamical.org/catalog/{self.id}/"
 
     @classmethod
-    def from_dataset(cls, item: CatalogItem, ds: xr.Dataset) -> CollectionInput:
+    def from_dataset(
+        cls,
+        item: CatalogItem,
+        ds: xr.Dataset,
+        subgroups: dict[str, xr.Dataset] | None = None,
+    ) -> CollectionInput:
+        """Build a collection from the store's root group ``ds``.
+
+        ``subgroups`` maps each nested zarr group name (e.g. ``pressure_level``)
+        to its opened dataset. The datacube extension has no notion of a group
+        hierarchy, so we flatten: the group's extra dimension is added to
+        ``cube:dimensions`` and its variables are listed under ``{group}/{var}``
+        keys (following GeoZarr's slash-path convention). This keeps the keys
+        unique when the same variable name appears in several groups (e.g.
+        ``temperature`` in both ``pressure_level`` and ``model_level``). Passing
+        no subgroups reproduces the single-group output exactly.
+        """
         ds_id = ds.attrs["dataset_id"]
         if ds_id != item.id:
             raise ValueError(
@@ -448,21 +480,20 @@ class CollectionInput(BaseModel):
         # Sort by variable name so regeneration is deterministic; xarray's
         # `data_vars` iteration order depends on zarr store internals and
         # silently reshuffles across generator runs otherwise.
-        variables: dict[str, CubeVariable] = {}
-        for name in sorted(ds.data_vars):
-            da = ds.data_vars[name]
-            chunks = da.encoding.get("chunks")
-            shards = da.encoding.get("shards")
-            variables[str(name)] = CubeVariable(
-                dimensions=list(da.dims),
-                chunks=[int(n) for n in chunks] if chunks is not None else None,
-                shards=[int(n) for n in shards] if shards is not None else None,
-                unit=_str_or_none(da.attrs.get("units") or da.attrs.get("unit")),
-                long_name=da.attrs["long_name"],
-                standard_name=_str_or_none(da.attrs.get("standard_name")),
-                short_name=_str_or_none(da.attrs.get("short_name")),
-                comment=_str_or_none(da.attrs.get("comment")),
-            )
+        variables: dict[str, CubeVariable] = {
+            str(name): _cube_variable(ds.data_vars[name])
+            for name in sorted(ds.data_vars)
+        }
+        # Fold each nested group's new dimension(s) and variables into the same
+        # flat datacube maps. Iterate groups in sorted order for determinism.
+        for group_name, group_ds in sorted((subgroups or {}).items()):
+            for name in sorted(group_ds.dims):
+                if name in group_ds.coords and name not in dims:
+                    dims[name] = _dim_entry(name, group_ds[name])
+            for name in sorted(group_ds.data_vars):
+                variables[f"{group_name}/{name}"] = _cube_variable(
+                    group_ds.data_vars[name]
+                )
         model = MODELS[item.model_id]
         chunking = _build_chunking(ds)
         chunking_table = chunking.as_markdown_table() if chunking is not None else None
