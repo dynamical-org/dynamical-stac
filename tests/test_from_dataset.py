@@ -90,6 +90,61 @@ def test_from_dataset_coerces_naive_time_to_utc() -> None:
     assert result.temporal_start == dt.datetime(2020, 1, 1, tzinfo=dt.UTC)
 
 
+def _synthetic_subgroup() -> xr.Dataset:
+    """A nested-group dataset: same axes as the root plus a vertical ``level``."""
+    times = pd.date_range("2020-01-01", periods=3, freq="D").to_numpy()
+    lats = np.array([-10.0, 0.0, 10.0])
+    lons = np.array([100.0, 110.0, 120.0])
+    levels = np.array([1000, 500, 250], dtype="int64")
+    data = np.zeros((len(times), len(lats), len(lons), len(levels)), dtype="float32")
+    return xr.Dataset(
+        data_vars={
+            "temperature": (
+                ("time", "latitude", "longitude", "level"),
+                data,
+                {"units": "K", "long_name": "Temperature on levels"},
+            ),
+        },
+        coords={
+            "time": times,
+            "latitude": ("latitude", lats, {"units": "degree_north"}),
+            "longitude": ("longitude", lons, {"units": "degree_east"}),
+            "level": (
+                "level",
+                levels,
+                {"units": "hPa", "standard_name": "air_pressure"},
+            ),
+        },
+    )
+
+
+def test_from_dataset_flattens_subgroups_with_slash_keys() -> None:
+    item = _catalog_item()
+    root = _synthetic_dataset()
+    result = CollectionInput.from_dataset(
+        item, root, {"pressure_level": _synthetic_subgroup()}
+    )
+    # The group's new vertical dimension is folded into cube:dimensions.
+    assert "level" in result.cube_dimensions
+    assert result.cube_dimensions["level"].size == 3
+    assert result.cube_dimensions["level"].unit == "hPa"
+    # The root variable keeps its bare name; the group variable of the same name
+    # is disambiguated by a slash-prefixed key rather than colliding.
+    assert "temperature" in result.cube_variables
+    assert "pressure_level/temperature" in result.cube_variables
+    grouped = result.cube_variables["pressure_level/temperature"]
+    assert grouped.dimensions == ["time", "latitude", "longitude", "level"]
+
+
+def test_from_dataset_empty_subgroups_matches_no_subgroups() -> None:
+    item = _catalog_item()
+    root = _synthetic_dataset()
+    without = CollectionInput.from_dataset(item, root)
+    empty = CollectionInput.from_dataset(item, root, {})
+    assert without.cube_variables == empty.cube_variables
+    assert without.cube_dimensions == empty.cube_dimensions
+
+
 def test_from_dataset_prefers_init_time_over_time() -> None:
     item = _catalog_item()
     times = pd.date_range("2021-06-01", periods=2, freq="D").to_numpy()

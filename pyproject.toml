@@ -5,12 +5,15 @@ description = "STAC catalog generation for dynamical.org"
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.42.91",
+    "gribberish==1.5.0",
     "icechunk>=0.2.0",
     "pandas>=2.2.0",
     "pydantic>=2.0",
     "pystac[validation]>=1.10.0",
     "xarray>=2024.10.0",
-    "zarr>=3.0.0",
+    # >=3.2.1 for the built-in `scale_offset` codec, which virtual datasets use
+    # for their read-time unit-scaling filters (e.g. Kelvin->Celsius).
+    "zarr>=3.2.1",
 ]
 
 [dependency-groups]
@@ -21,7 +24,7 @@ dev = [
 ]
 integration = [
     "pystac-client>=0.8.0",
-    "dynamical-catalog",
+    "dynamical-catalog>=0.7.0",
 ]
 
 [tool.pytest.ini_options]
@@ -92,8 +95,3 @@ ignore = [
     "ARG001",  # unused function arg
     "ARG005",  # unused lambda arg
 ]
-
-[tool.uv.sources]
-# Use the icechunk-2 branch until it's merged and a new release is published on PyPI.
-# After merge, switch to a pinned PyPI version (e.g. dynamical-catalog>=0.4.0) and drop this source.
-dynamical-catalog = { git = "https://github.com/dynamical-org/dynamical-catalog", branch = "icechunk-2" }

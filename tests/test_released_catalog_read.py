@@ -58,6 +58,18 @@ from compat_matrix import (  # noqa: E402
 
 _DYNAMICAL_CATALOG_REPO = "https://github.com/dynamical-org/dynamical-catalog"
 
+# Virtual datasets store chunks as GRIB messages, decoded by the gribberish
+# codec, which dynamical-catalog does not depend on. A real consumer installs
+# it and imports gribberish.zarr to register the codec; the harness does the
+# same. Pin matches the version that wrote the chunks (see pyproject.toml).
+_GRIBBERISH_SPEC = "gribberish==1.5.0"
+
+# Virtual datasets also apply zarr's built-in `scale_offset` codec (read-time
+# unit scaling, e.g. Kelvin->Celsius), which only exists in zarr >= 3.2.1. Old
+# releases resolved by `uv run --with` might otherwise pull an earlier zarr and
+# fail to open the store, so floor it here as a real consumer would.
+_ZARR_SPEC = "zarr>=3.2.1"
+
 # Resolve targets at module import (collection time) so each one becomes
 # its own pytest parametrize id. PyPI is hit once; the result is reused
 # inside this process. If PyPI is unreachable, collection fails loudly —
@@ -80,6 +92,7 @@ _HARNESS = textwrap.dedent(
     """
     import json, math, sys
     import dynamical_catalog
+    import gribberish.zarr  # registers the GribberishCodec for virtual datasets
     from dynamical_catalog import _stac
 
     root_url, collection_ids_json = sys.argv[1], sys.argv[2]
@@ -129,6 +142,10 @@ def test_released_dynamical_catalog_opens_every_collection(
             f"{sys.version_info.major}.{sys.version_info.minor}",
             "--with",
             _install_spec(target),
+            "--with",
+            _GRIBBERISH_SPEC,
+            "--with",
+            _ZARR_SPEC,
             "python",
             str(harness),
             root_url,
