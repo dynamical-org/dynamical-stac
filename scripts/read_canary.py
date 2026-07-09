@@ -27,11 +27,8 @@ from __future__ import annotations
 
 import modal
 
-# Still pinned to icechunk-2 rather than a released PyPI version: switching
-# depends on dynamical-org/reformatters#724 (zarr/gribberish dep bump) landing
-# and a new dynamical-catalog release following it. Re-check once that lands.
 image = modal.Image.debian_slim(python_version="3.12").pip_install(
-    "dynamical-catalog @ git+https://github.com/dynamical-org/dynamical-catalog@icechunk-2",
+    "dynamical-catalog>=0.7.0",
     "requests>=2.32",
 )
 
