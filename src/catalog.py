@@ -303,8 +303,12 @@ class CatalogItem(BaseModel):
         for prefix in self.virtual_chunk_container_prefixes:
             if not prefix.startswith("s3://"):
                 raise ValueError(
-                    f"{self.id} virtual_chunk_container_prefixes must be s3:// "
-                    f"URLs, got {prefix!r}"
+                    f"{self.id} virtual chunk container {prefix!r} must be an "
+                    f"s3:// URL: dynamical-catalog only authorizes anonymous S3 "
+                    f"virtual chunk access, so a non-S3 source can be advertised "
+                    f"but never read. icechunk supports other backends (GCS, "
+                    f"Azure, HTTP); extend dynamical-catalog's reader first to "
+                    f"use one here."
                 )
         return self
 

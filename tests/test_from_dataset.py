@@ -276,7 +276,7 @@ def test_icechunk_asset_omits_virtual_chunk_containers_by_default() -> None:
 
 
 def test_catalog_item_rejects_non_s3_virtual_chunk_container_prefix() -> None:
-    with pytest.raises(ValueError, match="must be s3://"):
+    with pytest.raises(ValueError, match="only authorizes anonymous S3"):
         _catalog_item(virtual_chunk_container_prefixes=("gs://nope/",))
 
 
