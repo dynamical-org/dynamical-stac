@@ -237,6 +237,9 @@ class CatalogItem(BaseModel):
     id: str = Field(min_length=1)
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: Literal["us-west-2"]  # add additional as needed
+    # Virtual datasets reference GRIB bytes in public source buckets; readers must
+    # be told which container prefixes to authorize anonymously to resolve them.
+    virtual_chunk_container_prefixes: tuple[str, ...] = ()
     model_id: str = Field(min_length=1)
     description_summary: str = Field(min_length=1)
     reformatter_url: str = Field(min_length=1)
@@ -293,6 +296,16 @@ class CatalogItem(BaseModel):
                 f"id {self.id!r} must be the first path fragment of icechunk_href "
                 f"(got {first!r} from {self.icechunk_href!r})"
             )
+        return self
+
+    @model_validator(mode="after")
+    def _virtual_chunk_container_prefixes_are_s3(self) -> CatalogItem:
+        for prefix in self.virtual_chunk_container_prefixes:
+            if not prefix.startswith("s3://"):
+                raise ValueError(
+                    f"{self.id} virtual_chunk_container_prefixes must be s3:// "
+                    f"URLs, got {prefix!r}"
+                )
         return self
 
     @model_validator(mode="after")
@@ -421,6 +434,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="noaa-gefs-forecast-10-day-spatial-dev",
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-10-day-spatial-dev/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-gefs-pds/",),
         model_id="noaa-gefs",
         description_summary=(
             "This dataset is an archive of past and present GEFS forecasts, "
@@ -484,6 +498,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="noaa-hrrr-forecast-48-hour-spatial",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour-spatial/v0.5.0.icechunk/",
         icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",),
         model_id="noaa-hrrr",
         description_summary=(
             "This dataset is an archive of past and present HRRR forecasts, "

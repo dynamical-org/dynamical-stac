@@ -408,6 +408,7 @@ class CollectionInput(BaseModel):
     chunking: Chunking | None = None
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: str = Field(min_length=1)
+    virtual_chunk_container_prefixes: tuple[str, ...] = ()
     attribution: str = Field(min_length=1)
     version: str = Field(min_length=1)
     summaries: dict[str, str] = Field(default_factory=dict)
@@ -509,6 +510,7 @@ class CollectionInput(BaseModel):
             chunking=chunking,
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
+            virtual_chunk_container_prefixes=item.virtual_chunk_container_prefixes,
             attribution=ds.attrs["attribution"],
             version=ds.attrs["dataset_version"],
             summaries={k: ds.attrs[k] for k in _SUMMARY_ATTRS if k in ds.attrs},
@@ -563,6 +565,21 @@ class CollectionInput(BaseModel):
                 self.chunking.model_dump()
             )
 
+        icechunk_extra_fields: dict[str, object] = {
+            "xarray:open_kwargs": {"engine": "zarr"},
+            "xarray:storage_options": {
+                "anon": True,
+                "client_kwargs": {"region_name": self.icechunk_region},
+            },
+        }
+        if self.virtual_chunk_container_prefixes:
+            icechunk_extra_fields["icechunk:virtual_chunk_containers"] = [
+                {
+                    "url_prefix": prefix,
+                    "credentials": {"type": "s3", "anonymous": True},
+                }
+                for prefix in self.virtual_chunk_container_prefixes
+            ]
         collection.add_asset(
             "icechunk",
             pystac.Asset(
@@ -570,13 +587,7 @@ class CollectionInput(BaseModel):
                 media_type="application/x-icechunk",
                 title="Icechunk v2 repository",
                 roles=["data"],
-                extra_fields={
-                    "xarray:open_kwargs": {"engine": "zarr"},
-                    "xarray:storage_options": {
-                        "anon": True,
-                        "client_kwargs": {"region_name": self.icechunk_region},
-                    },
-                },
+                extra_fields=icechunk_extra_fields,
             ),
         )
 
