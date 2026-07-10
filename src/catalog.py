@@ -499,8 +499,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour"),),
     ),
     CatalogItem(
-        id="noaa-hrrr-forecast-48-hour-spatial",
-        icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour-spatial/v0.5.0.icechunk/",
+        id="noaa-hrrr-forecast-48-hour-virtual",
+        icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour-virtual/v0.5.0.icechunk/",
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",),
         model_id="noaa-hrrr",
@@ -520,11 +520,11 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "holding the full vertical profiles. It is an experimental dataset "
             "and its structure is not yet settled."
         ),
-        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_48_hour_spatial/template_config.py",
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_48_hour_virtual/template_config.py",
         examples=(
             _example(
                 "A temperature map at one forecast step",
-                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-spatial")\n'
+                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual")\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").compute()',
             ),
         ),
