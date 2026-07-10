@@ -45,7 +45,17 @@ def _open_icechunk(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]
         region=item.icechunk_region,
         anonymous=True,
     )
-    repo = icechunk.Repository.open(storage)
+    authorize = (
+        icechunk.containers_credentials(
+            {
+                prefix: icechunk.s3_anonymous_credentials()
+                for prefix in item.virtual_chunk_container_prefixes
+            }
+        )
+        if item.virtual_chunk_container_prefixes
+        else None
+    )
+    repo = icechunk.Repository.open(storage, authorize_virtual_chunk_access=authorize)
     session = repo.readonly_session("main")
     store = session.store
     root = xr.open_zarr(store, consolidated=False, decode_timedelta=True)
