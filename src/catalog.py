@@ -531,7 +531,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_pressure = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="pressure_level")\n'
                 'ds_model = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="model_level")\n'
                 "\n"
-                'ds_pressure["temperature"].sel(init_time="2025-01-01T00", lead_time="24h", pressure_level=500).compute()',
+                'ds_pressure["temperature"].sel(pressure_level=500)',
             ),
         ),
         # Placeholder until a dedicated notebook exists: reuse the materialized
