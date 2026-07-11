@@ -527,7 +527,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual")\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").compute()\n'
                 "\n"
-                "# Variables with vertical dimensions have an extra `pressure_level` or `model_level` dimension\n"
+                "# Variables with a vertical dimension live in the pressure_level and model_level groups\n"
                 'ds_pressure = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="pressure_level")\n'
                 'ds_model = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="model_level")',
             ),
