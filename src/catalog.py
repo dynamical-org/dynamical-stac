@@ -525,7 +525,13 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _example(
                 "A temperature map at one forecast step",
                 'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual")\n'
-                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").compute()',
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").compute()\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level and model_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="pressure_level")\n'
+                'ds_model = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="model_level")\n'
+                "\n"
+                'ds_pressure["temperature"].sel(pressure_level=500)',
             ),
         ),
         # Placeholder until a dedicated notebook exists: reuse the materialized
