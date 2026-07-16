@@ -42,6 +42,12 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-hrrr-forecast-48-hour-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR forecast, 48 hour, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/noaa-hrrr-analysis/collection.json",
       "type": "application/json",
       "title": "NOAA HRRR analysis"
