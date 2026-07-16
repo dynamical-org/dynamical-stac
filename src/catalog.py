@@ -237,6 +237,9 @@ class CatalogItem(BaseModel):
     id: str = Field(min_length=1)
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: Literal["us-west-2"]  # add additional as needed
+    # Virtual datasets reference GRIB bytes in public source buckets; readers must
+    # be told which container prefixes to authorize anonymously to resolve them.
+    virtual_chunk_container_prefixes: tuple[str, ...] = ()
     model_id: str = Field(min_length=1)
     description_summary: str = Field(min_length=1)
     reformatter_url: str = Field(min_length=1)
@@ -293,6 +296,20 @@ class CatalogItem(BaseModel):
                 f"id {self.id!r} must be the first path fragment of icechunk_href "
                 f"(got {first!r} from {self.icechunk_href!r})"
             )
+        return self
+
+    @model_validator(mode="after")
+    def _virtual_chunk_container_prefixes_are_s3(self) -> CatalogItem:
+        for prefix in self.virtual_chunk_container_prefixes:
+            if not prefix.startswith("s3://"):
+                raise ValueError(
+                    f"{self.id} virtual chunk container {prefix!r} must be an "
+                    f"s3:// URL: dynamical-catalog only authorizes anonymous S3 "
+                    f"virtual chunk access, so a non-S3 source can be advertised "
+                    f"but never read. icechunk supports other backends (GCS, "
+                    f"Azure, HTTP); extend dynamical-catalog's reader first to "
+                    f"use one here."
+                )
         return self
 
     @model_validator(mode="after")
@@ -445,9 +462,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour"),),
     ),
     CatalogItem(
-        id="noaa-hrrr-forecast-48-hour-spatial",
-        icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour-spatial/v0.5.0.icechunk/",
+        id="noaa-hrrr-forecast-48-hour-virtual",
+        icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour-virtual/v0.5.0.icechunk/",
         icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",),
         model_id="noaa-hrrr",
         description_summary=(
             "This dataset is an archive of past and present HRRR forecasts, "
@@ -465,23 +483,21 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "holding the full vertical profiles. It is an experimental dataset "
             "and its structure is not yet settled."
         ),
-        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_48_hour_spatial/template_config.py",
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_48_hour_virtual/template_config.py",
         examples=(
             _example(
                 "A temperature map at one forecast step",
-                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-spatial")\n'
-                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").compute()',
+                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual")\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").compute()\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level and model_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="pressure_level")\n'
+                'ds_model = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="model_level")\n'
+                "\n"
+                'ds_pressure["temperature"].sel(pressure_level=500)',
             ),
         ),
-        # Placeholder until a dedicated notebook exists: reuse the materialized
-        # HRRR 48-hour notebook. A non-"Quickstart" title sidesteps
-        # _quickstart_slug_matches_id.
-        notebooks=(
-            DatasetNotebook(
-                slug="noaa-hrrr-forecast-48-hour",
-                title="Example notebook (HRRR 48-hour forecast)",
-            ),
-        ),
+        notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour-virtual"),),
         staging=True,
     ),
     CatalogItem(

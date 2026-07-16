@@ -19,11 +19,13 @@ _TEST_ID = "noaa-gfs-analysis"
 def _catalog_item(
     item_id: str = _TEST_ID,
     icechunk_href: str = f"s3://test-bucket/{_TEST_ID}/v0.icechunk/",
+    virtual_chunk_container_prefixes: tuple[str, ...] = (),
 ) -> CatalogItem:
     return CatalogItem(
         id=item_id,
         icechunk_href=icechunk_href,
         icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=virtual_chunk_container_prefixes,
         model_id="noaa-gfs",
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
@@ -250,6 +252,32 @@ def test_from_dataset_passes_additional_terms_through() -> None:
     )
     result = CollectionInput.from_dataset(item, _synthetic_dataset())
     assert result.additional_terms == terms
+
+
+def _icechunk_asset(item: CatalogItem) -> dict[str, object]:
+    collection = CollectionInput.from_dataset(item, _synthetic_dataset())
+    return collection.to_pystac_collection().to_dict()["assets"]["icechunk"]
+
+
+def test_icechunk_asset_advertises_virtual_chunk_containers() -> None:
+    item = _catalog_item(virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",))
+    asset = _icechunk_asset(item)
+    assert asset["icechunk:virtual_chunk_containers"] == [
+        {
+            "url_prefix": "s3://noaa-hrrr-bdp-pds/",
+            "credentials": {"type": "s3", "anonymous": True},
+        }
+    ]
+
+
+def test_icechunk_asset_omits_virtual_chunk_containers_by_default() -> None:
+    asset = _icechunk_asset(_catalog_item())
+    assert "icechunk:virtual_chunk_containers" not in asset
+
+
+def test_catalog_item_rejects_non_s3_virtual_chunk_container_prefix() -> None:
+    with pytest.raises(ValueError, match="only authorizes anonymous S3"):
+        _catalog_item(virtual_chunk_container_prefixes=("gs://nope/",))
 
 
 def test_dim_entry_latitude_extent_uses_degree_north() -> None:

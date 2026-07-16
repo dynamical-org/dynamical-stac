@@ -62,7 +62,7 @@ _DYNAMICAL_CATALOG_REPO = "https://github.com/dynamical-org/dynamical-catalog"
 # codec, which dynamical-catalog does not depend on. A real consumer installs
 # it and imports gribberish.zarr to register the codec; the harness does the
 # same. Pin matches the version that wrote the chunks (see pyproject.toml).
-_GRIBBERISH_SPEC = "gribberish==1.4.0"
+_GRIBBERISH_SPEC = "gribberish==1.5.0"
 
 # Virtual datasets also apply zarr's built-in `scale_offset` codec (read-time
 # unit scaling, e.g. Kelvin->Celsius), which only exists in zarr >= 3.2.1. Old
