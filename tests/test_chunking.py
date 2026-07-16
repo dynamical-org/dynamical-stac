@@ -236,6 +236,8 @@ def test_from_dataset_unsharded_omits_shard_key_in_stac() -> None:
     assert result.chunking is not None
     assert result.chunking.shard is None
 
-    chunking_field = result.to_pystac_collection().extra_fields["dynamical-org:chunking"]
+    chunking_field = result.to_pystac_collection().extra_fields[
+        "dynamical-org:chunking"
+    ]
     assert "shard" not in chunking_field
     assert chunking_field["chunk"]["shape"] == [1, 2, 2]
