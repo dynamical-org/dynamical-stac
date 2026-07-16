@@ -56,7 +56,7 @@
   "model_id": "noaa-hrrr",
   "model_name": "NOAA HRRR",
   "description_summary": "This dataset is an archive of past and present HRRR forecasts, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, and step forward hourly along the `lead_time` dimension out to 48 hours. This dataset contains only the 00, 06, 12, and 18 hour UTC initialization times which produce the full length, 48 hour forecast.\n\nThis is a virtual dataset: each chunk references a single GRIB message in NOAA's source archive, decoded at read time, and served on the native HRRR 3 km Lambert Conformal Conic grid with spatial indexing along the `x` and `y` dimensions. Alongside the surface and single-level variables it includes `pressure_level` and `model_level` groups holding the full vertical profiles. It is an experimental dataset and its structure is not yet settled.",
-  "description_details": "### Spatial access\n\nThis dataset is optimized for spatial (map) access patterns: each chunk holds a\nfull `y`/`x` grid for a single `init_time` and `lead_time`, so reading a map for\none forecast step is fast while reading a long time series at a single point is\ncomparatively slow.\n\nIt is served on the native HRRR 3 km Lambert Conformal Conic projection, with\nspatial indexing along the `x` and `y` dimensions and two-dimensional `latitude`\nand `longitude` coordinates. The embedded `spatial_ref` coordinate carries the\nCRS, so you can select geographic areas of interest.\n\n### Vertical groups\n\nAlongside the surface and single-level variables in the root group, the store\ncontains two nested groups holding the full vertical profiles:\n\n- `pressure_level` \u2014 variables on 39 isobaric levels (1000 down to 50 hPa).\n- `model_level` \u2014 variables on the 50 native hybrid (sigma) model levels.\n\nOpen a group with xarray's `group` argument, e.g.\n`xr.open_zarr(store, group=\"pressure_level\")`. In this dataset's STAC metadata\nthese variables are listed under `pressure_level/\u2026` and `model_level/\u2026` keys to\nkeep them distinct from the root variables of the same name.\n\n### Virtual dataset\n\nThis is a virtual dataset: rather than storing a re-chunked copy of the data,\neach chunk is a reference to a single GRIB message in NOAA's source archive,\ndecoded on the fly when you read it. Temperatures and dew points are converted to\nCelsius and a few variables are unit-scaled on read to match dynamical's\nmaterialized `noaa-hrrr-forecast-48-hour`, but accumulated fields (e.g.\n`total_precipitation_surface`) are served as the source GRIB window\naccumulations rather than deaccumulated rates.\n\nThis is an experimental dataset used to exercise our virtual dataset tooling;\nits structure is not yet settled and it may change or be removed.\n\n### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Data availability\n\nThe archive spans init times from 2018-07-13T12 UTC to the present. A number of\nfields change behavior at the HRRR version 3 \u2192 version 4 upgrade on 2020-12-02,\nand some variables are incomplete before that date.\n\nSee the [validation report](/catalog/noaa-hrrr-forecast-48-hour-virtual/validation/)\nfor complete details.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (6 hours) |\n| lead_time | 1 (1 hour) |\n| y | 1059 (3177 km) |\n| x | 1799 (5397 km) |\n| **uncompressed** | 14.5 MiB |",
   "description_model": "The High-Resolution Rapid Refresh (HRRR) is a NOAA real-time 3-km resolution, hourly updated, cloud-resolving, convection-allowing atmospheric model, initialized by 3km grids with 3km radar assimilation. Radar data is assimilated in the HRRR every 15 min over a 1-h period adding further detail to that provided by the hourly data assimilation from the 13km radar-enhanced Rapid Refresh.",
   "examples": [
     {
@@ -3491,6 +3491,31 @@
       "long_name": "V component of wind",
       "standard_name": "northward_wind",
       "short_name": "v"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float64",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "1 hour",
+        "y": "3177 km",
+        "x": "5397 km"
+      },
+      "uncompressed_size_bytes": 15241128,
+      "uncompressed_size": "14.5 MiB"
     }
   },
   "title": "NOAA HRRR forecast, 48 hour, virtual",

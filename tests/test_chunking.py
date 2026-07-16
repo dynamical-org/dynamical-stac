@@ -33,7 +33,7 @@ def _catalog_item() -> CatalogItem:
 
 def _chunked_dataset(
     chunks: tuple[int, ...] = (1, 2, 2),
-    shards: tuple[int, ...] = (2, 2, 2),
+    shards: tuple[int, ...] | None = (2, 2, 2),
     n_vars: int = 1,
     second_var_chunks: tuple[int, ...] | None = None,
 ) -> xr.Dataset:
@@ -205,3 +205,37 @@ def test_chunking_as_markdown_table_is_transposed() -> None:
         "| longitude | 2 (0.5°) | 4 (1°) |\n"
         "| **uncompressed** | 16.0 B | 128.0 B |"
     )
+
+
+def test_build_chunking_unsharded_omits_shard() -> None:
+    # A store with chunks but no shards (e.g. a virtual dataset) yields a
+    # chunk-only summary rather than being dropped entirely.
+    chunking = _build_chunking(_chunked_dataset(chunks=(1, 2, 2), shards=None))
+    assert chunking is not None
+    assert chunking.chunk.shape == [1, 2, 2]
+    assert chunking.shard is None
+
+
+def test_chunking_as_markdown_table_unsharded_drops_shard_column() -> None:
+    chunking = _build_chunking(_chunked_dataset(chunks=(1, 2, 2), shards=None))
+    assert chunking is not None
+    assert chunking.as_markdown_table() == (
+        "| dimension | chunk |\n"
+        "|---|---|\n"
+        "| time | 1 (1 hour) |\n"
+        "| latitude | 2 (0.5°) |\n"
+        "| longitude | 2 (0.5°) |\n"
+        "| **uncompressed** | 16.0 B |"
+    )
+
+
+def test_from_dataset_unsharded_omits_shard_key_in_stac() -> None:
+    result = CollectionInput.from_dataset(
+        _catalog_item(), _chunked_dataset(shards=None)
+    )
+    assert result.chunking is not None
+    assert result.chunking.shard is None
+
+    chunking_field = result.to_pystac_collection().extra_fields["dynamical-org:chunking"]
+    assert "shard" not in chunking_field
+    assert chunking_field["chunk"]["shape"] == [1, 2, 2]
