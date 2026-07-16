@@ -535,7 +535,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour-virtual"),),
-        staging=True,
+        staging=False,
     ),
     CatalogItem(
         id="noaa-hrrr-analysis",
