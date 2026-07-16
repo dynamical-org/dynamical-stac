@@ -110,9 +110,15 @@ FRAGMENTS: dict[str, str] = {
         "long-archive datasets. When possible, aligning your reads with this "
         "dataset's chunk grid can significantly improve data access speed.\n\n"
         "The element count and coordinate span of this dataset:\n\n"
-        "{{ chunking_table }}\n\n"
-        "The same values are published in the `dynamical-org:chunking` field of "
-        "this dataset's [STAC collection metadata](https://stac.dynamical.org/catalog.json)."
+        "{{ chunking_table }}"
+    ),
+    "chunking_unsharded": (
+        "This dataset is stored in [Zarr](https://zarr.dev/) format, which "
+        "splits each variable into a grid of **chunks** — the smallest "
+        "unit read from storage. When possible, aligning your reads with this "
+        "dataset's chunk grid can significantly improve data access speed.\n\n"
+        "The element count and coordinate span of this dataset:\n\n"
+        "{{ chunking_table }}"
     ),
     # References {{ reformatter_url }} — supplied per-dataset at load time.
     "compression": (

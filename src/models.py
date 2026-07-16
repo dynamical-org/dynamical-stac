@@ -111,24 +111,35 @@ class Chunking(BaseModel):
     ``(dims, chunks, shards, dtype)`` signature (the case for all current
     datasets); :func:`_build_chunking` raises otherwise so non-uniform stores
     fail loudly at generation time rather than shipping a misleading summary.
+
+    ``shard`` is ``None`` for chunked-but-unsharded stores (e.g. virtual
+    datasets whose chunks each reference a single source GRIB message); the
+    rendered table and STAC field then omit the shard column entirely.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     dtype: str = Field(min_length=1)
     chunk: ChunkGrid
-    shard: ChunkGrid
+    shard: ChunkGrid | None = None
 
     def as_markdown_table(self) -> str:
         """Transposed Markdown table — one row per dimension (element count plus
-        its coordinate span), then an uncompressed-size row, with chunk and
-        shard columns. Transposed so high-dimensional datasets don't side-scroll
-        on narrow screens.
+        its coordinate span), then an uncompressed-size row. Includes a shard
+        column only when the store is sharded. Transposed so high-dimensional
+        datasets don't side-scroll on narrow screens.
         """
 
         def cell(grid: ChunkGrid, dim: str, n: int) -> str:
             length = grid.lengths.get(dim)
             return f"{n} ({length})" if length is not None else str(n)
+
+        if self.shard is None:
+            rows = ["| dimension | chunk |", "|---|---|"]
+            for dim, c in zip(self.chunk.dimensions, self.chunk.shape, strict=True):
+                rows.append(f"| {dim} | {cell(self.chunk, dim, c)} |")
+            rows.append(f"| **uncompressed** | {self.chunk.uncompressed_size} |")
+            return "\n".join(rows)
 
         rows = ["| dimension | chunk | shard |", "|---|---|---|"]
         for dim, c, s in zip(
@@ -321,12 +332,12 @@ def _build_chunking(ds: xr.Dataset) -> Chunking | None:
         da = ds[name]
         chunks = da.encoding.get("chunks")
         shards = da.encoding.get("shards")
-        if chunks is None or shards is None:
+        if chunks is None:
             continue
         signatures[str(name)] = (
             tuple(str(d) for d in da.dims),
             tuple(chunks),
-            tuple(shards),
+            tuple(shards) if shards is not None else None,
             str(da.encoding["dtype"]),
         )
     if not signatures:
@@ -343,7 +354,7 @@ def _build_chunking(ds: xr.Dataset) -> Chunking | None:
     return Chunking(
         dtype=dtype,
         chunk=_chunk_grid(ds, dims, chunks, itemsize),
-        shard=_chunk_grid(ds, dims, shards, itemsize),
+        shard=_chunk_grid(ds, dims, shards, itemsize) if shards is not None else None,
     )
 
 
@@ -561,8 +572,11 @@ class CollectionInput(BaseModel):
             k: v.model_dump(exclude_none=True) for k, v in self.cube_variables.items()
         }
         if self.chunking is not None:
+            # exclude_none drops the `shard` key for chunked-but-unsharded
+            # stores; sharded collections have no None fields, so their output
+            # is unchanged.
             collection.extra_fields["dynamical-org:chunking"] = (
-                self.chunking.model_dump()
+                self.chunking.model_dump(exclude_none=True)
             )
 
         icechunk_extra_fields: dict[str, object] = {
