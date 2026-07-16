@@ -534,15 +534,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_pressure["temperature"].sel(pressure_level=500)',
             ),
         ),
-        # Placeholder until a dedicated notebook exists: reuse the materialized
-        # HRRR 48-hour notebook. A non-"Quickstart" title sidesteps
-        # _quickstart_slug_matches_id.
-        notebooks=(
-            DatasetNotebook(
-                slug="noaa-hrrr-forecast-48-hour",
-                title="Example notebook (HRRR 48-hour forecast)",
-            ),
-        ),
+        notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour-virtual"),),
         staging=True,
     ),
     CatalogItem(
