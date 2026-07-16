@@ -201,9 +201,21 @@ def _dim_entry(name: str, coord: xr.DataArray) -> CubeDimension:
             unit="seconds",
             size=size,
         )
-    return CubeDimension(
-        type="other", extent=[None, None], unit=units or None, size=size
-    )
+    # Numeric non-spatial/temporal coords (vertical levels, ensemble member)
+    # carry a meaningful min/max; report it, preserving int vs float so integer
+    # level/member indices don't render as floats. Non-numeric coords, if any,
+    # keep [None, None].
+    kind = values.dtype.kind
+    if kind in "iu":
+        extent: list[int | None] | list[float | None] = [
+            int(values.min()),
+            int(values.max()),
+        ]
+    elif kind == "f":
+        extent = [float(values.min()), float(values.max())]
+    else:
+        extent = [None, None]
+    return CubeDimension(type="other", extent=extent, unit=units or None, size=size)
 
 
 def _iso(value: np.datetime64) -> str:

@@ -15,7 +15,7 @@ REFORMATTERS_ROOT = (
 REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 
 # Prepended to every example snippet so users see the required package versions.
-_DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.5.0"
+_DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.7.0"
 
 
 class DatasetLicense(StrEnum):
@@ -517,14 +517,13 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "start time of the model run, and step forward hourly along the "
             "`lead_time` dimension out to 48 hours. This dataset contains only "
             "the 00, 06, 12, and 18 hour UTC initialization times which produce "
-            "the full length, 48 hour forecast.\n\nThis is a virtual dataset: "
-            "each chunk references a single GRIB message in NOAA's source "
-            "archive, decoded at read time, and served on the native HRRR 3 km "
-            "Lambert Conformal Conic grid with spatial indexing along the `x` "
-            "and `y` dimensions. Alongside the surface and single-level "
-            "variables it includes `pressure_level` and `model_level` groups "
-            "holding the full vertical profiles. It is an experimental dataset "
-            "and its structure is not yet settled."
+            "the full length, 48 hour forecast.\n\n"
+            "This dataset uses the native HRRR Lambert Conformal Conic "
+            "projection, with spatial indexing along the `x` and `y` "
+            "dimensions. The example notebook shows how to use the embedded "
+            "spatial reference to select geographic areas of interest.\n\n"
+            "Note: `dynamical-catalog>=0.7.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_48_hour_virtual/template_config.py",
         examples=(
