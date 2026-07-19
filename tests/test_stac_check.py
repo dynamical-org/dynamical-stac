@@ -1,7 +1,7 @@
 """Integration test: run stac-check best-practices linter on the committed catalog.
 
 Lints the committed `stac/` tree — the production catalog we actually ship to
-stac.dynamical.org — rather than the `served_catalog` fixture, which now
+stac.dynamical.org — rather than the `served_catalog` fixture, which
 includes staging items. `test_stac_drift.py` guarantees the committed tree
 equals what `generate()` produces, so linting it is equivalent to linting a
 freshly-generated production catalog, and it keeps this prod contract separate

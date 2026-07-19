@@ -33,11 +33,10 @@ def _select_items(
 def _open_icechunk(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
     """Open the store's root group plus any nested child groups.
 
-    The root dataset is opened exactly as before, so existing single-group
-    collections regenerate byte-for-byte. Child groups (e.g. the HRRR spatial
-    dataset's ``pressure_level`` / ``model_level`` vertical groups) are opened
-    separately and returned keyed by group name; ``from_dataset`` flattens their
-    variables into the collection. Single-group stores yield an empty dict.
+    Child groups (e.g. the HRRR spatial dataset's ``pressure_level`` /
+    ``model_level`` vertical groups) are opened separately and returned keyed by
+    group name; ``from_dataset`` flattens their variables into the collection.
+    Single-group stores yield an empty dict.
     """
     storage = icechunk.s3_storage(
         bucket=item.icechunk_bucket,
