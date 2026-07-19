@@ -11,7 +11,7 @@ def test_main_generate_defaults_to_stac_dir(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[pathlib.Path] = []
-    monkeypatch.setattr(cli, "generate", lambda out: calls.append(out))
+    monkeypatch.setattr(cli, "generate", calls.append)
 
     rc = cli.main(["generate"])
 
@@ -23,7 +23,7 @@ def test_main_generate_accepts_explicit_output(
     monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
 ) -> None:
     calls: list[pathlib.Path] = []
-    monkeypatch.setattr(cli, "generate", lambda out: calls.append(out))
+    monkeypatch.setattr(cli, "generate", calls.append)
 
     rc = cli.main(["generate", "--output", str(tmp_path)])
 
@@ -35,7 +35,7 @@ def test_main_upload_invokes_upload(
     monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
 ) -> None:
     calls: list[pathlib.Path] = []
-    monkeypatch.setattr(cli, "upload", lambda d: calls.append(d))
+    monkeypatch.setattr(cli, "upload", calls.append)
 
     rc = cli.main(["upload", str(tmp_path)])
 
