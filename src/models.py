@@ -666,4 +666,4 @@ def _str_or_none(value: object) -> str | None:
     if value is None:
         return None
     s = str(value)
-    return s if s else None
+    return s or None
