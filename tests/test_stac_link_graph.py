@@ -33,8 +33,8 @@ from generate import ROOT_HREF
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMITTED_STAC = REPO_ROOT / "stac"
 
-# The committed tree uses ABSOLUTE_PUBLISHED hrefs (see generate.py:67), so
-# every href under the public base URL maps 1:1 onto a path inside `stac/`.
+# The committed tree uses ABSOLUTE_PUBLISHED hrefs, so every href under the
+# public base URL maps 1:1 onto a path inside `stac/`.
 _PUBLIC_BASE = ROOT_HREF.rstrip("/") + "/"
 
 # Link rels whose targets must live inside our published tree. Other rels

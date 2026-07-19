@@ -572,8 +572,7 @@ class CollectionInput(BaseModel):
         # Don't mirror cube:variables into summaries. STAC Browser renders the
         # summary's flat name list in place of the top-level dict, collapsing
         # the variable table to its first entry. pystac.Summaries also silently
-        # drops lists >25 items, so the mirror was inconsistent across
-        # collections (HRRR has 26 vars and was already being dropped).
+        # drops lists >25 items.
         summaries: dict[str, list[str]] = {k: [v] for k, v in self.summaries.items()}
         collection.summaries = pystac.Summaries(summaries)
 
