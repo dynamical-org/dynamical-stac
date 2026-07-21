@@ -313,7 +313,8 @@
       ],
       "unit": "percent",
       "long_name": "Percent frozen precipitation",
-      "short_name": "cpofp"
+      "short_name": "cpofp",
+      "comment": "-50 encodes no/undefined frozen precipitation; CF-aware readers mask it to NaN."
     },
     "precipitable_water_atmosphere": {
       "dimensions": [
