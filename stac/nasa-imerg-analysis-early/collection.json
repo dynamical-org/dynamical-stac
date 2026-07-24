@@ -1,0 +1,262 @@
+{
+  "type": "Collection",
+  "id": "nasa-imerg-analysis-early",
+  "stac_version": "1.1.0",
+  "description": "Global half-hourly precipitation from NASA GPM IMERG Early Run, version 07.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/nasa-imerg-analysis-early/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/nasa-imerg-analysis-early.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "Quickstart (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/nasa-imerg-analysis-early.ipynb",
+      "type": "text/html",
+      "title": "Quickstart (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.dynamical.org/nasa-imerg-analysis-early/collection.json",
+      "type": "application/json",
+      "title": "NASA IMERG analysis, early"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "NASA GPM IMERG data processed by dynamical.org from NASA GES DISC and PPS archives.",
+  "version": "0.1.0",
+  "model_id": "nasa-imerg",
+  "model_name": "NASA IMERG",
+  "description_summary": "This analysis dataset is an archive of global half-hourly precipitation estimates from NASA GPM IMERG, version 07, on a 0.1 degree grid with dimensions time, latitude, and longitude. This is the Early Run, a low-latency product published about 4 hours after observation time, suited to time-sensitive applications.",
+  "description_details": "### Early vs. Late Run\n\nNASA produces several IMERG runs from the same input observations at different latencies. This dataset is the **Early Run**, published approximately 4 hours after observation time. It relies on forward propagation (morphing) of precipitation features only and is intended for time-sensitive applications.\n\nThe companion [NASA IMERG analysis, late](/catalog/nasa-imerg-analysis-late/) dataset incorporates additional satellite sensor input and both forward and backward morphing for higher quality, at the cost of a longer, roughly 12 to 18 hour, latency.\n\n### Temporal coverage\n\nIMERG version 07 reprocesses the full record back to 1998, spanning both the Tropical Rainfall Measuring Mission (TRMM, 1998 to 2014) and Global Precipitation Measurement (GPM, 2014 to present) satellite eras. Estimates before the GPM era (mid-2014) rely on a smaller satellite constellation and are generally of lower quality, particularly at high latitudes.\n\n### Source\n\nThe source files this archive is constructed from are provided by NASA and accessed from the [GES DISC](https://disc.gsfc.nasa.gov/) archive. Operational low-latency data is additionally accessed from the [NASA Precipitation Processing System (PPS)](https://gpm.nasa.gov/data/directory).\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks & shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk | shard |\n|---|---|---|\n| time | 1440 (30 days) | 1440 (30 days) |\n| latitude | 100 (10\u00b0) | 900 (90\u00b0) |\n| longitude | 100 (10\u00b0) | 900 (~90\u00b0) |\n| **uncompressed** | 54.9 MiB | 4.3 GiB |\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/nasa/imerg/template_config.py).",
+  "description_model": "The Integrated Multi-satellitE Retrievals for GPM (IMERG) is a NASA algorithm that merges precipitation estimates from the constellation of passive microwave satellites in the Global Precipitation Measurement (GPM) mission with microwave-calibrated infrared estimates, monthly gauge analyses, and other sources to produce a global, gridded, half-hourly precipitation record. IMERG intercalibrates, merges, and interpolates these inputs onto a 0.1 degree grid spanning the TRMM and GPM satellite eras.",
+  "examples": [
+    {
+      "title": "Precipitation at a place and time",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"nasa-imerg-analysis-early\", chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00:00\", latitude=0, longitude=0, method=\"nearest\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"nasa-imerg-analysis-early\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00:00\", latitude=0, longitude=0, method=\"nearest\")",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        -89.95,
+        89.95
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 1800
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -179.95,
+        179.95
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 3600
+    },
+    "time": {
+      "type": "temporal",
+      "extent": [
+        "1998-01-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    }
+  },
+  "cube:variables": {
+    "precipitation_quality_index_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1440,
+        100,
+        100
+      ],
+      "shards": [
+        1440,
+        900,
+        900
+      ],
+      "unit": "1",
+      "long_name": "Quality index for precipitation",
+      "short_name": "pqi",
+      "comment": "Dimensionless quality index for the precipitation estimate; higher is better."
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1440,
+        100,
+        100
+      ],
+      "shards": [
+        1440,
+        900,
+        900
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Mean precipitation rate over the half hour. Complete merged microwave-infrared, gauge-adjusted where available (formerly precipitationCal). Units equivalent to mm/s; source is mm/hr."
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1440,
+        100,
+        100
+      ],
+      "lengths": {
+        "time": "30 days",
+        "latitude": "10\u00b0",
+        "longitude": "10\u00b0"
+      },
+      "uncompressed_size_bytes": 57600000,
+      "uncompressed_size": "54.9 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1440,
+        900,
+        900
+      ],
+      "lengths": {
+        "time": "30 days",
+        "latitude": "90\u00b0",
+        "longitude": "~90\u00b0"
+      },
+      "uncompressed_size_bytes": 4665600000,
+      "uncompressed_size": "4.3 GiB"
+    }
+  },
+  "title": "NASA IMERG analysis, early",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -179.95,
+          -89.95,
+          179.95,
+          89.95
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "1998-01-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Global"
+    ],
+    "spatial_resolution": [
+      "0.1 degrees (~10km)"
+    ],
+    "time_domain": [
+      "1998-01-01 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "30 minutes"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-nasa-imerg/nasa-imerg-analysis-early/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-nasa-imerg.s3.us-west-2.amazonaws.com/nasa-imerg-analysis-early/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}
