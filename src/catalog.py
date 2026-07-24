@@ -18,6 +18,21 @@ REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 _DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.7.0"
 
 
+def s3_to_https_url(s3_href: str, region: str) -> str:
+    """Convert an ``s3://bucket/key`` URL to a virtual-hosted-style HTTPS URL
+    with the AWS region in the domain, e.g.
+
+        s3://dynamical-noaa-gefs/noaa-gefs-forecast-35-day/v0.2.0.icechunk/
+        -> https://dynamical-noaa-gefs.s3.us-west-2.amazonaws.com/noaa-gefs-forecast-35-day/v0.2.0.icechunk
+
+    Any trailing slash is stripped: ``icechunk.http_storage`` rejects a
+    ``base_url`` ending in ``/`` ("the repository doesn't exist").
+    """
+    parsed = urlparse(s3_href)
+    key = parsed.path.strip("/")
+    return f"https://{parsed.netloc}.s3.{region}.amazonaws.com/{key}"
+
+
 class DatasetLicense(StrEnum):
     CC_BY_4_0 = "CC-BY-4.0"
 
@@ -264,6 +279,16 @@ class CatalogItem(BaseModel):
     def icechunk_prefix(self) -> str:
         return urlparse(self.icechunk_href).path.lstrip("/")
 
+    @property
+    def icechunk_https_href(self) -> str:
+        """Public HTTPS URL for the icechunk store (region in the domain).
+
+        Advertised as the ``icechunk-https`` asset so datasets can be opened
+        with only ``pystac`` + ``icechunk`` (no ``dynamical-catalog``); see
+        ``icechunk.http_storage``.
+        """
+        return s3_to_https_url(self.icechunk_href, self.icechunk_region)
+
     def description_details(self, chunking_table: str | None = None) -> str:
         """Long-form prose from ``prose/datasets/{id}.md``.
 
@@ -365,8 +390,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Temperature at a specific place and time",
-                'ds = dynamical_catalog.open("noaa-gfs-analysis")\n'
-                'ds["temperature_2m"].sel(time="2026-01-01T00", latitude=0, longitude=0).compute()',
+                'ds = dynamical_catalog.open("noaa-gfs-analysis", chunks=None)\n'
+                'ds["temperature_2m"].sel(time="2026-01-01T00", latitude=0, longitude=0)',
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-gfs-analysis"),),
@@ -386,8 +411,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in a forecast",
-                'ds = dynamical_catalog.open("noaa-gfs-forecast")\n'
-                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
+                'ds = dynamical_catalog.open("noaa-gfs-forecast", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
             ),
         ),
         notebooks=(
@@ -413,8 +438,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in ensemble forecast",
-                'ds = dynamical_catalog.open("noaa-gefs-forecast-35-day")\n'
-                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
+                'ds = dynamical_catalog.open("noaa-gefs-forecast-35-day", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-gefs-forecast-35-day"),),
@@ -434,8 +459,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Temperature at a specific place and time",
-                'ds = dynamical_catalog.open("noaa-gefs-analysis")\n'
-                'ds["temperature_2m"].sel(time="2025-01-01T00", latitude=0, longitude=0).compute()',
+                'ds = dynamical_catalog.open("noaa-gefs-analysis", chunks=None)\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00", latitude=0, longitude=0)',
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-gefs-analysis"),),
@@ -461,8 +486,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in a forecast",
-                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour")\n'
-                'ds["temperature_2m"].sel(init_time="2025-01-01T00", x=0, y=0, method="nearest").max().compute()',
+                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", x=0, y=0, method="nearest").max()',
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour"),),
@@ -492,12 +517,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "A temperature map at one forecast step",
-                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual")\n'
-                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").compute()\n'
+                'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h")\n'
                 "\n"
                 "# Variables with a vertical dimension live in the pressure_level and model_level groups\n"
-                'ds_pressure = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="pressure_level")\n'
-                'ds_model = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="model_level")\n'
+                'ds_pressure = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="pressure_level", chunks=None)\n'
+                'ds_model = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="model_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["temperature"].sel(pressure_level=500)',
             ),
@@ -524,8 +549,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Temperature at a specific place and time",
-                'ds = dynamical_catalog.open("noaa-hrrr-analysis")\n'
-                'ds["temperature_2m"].sel(time="2025-01-01T00", x=0, y=0, method="nearest").compute()',
+                'ds = dynamical_catalog.open("noaa-hrrr-analysis", chunks=None)\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00", x=0, y=0, method="nearest")',
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis"),),
@@ -544,8 +569,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Precipitation at a place and time",
-                'ds = dynamical_catalog.open("noaa-mrms-conus-analysis-hourly")\n'
-                'ds["precipitation_surface"].sel(time="2026-01-01T00", latitude=40, longitude=-90, method="nearest").compute()',
+                'ds = dynamical_catalog.open("noaa-mrms-conus-analysis-hourly", chunks=None)\n'
+                'ds["precipitation_surface"].sel(time="2026-01-01T00", latitude=40, longitude=-90, method="nearest")',
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-mrms-conus-analysis-hourly"),),
@@ -566,8 +591,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in a forecast",
-                'ds = dynamical_catalog.open("ecmwf-aifs-single-forecast")\n'
-                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
+                'ds = dynamical_catalog.open("ecmwf-aifs-single-forecast", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
             ),
         ),
         notebooks=(
@@ -592,8 +617,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in ensemble",
-                'ds = dynamical_catalog.open("ecmwf-aifs-ens-forecast")\n'
-                'ds["temperature_2m"].sel(init_time="2025-08-01T00", latitude=0, longitude=0).max().compute()',
+                'ds = dynamical_catalog.open("ecmwf-aifs-ens-forecast", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-08-01T00", latitude=0, longitude=0).max()',
             ),
         ),
         notebooks=(_quickstart_notebook("ecmwf-aifs-ens-forecast"),),
@@ -618,8 +643,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in ensemble",
-                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree")\n'
-                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max().compute()',
+                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
             ),
         ),
         notebooks=(_quickstart_notebook("ecmwf-ifs-ens-forecast-15-day-0-25-degree"),),
@@ -642,8 +667,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum temperature in a forecast",
-                'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day")\n'
-                'ds["temperature_2m"].sel(init_time="2026-04-01T00", latitude=50, longitude=10).max().compute()',
+                'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-04-01T00", latitude=50, longitude=10).max()',
             ),
         ),
         notebooks=(_quickstart_notebook("dwd-icon-eu-forecast-5-day"),),

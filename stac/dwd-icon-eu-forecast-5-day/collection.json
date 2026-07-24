@@ -61,8 +61,18 @@
   "examples": [
     {
       "title": "Maximum temperature in a forecast",
-      "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"dwd-icon-eu-forecast-5-day\")\nds[\"temperature_2m\"].sel(init_time=\"2026-04-01T00\", latitude=50, longitude=10).max().compute()",
-      "language": "python"
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"dwd-icon-eu-forecast-5-day\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-04-01T00\", latitude=50, longitude=10).max()",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"dwd-icon-eu-forecast-5-day\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-04-01T00\", latitude=50, longitude=10).max()",
+          "language": "python"
+        }
+      ]
     }
   ],
   "cube:dimensions": {
@@ -689,6 +699,17 @@
         "client_kwargs": {
           "region_name": "us-west-2"
         }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-dwd-icon-eu.s3.us-west-2.amazonaws.com/dwd-icon-eu-forecast-5-day/v0.2.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
       },
       "roles": [
         "data"

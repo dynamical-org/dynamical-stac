@@ -61,8 +61,18 @@
   "examples": [
     {
       "title": "A temperature map at one forecast step",
-      "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour-virtual\")\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", lead_time=\"24h\").compute()\n\n# Variables with a vertical dimension live in the pressure_level and model_level groups\nds_pressure = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour-virtual\", group=\"pressure_level\")\nds_model = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour-virtual\", group=\"model_level\")\n\nds_pressure[\"temperature\"].sel(pressure_level=500)",
-      "language": "python"
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", lead_time=\"24h\")\n\n# Variables with a vertical dimension live in the pressure_level and model_level groups\nds_pressure = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour-virtual\", group=\"pressure_level\", chunks=None)\nds_model = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour-virtual\", group=\"model_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(pressure_level=500)",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-hrrr-forecast-48-hour-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-hrrr-bdp-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", lead_time=\"24h\")\n\n# Variables with a vertical dimension live in the pressure_level and model_level groups\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_model = xr.open_zarr(session.store, group=\"model_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(pressure_level=500)",
+          "language": "python"
+        }
+      ]
     }
   ],
   "cube:dimensions": {
@@ -3573,6 +3583,26 @@
         "client_kwargs": {
           "region_name": "us-west-2"
         }
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "s3://noaa-hrrr-bdp-pds/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-noaa-hrrr.s3.us-west-2.amazonaws.com/noaa-hrrr-forecast-48-hour-virtual/v0.5.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
       },
       "icechunk:virtual_chunk_containers": [
         {

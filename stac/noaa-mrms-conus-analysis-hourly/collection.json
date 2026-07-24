@@ -61,8 +61,18 @@
   "examples": [
     {
       "title": "Precipitation at a place and time",
-      "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"noaa-mrms-conus-analysis-hourly\")\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\").compute()",
-      "language": "python"
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"noaa-mrms-conus-analysis-hourly\", chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-mrms-conus-analysis-hourly\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\")",
+          "language": "python"
+        }
+      ]
     }
   ],
   "cube:dimensions": {
@@ -323,6 +333,17 @@
         "client_kwargs": {
           "region_name": "us-west-2"
         }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-noaa-mrms.s3.us-west-2.amazonaws.com/noaa-mrms-conus-analysis-hourly/v0.3.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
       },
       "roles": [
         "data"

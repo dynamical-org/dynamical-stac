@@ -41,6 +41,7 @@ def _valid_input(**overrides: object) -> CollectionInput:
         },
         "icechunk_href": "s3://test-bucket/test-prefix/",
         "icechunk_region": "us-west-2",
+        "icechunk_https_href": "https://test-bucket.s3.us-west-2.amazonaws.com/test-prefix",
         "attribution": "Test Attribution",
         "version": "v0.0.0",
         "model_id": "noaa-gfs",
@@ -48,7 +49,12 @@ def _valid_input(**overrides: object) -> CollectionInput:
         "description_summary": "Test summary",
         "description_details": "### Section\n\ntest details",
         "description_model": "Test model description",
-        "examples": (DatasetExample(title="Example", code="import xarray"),),
+        "examples": (
+            DatasetExample(
+                title="Example",
+                code='import dynamical_catalog\n\nds = dynamical_catalog.open("x", chunks=None)',
+            ),
+        ),
         "notebooks": (DatasetNotebook(slug="test-dataset", title="Quickstart"),),
     }
     defaults.update(overrides)
@@ -92,7 +98,12 @@ _PROSE_KWARGS: dict[str, object] = {
     "model_id": "noaa-gfs",
     "description_summary": "summary",
     "reformatter_url": "https://example.com/reformatter.py",
-    "examples": (DatasetExample(title="Example", code="import xarray"),),
+    "examples": (
+        DatasetExample(
+            title="Example",
+            code='import dynamical_catalog\n\nds = dynamical_catalog.open("x", chunks=None)',
+        ),
+    ),
     "notebooks": (DatasetNotebook(slug=_TEST_ID, title="Quickstart"),),
 }
 
@@ -106,6 +117,18 @@ def test_catalog_item_derives_bucket_and_prefix_from_href() -> None:
     )
     assert item.icechunk_bucket == "dynamical-noaa-gfs"
     assert item.icechunk_prefix == f"{_TEST_ID}/v1.0.icechunk/"
+
+
+def test_icechunk_https_href_puts_region_in_domain_and_strips_trailing_slash() -> None:
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.0.icechunk/",
+        icechunk_region="us-west-2",
+        **_PROSE_KWARGS,  # type: ignore[arg-type]
+    )
+    assert item.icechunk_https_href == (
+        f"https://dynamical-noaa-gfs.s3.us-west-2.amazonaws.com/{_TEST_ID}/v1.0.icechunk"
+    )
 
 
 def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
