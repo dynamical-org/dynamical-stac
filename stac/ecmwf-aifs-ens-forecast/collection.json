@@ -66,7 +66,7 @@
   "description_model": "The Artificial Intelligence Forecasting System (AIFS) is a data driven forecast model developed by the European Centre for Medium-Range Weather Forecasts (ECMWF). AIFS ENS is the ensemble configuration of AIFS, containing 51 ensemble members. AIFS is trained on ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) analyses.",
   "examples": [
     {
-      "title": "Maximum temperature in ensemble",
+      "title": "Maximum ensemble temperature",
       "variants": [
         {
           "label": "dynamical-catalog",
