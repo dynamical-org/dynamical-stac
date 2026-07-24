@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import re
 from typing import Literal
 from urllib.parse import quote
 
@@ -54,6 +55,103 @@ _SUMMARY_ATTRS = (
     "forecast_domain",
     "forecast_resolution",
 )
+
+# Published catalog URL baked into the pystac open snippet. Reading the
+# ``icechunk-https`` asset href from here (rather than hardcoding the store URL)
+# is what lets us relocate a dataset to any public-HTTPS object store without
+# users changing their code.
+STAC_CATALOG_URL = "https://stac.dynamical.org/catalog.json"
+
+# Labels for the two open-snippet variants rendered as tabs on dataset pages.
+_CATALOG_VARIANT_LABEL = "dynamical-catalog"
+_PYSTAC_VARIANT_LABEL = "pystac + icechunk"
+
+# Matches an authored dynamical-catalog open line, e.g.
+#   ds = dynamical_catalog.open("noaa-gfs-analysis", chunks=None)
+#   ds_pressure = dynamical_catalog.open("id", group="pressure_level", chunks=None)
+_CATALOG_OPEN_RE = re.compile(
+    r"^(?P<var>\w+) = dynamical_catalog\.open\("
+    r'"(?P<id>[^"]+)"'
+    r'(?:, group="(?P<group>[^"]+)")?'
+    r", chunks=None\)$"
+)
+
+
+def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> str:
+    """Imports + STAC lookup + icechunk session for the pystac open variant.
+
+    Virtual datasets additionally authorize anonymous S3 reads of their GRIB
+    chunk containers (icechunk only opens the repo over HTTPS; the referenced
+    source chunks still live in public S3 buckets).
+    """
+    lines = [
+        "import icechunk",
+        "import pystac",
+        "import xarray as xr",
+        "",
+        f'catalog = pystac.Catalog.from_file("{STAC_CATALOG_URL}")',
+        f'collection = catalog.get_child("{collection_id}")',
+        'asset = collection.assets["icechunk-https"]',
+        "",
+    ]
+    if virtual_prefixes:
+        entries = ", ".join(
+            f'"{prefix}": icechunk.s3_anonymous_credentials()'
+            for prefix in virtual_prefixes
+        )
+        lines += [
+            f"authorize = icechunk.containers_credentials({{{entries}}})",
+            "repo = icechunk.Repository.open(",
+            "    icechunk.http_storage(asset.href),",
+            "    authorize_virtual_chunk_access=authorize,",
+            ")",
+        ]
+    else:
+        lines.append(
+            "repo = icechunk.Repository.open(icechunk.http_storage(asset.href))"
+        )
+    lines.append('session = repo.readonly_session("main")')
+    return "\n".join(lines)
+
+
+def _pystac_variant_code(
+    catalog_code: str, collection_id: str, virtual_prefixes: tuple[str, ...]
+) -> str:
+    """Derive the pystac + icechunk-HTTPS snippet from the dynamical-catalog one.
+
+    The two variants share their operations verbatim and differ only in how the
+    dataset is opened: each ``dynamical_catalog.open(...)`` line becomes an
+    ``xr.open_zarr(session.store, ...)`` line against the session built by
+    :func:`_pystac_preamble`. Raises if an open line doesn't match the expected
+    shape, so a malformed snippet fails at generation time rather than shipping
+    a broken example.
+    """
+    body: list[str] = []
+    saw_open = False
+    for line in catalog_code.splitlines():
+        if line.startswith("import dynamical_catalog"):
+            continue
+        match = _CATALOG_OPEN_RE.match(line)
+        if match:
+            saw_open = True
+            group_arg = f', group="{match["group"]}"' if match["group"] else ""
+            body.append(
+                f"{match['var']} = xr.open_zarr(session.store{group_arg}, chunks=None)"
+            )
+        elif "dynamical_catalog.open(" in line:
+            raise ValueError(f"unrecognized dynamical_catalog.open line: {line!r}")
+        else:
+            body.append(line)
+    if not saw_open:
+        raise ValueError(
+            f"example for {collection_id!r} has no dynamical_catalog.open(...) call"
+        )
+    # Drop the blank line the import preamble left behind so the first open sits
+    # directly under our own preamble.
+    while body and not body[0].strip():
+        body.pop(0)
+    preamble = _pystac_preamble(collection_id, virtual_prefixes)
+    return f"{preamble}\n\n" + "\n".join(body)
 
 
 class CubeDimension(BaseModel):
@@ -431,6 +529,7 @@ class CollectionInput(BaseModel):
     chunking: Chunking | None = None
     icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
     icechunk_region: str = Field(min_length=1)
+    icechunk_https_href: str = Field(pattern=r"^https://[^/]+/.+$")
     virtual_chunk_container_prefixes: tuple[str, ...] = ()
     attribution: str = Field(min_length=1)
     version: str = Field(min_length=1)
@@ -533,6 +632,7 @@ class CollectionInput(BaseModel):
             chunking=chunking,
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
+            icechunk_https_href=item.icechunk_https_href,
             virtual_chunk_container_prefixes=item.virtual_chunk_container_prefixes,
             attribution=ds.attrs["attribution"],
             version=ds.attrs["dataset_version"],
@@ -567,7 +667,29 @@ class CollectionInput(BaseModel):
         collection.extra_fields["description_summary"] = self.description_summary
         collection.extra_fields["description_details"] = self.description_details
         collection.extra_fields["description_model"] = self.description_model
-        collection.extra_fields["examples"] = [e.model_dump() for e in self.examples]
+        # Each example carries two open-snippet variants (rendered as tabs on
+        # dataset pages): the dynamical-catalog library and a library-free
+        # pystac + icechunk-over-HTTPS equivalent that shares the operations.
+        collection.extra_fields["examples"] = [
+            {
+                "title": ex.title,
+                "variants": [
+                    {
+                        "label": _CATALOG_VARIANT_LABEL,
+                        "code": ex.code,
+                        "language": ex.language,
+                    },
+                    {
+                        "label": _PYSTAC_VARIANT_LABEL,
+                        "code": _pystac_variant_code(
+                            ex.code, self.id, self.virtual_chunk_container_prefixes
+                        ),
+                        "language": ex.language,
+                    },
+                ],
+            }
+            for ex in self.examples
+        ]
 
         # Don't mirror cube:variables into summaries. STAC Browser renders the
         # summary's flat name list in place of the top-level dict, collapsing
@@ -590,6 +712,14 @@ class CollectionInput(BaseModel):
                 self.chunking.model_dump(exclude_none=True)
             )
 
+        virtual_chunk_containers = [
+            {
+                "url_prefix": prefix,
+                "credentials": {"type": "s3", "anonymous": True},
+            }
+            for prefix in self.virtual_chunk_container_prefixes
+        ]
+
         icechunk_extra_fields: dict[str, object] = {
             "xarray:open_kwargs": {"engine": "zarr"},
             "xarray:storage_options": {
@@ -597,14 +727,10 @@ class CollectionInput(BaseModel):
                 "client_kwargs": {"region_name": self.icechunk_region},
             },
         }
-        if self.virtual_chunk_container_prefixes:
-            icechunk_extra_fields["icechunk:virtual_chunk_containers"] = [
-                {
-                    "url_prefix": prefix,
-                    "credentials": {"type": "s3", "anonymous": True},
-                }
-                for prefix in self.virtual_chunk_container_prefixes
-            ]
+        if virtual_chunk_containers:
+            icechunk_extra_fields["icechunk:virtual_chunk_containers"] = (
+                virtual_chunk_containers
+            )
         collection.add_asset(
             "icechunk",
             pystac.Asset(
@@ -613,6 +739,26 @@ class CollectionInput(BaseModel):
                 title="Icechunk v2 repository",
                 roles=["data"],
                 extra_fields=icechunk_extra_fields,
+            ),
+        )
+
+        # Library-free access path: open with pystac + icechunk.http_storage.
+        # No xarray:storage_options — http_storage takes no region/anon config.
+        icechunk_https_extra_fields: dict[str, object] = {
+            "xarray:open_kwargs": {"engine": "zarr"},
+        }
+        if virtual_chunk_containers:
+            icechunk_https_extra_fields["icechunk:virtual_chunk_containers"] = (
+                virtual_chunk_containers
+            )
+        collection.add_asset(
+            "icechunk-https",
+            pystac.Asset(
+                href=self.icechunk_https_href,
+                media_type="application/x-icechunk",
+                title="Icechunk v2 repository (HTTPS)",
+                roles=["data"],
+                extra_fields=icechunk_https_extra_fields,
             ),
         )
 

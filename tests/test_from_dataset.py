@@ -29,7 +29,12 @@ def _catalog_item(
         model_id="noaa-gfs",
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
-        examples=(DatasetExample(title="Example", code="import xarray"),),
+        examples=(
+            DatasetExample(
+                title="Example",
+                code='import dynamical_catalog\n\nds = dynamical_catalog.open("x", chunks=None)',
+            ),
+        ),
         notebooks=(DatasetNotebook(slug=item_id, title="Quickstart"),),
     )
 
@@ -247,7 +252,12 @@ def test_from_dataset_passes_additional_terms_through() -> None:
         model_id="noaa-gfs",
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
-        examples=(DatasetExample(title="Example", code="import xarray"),),
+        examples=(
+            DatasetExample(
+                title="Example",
+                code='import dynamical_catalog\n\nds = dynamical_catalog.open("x", chunks=None)',
+            ),
+        ),
         notebooks=(DatasetNotebook(slug=_TEST_ID, title="Quickstart"),),
     )
     result = CollectionInput.from_dataset(item, _synthetic_dataset())
@@ -273,6 +283,34 @@ def test_icechunk_asset_advertises_virtual_chunk_containers() -> None:
 def test_icechunk_asset_omits_virtual_chunk_containers_by_default() -> None:
     asset = _icechunk_asset(_catalog_item())
     assert "icechunk:virtual_chunk_containers" not in asset
+
+
+def _https_asset(item: CatalogItem) -> dict[str, object]:
+    collection = CollectionInput.from_dataset(item, _synthetic_dataset())
+    return collection.to_pystac_collection().to_dict()["assets"]["icechunk-https"]
+
+
+def test_icechunk_https_asset_uses_region_in_domain() -> None:
+    item = _catalog_item(
+        icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v0.icechunk/"
+    )
+    asset = _https_asset(item)
+    assert asset["href"] == (
+        f"https://dynamical-noaa-gfs.s3.us-west-2.amazonaws.com/{_TEST_ID}/v0.icechunk"
+    )
+    # http_storage takes no region/anon config, so no storage_options.
+    assert "xarray:storage_options" not in asset
+
+
+def test_icechunk_https_asset_advertises_virtual_chunk_containers() -> None:
+    item = _catalog_item(virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",))
+    asset = _https_asset(item)
+    assert asset["icechunk:virtual_chunk_containers"] == [
+        {
+            "url_prefix": "s3://noaa-hrrr-bdp-pds/",
+            "credentials": {"type": "s3", "anonymous": True},
+        }
+    ]
 
 
 def test_catalog_item_rejects_non_s3_virtual_chunk_container_prefix() -> None:

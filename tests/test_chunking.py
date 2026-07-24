@@ -26,7 +26,12 @@ def _catalog_item() -> CatalogItem:
         model_id="noaa-gfs",
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
-        examples=(DatasetExample(title="Example", code="import xarray"),),
+        examples=(
+            DatasetExample(
+                title="Example",
+                code='import dynamical_catalog\n\nds = dynamical_catalog.open("x", chunks=None)',
+            ),
+        ),
         notebooks=(DatasetNotebook(slug=_TEST_ID, title="Quickstart"),),
     )
 
