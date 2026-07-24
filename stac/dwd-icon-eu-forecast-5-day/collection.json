@@ -60,7 +60,7 @@
   "description_model": "ICON-EU is a regional weather forecast model operated by Deutscher Wetterdienst (DWD), Germany's national meteorological service. ICON-EU is a nested configuration of DWD's global ICON (Icosahedral Non-hydrostatic) model that provides high-resolution forecasts over Europe.",
   "examples": [
     {
-      "title": "Maximum temperature in a forecast",
+      "title": "Maximum temperature",
       "variants": [
         {
           "label": "dynamical-catalog",

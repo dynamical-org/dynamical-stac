@@ -60,7 +60,7 @@
   "description_model": "The Global Ensemble Forecast System (GEFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) weather forecast model. GEFS creates 31 separate forecasts (ensemble members) to describe the range of forecast uncertainty.",
   "examples": [
     {
-      "title": "Maximum temperature in ensemble forecast",
+      "title": "Maximum ensemble temperature",
       "variants": [
         {
           "label": "dynamical-catalog",
