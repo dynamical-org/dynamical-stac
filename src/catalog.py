@@ -249,6 +249,18 @@ MODELS: dict[str, Model] = {
             "ICON (Icosahedral Non-hydrostatic) model that provides high-resolution forecasts over Europe."
         ),
     ),
+    "nasa-imerg": Model(
+        id="nasa-imerg",
+        name="NASA IMERG",
+        description=(
+            "The Integrated Multi-satellitE Retrievals for GPM (IMERG) is a NASA algorithm that merges "
+            "precipitation estimates from the constellation of passive microwave satellites in the Global "
+            "Precipitation Measurement (GPM) mission with microwave-calibrated infrared estimates, monthly "
+            "gauge analyses, and other sources to produce a global, gridded, half-hourly precipitation "
+            "record. IMERG intercalibrates, merges, and interpolates these inputs onto a 0.1 degree grid "
+            "spanning the TRMM and GPM satellite eras."
+        ),
+    ),
 }
 
 
@@ -672,6 +684,54 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_quickstart_notebook("dwd-icon-eu-forecast-5-day"),),
+    ),
+    CatalogItem(
+        id="nasa-imerg-analysis-early",
+        icechunk_href="s3://dynamical-nasa-imerg/nasa-imerg-analysis-early/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="nasa-imerg",
+        description_summary=(
+            "This analysis dataset is an archive of global half-hourly "
+            "precipitation estimates from NASA GPM IMERG, version 07, on a "
+            "0.1 degree grid with dimensions time, latitude, and longitude. "
+            "This is the Early Run, a low-latency product published about 4 "
+            "hours after observation time, suited to time-sensitive "
+            "applications."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/nasa/imerg/template_config.py",
+        examples=(
+            _example(
+                "Precipitation at a place and time",
+                'ds = dynamical_catalog.open("nasa-imerg-analysis-early", chunks=None)\n'
+                'ds["precipitation_surface"].sel(time="2026-01-01T00:00", latitude=0, longitude=0, method="nearest")',
+            ),
+        ),
+        notebooks=(_quickstart_notebook("nasa-imerg-analysis-early"),),
+        staging=True,
+    ),
+    CatalogItem(
+        id="nasa-imerg-analysis-late",
+        icechunk_href="s3://dynamical-nasa-imerg/nasa-imerg-analysis-late/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="nasa-imerg",
+        description_summary=(
+            "This analysis dataset is an archive of global half-hourly "
+            "precipitation estimates from NASA GPM IMERG, version 07, on a "
+            "0.1 degree grid with dimensions time, latitude, and longitude. "
+            "This is the Late Run, which incorporates additional satellite "
+            "sensor input for higher quality, published about 12 to 18 hours "
+            "after observation time."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/nasa/imerg/template_config.py",
+        examples=(
+            _example(
+                "Precipitation at a place and time",
+                'ds = dynamical_catalog.open("nasa-imerg-analysis-late", chunks=None)\n'
+                'ds["precipitation_surface"].sel(time="2026-01-01T00:00", latitude=0, longitude=0, method="nearest")',
+            ),
+        ),
+        notebooks=(_quickstart_notebook("nasa-imerg-analysis-late"),),
+        staging=True,
     ),
 ]
 
