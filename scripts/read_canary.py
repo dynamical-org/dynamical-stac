@@ -34,6 +34,12 @@ image = modal.Image.debian_slim(python_version="3.12").pip_install(
 
 app = modal.App("dynamical-read-canary")
 
+# Floor on the catalog size, so a truncated/empty catalog fails loudly instead
+# of passing vacuously — with no collections the read loop checks nothing and
+# would otherwise report `ok`. The live catalog has ~12; this is a conservative
+# floor well below that.
+MIN_COLLECTIONS = 6
+
 
 def _check_collection(collection_id: str) -> None:
     import math  # noqa: PLC0415
@@ -83,6 +89,17 @@ def read_canary() -> None:
     }
 
     collection_ids = sorted(load_catalog())
+
+    if len(collection_ids) < MIN_COLLECTIONS:
+        error = RuntimeError(
+            f"catalog returned {len(collection_ids)} collections, "
+            f"expected >= {MIN_COLLECTIONS}"
+        )
+        sentry_sdk.capture_exception(error)
+        sentry_sdk.crons.capture_checkin(
+            monitor_slug="read-canary", status="error", monitor_config=monitor_config
+        )
+        raise error
 
     errors: list[str] = []
     with ThreadPoolExecutor(max_workers=8) as pool:
