@@ -389,7 +389,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/analysis/template_config.py",
         examples=(
             _example(
-                "Temperature at a specific place and time",
+                "Temperature at a place and time",
                 'ds = dynamical_catalog.open("noaa-gfs-analysis", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2026-01-01T00", latitude=0, longitude=0)',
             ),
@@ -410,7 +410,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/forecast/template_config.py",
         examples=(
             _example(
-                "Maximum temperature in a forecast",
+                "Maximum temperature",
                 'ds = dynamical_catalog.open("noaa-gfs-forecast", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
             ),
@@ -437,7 +437,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/common_gefs_template_config.py",
         examples=(
             _example(
-                "Maximum temperature in ensemble forecast",
+                "Maximum ensemble temperature",
                 'ds = dynamical_catalog.open("noaa-gefs-forecast-35-day", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
             ),
@@ -458,7 +458,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/common_gefs_template_config.py",
         examples=(
             _example(
-                "Temperature at a specific place and time",
+                "Temperature at a place and time",
                 'ds = dynamical_catalog.open("noaa-gefs-analysis", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00", latitude=0, longitude=0)',
             ),
@@ -485,7 +485,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=REFORMATTERS_REPO,
         examples=(
             _example(
-                "Maximum temperature in a forecast",
+                "Maximum temperature",
                 'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", x=0, y=0, method="nearest").max()',
             ),
@@ -516,7 +516,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_48_hour_virtual/template_config.py",
         examples=(
             _example(
-                "A temperature map at one forecast step",
+                "Temperature map",
                 'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h")\n'
                 "\n"
@@ -548,7 +548,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=REFORMATTERS_REPO,
         examples=(
             _example(
-                "Temperature at a specific place and time",
+                "Temperature at a place and time",
                 'ds = dynamical_catalog.open("noaa-hrrr-analysis", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00", x=0, y=0, method="nearest")',
             ),
@@ -590,7 +590,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_single/forecast/template_config.py",
         examples=(
             _example(
-                "Maximum temperature in a forecast",
+                "Maximum temperature",
                 'ds = dynamical_catalog.open("ecmwf-aifs-single-forecast", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
             ),
@@ -616,7 +616,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_ens/forecast/template_config.py",
         examples=(
             _example(
-                "Maximum temperature in ensemble",
+                "Maximum ensemble temperature",
                 'ds = dynamical_catalog.open("ecmwf-aifs-ens-forecast", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-08-01T00", latitude=0, longitude=0).max()',
             ),
@@ -642,7 +642,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_15_day_0_25_degree/template_config.py",
         examples=(
             _example(
-                "Maximum temperature in ensemble",
+                "Maximum ensemble temperature",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
             ),
@@ -666,7 +666,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/dwd/icon_eu/forecast_5_day/template_config.py",
         examples=(
             _example(
-                "Maximum temperature in a forecast",
+                "Maximum temperature",
                 'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2026-04-01T00", latitude=50, longitude=10).max()',
             ),
