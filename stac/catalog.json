@@ -83,6 +83,18 @@
       "title": "DWD ICON-EU forecast, 5 day"
     },
     {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/nasa-imerg-analysis-early/collection.json",
+      "type": "application/json",
+      "title": "NASA IMERG analysis, early"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/nasa-imerg-analysis-late/collection.json",
+      "type": "application/json",
+      "title": "NASA IMERG analysis, late"
+    },
+    {
       "rel": "self",
       "href": "https://stac.dynamical.org/catalog.json",
       "type": "application/json",
