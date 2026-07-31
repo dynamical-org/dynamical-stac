@@ -935,7 +935,7 @@
       "Global"
     ],
     "spatial_resolution": [
-      "0-240 hours: 0.25 degrees (~20km), 243-840 hours: 0.5 degrees (~40km)"
+      "0-240 hours: 0.25 degrees (~20km), 246-840 hours: 0.5 degrees (~40km)"
     ],
     "time_domain": [
       "Forecasts initialized 2020-10-01 00:00:00 UTC to Present"
@@ -947,7 +947,7 @@
       "Forecast lead time 0-840 hours (0-35 days) ahead"
     ],
     "forecast_resolution": [
-      "Forecast step 0-240 hours: 3 hourly, 243-840 hours: 6 hourly"
+      "Forecast step 0-240 hours: 3 hourly, 246-840 hours: 6 hourly"
     ]
   },
   "assets": {

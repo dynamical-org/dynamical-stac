@@ -478,6 +478,43 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-gefs-analysis"),),
     ),
     CatalogItem(
+        id="noaa-hrrr-forecast-18-hour-virtual",
+        icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-18-hour-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",),
+        model_id="noaa-hrrr",
+        description_summary=(
+            "This dataset is an archive of past and present HRRR forecasts, "
+            "optimized for spatial (map) access patterns. Forecasts are "
+            "identified by an initialization time (`init_time`) denoting the "
+            "start time of the model run, and step forward hourly along the "
+            "`lead_time` dimension out to 18 hours. A new forecast is "
+            "initialized every hour.\n\n"
+            "This dataset uses the native HRRR Lambert Conformal Conic "
+            "projection, with spatial indexing along the `x` and `y` "
+            "dimensions. The example notebook shows how to use the embedded "
+            "spatial reference to select geographic areas of interest.\n\n"
+            "Note: `dynamical-catalog>=0.7.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.5`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_18_hour_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-hrrr-forecast-18-hour-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="12h")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level and model_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-hrrr-forecast-18-hour-virtual", group="pressure_level", chunks=None)\n'
+                'ds_model = dynamical_catalog.open("noaa-hrrr-forecast-18-hour-virtual", group="model_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["temperature"].sel(pressure_level=500)',
+            ),
+        ),
+        notebooks=(_quickstart_notebook("noaa-hrrr-forecast-18-hour-virtual"),),
+        staging=True,
+    ),
+    CatalogItem(
         id="noaa-hrrr-forecast-48-hour",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
