@@ -143,6 +143,12 @@ FRAGMENTS: dict[str, str] = {
         "for more information on this approach. The exact number of rounded bits "
         "can be found in our [reformatting code]({{ reformatter_url }})."
     ),
+    # Appended after {{ compression }} in both IMERG datasets' prose.
+    "compression_imerg_note": (
+        "NASA distributes IMERG precipitation values already rounded to "
+        "0.01 mm/hr. Our rounding is relative rather than absolute, and adds "
+        "less than 0.5% error to each value."
+    ),
 }
 
 

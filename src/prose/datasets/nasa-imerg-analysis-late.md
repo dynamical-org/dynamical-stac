@@ -23,3 +23,5 @@ The source files this archive is constructed from are provided by NASA and acces
 ### Compression
 
 {{ compression }}
+
+{{ compression_imerg_note }}
