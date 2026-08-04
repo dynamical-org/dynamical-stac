@@ -1,6 +1,6 @@
 ### Early vs. Late Run
 
-NASA produces several IMERG runs from the same input observations at different latencies. This dataset is the **Late Run**, published approximately 12 to 18 hours after observation time. It incorporates additional satellite sensor input and applies both forward and backward propagation (morphing) of precipitation features, yielding higher quality than the low-latency Early Run.
+NASA produces several IMERG runs from the same input observations at different latencies. This dataset is the **Late Run**, published approximately 14 hours after observation time. It incorporates additional satellite sensor input and applies both forward and backward propagation (morphing) of precipitation features, yielding higher quality than the low-latency Early Run.
 
 The companion [NASA IMERG analysis, early](/catalog/nasa-imerg-analysis-early/) dataset is published about 4 hours after observation time.
 
@@ -23,3 +23,5 @@ The source files this archive is constructed from are provided by NASA and acces
 ### Compression
 
 {{ compression }}
+
+{{ compression_imerg_note }}

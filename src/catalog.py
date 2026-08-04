@@ -143,6 +143,12 @@ FRAGMENTS: dict[str, str] = {
         "for more information on this approach. The exact number of rounded bits "
         "can be found in our [reformatting code]({{ reformatter_url }})."
     ),
+    # Appended after {{ compression }} in both IMERG datasets' prose.
+    "compression_imerg_note": (
+        "NASA distributes IMERG precipitation values already rounded to "
+        "0.01 mm/hr. Our rounding is relative rather than absolute, and adds "
+        "less than 0.5% error to each value."
+    ),
 }
 
 
@@ -255,8 +261,8 @@ MODELS: dict[str, Model] = {
         description=(
             "The Integrated Multi-satellitE Retrievals for GPM (IMERG) is a NASA algorithm that merges "
             "precipitation estimates from the constellation of passive microwave satellites in the Global "
-            "Precipitation Measurement (GPM) mission with microwave-calibrated infrared estimates, monthly "
-            "gauge analyses, and other sources to produce a global, gridded, half-hourly precipitation "
+            "Precipitation Measurement (GPM) mission with microwave-calibrated infrared estimates and "
+            "monthly gauge analyses to produce a global, gridded, half-hourly precipitation "
             "record. IMERG intercalibrates, merges, and interpolates these inputs onto a 0.1 degree grid "
             "spanning the TRMM and GPM satellite eras."
         ),
@@ -755,7 +761,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "precipitation estimates from NASA GPM IMERG, version 07, on a "
             "0.1 degree grid with dimensions time, latitude, and longitude. "
             "This is the Late Run, which incorporates additional satellite "
-            "sensor input for higher quality, published about 12 to 18 hours "
+            "sensor input for higher quality, published about 14 hours "
             "after observation time."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/nasa/imerg/template_config.py",
