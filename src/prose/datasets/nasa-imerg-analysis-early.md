@@ -2,7 +2,7 @@
 
 NASA produces several IMERG runs from the same input observations at different latencies. This dataset is the **Early Run**, published approximately 4 hours after observation time. It relies on forward propagation (morphing) of precipitation features only and is intended for time-sensitive applications.
 
-The companion [NASA IMERG analysis, late](/catalog/nasa-imerg-analysis-late/) dataset incorporates additional satellite sensor input and both forward and backward morphing for higher quality, at the cost of a longer, roughly 12 to 18 hour, latency.
+The companion [NASA IMERG analysis, late](/catalog/nasa-imerg-analysis-late/) dataset incorporates additional satellite sensor input and both forward and backward morphing for higher quality, at the cost of a longer, roughly 14 hour, latency.
 
 ### Temporal coverage
 
