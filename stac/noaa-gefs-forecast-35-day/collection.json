@@ -688,6 +688,34 @@
       "short_name": "tcc",
       "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
     },
+    "wind_gust_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        31,
+        64,
+        17,
+        16
+      ],
+      "shards": [
+        1,
+        31,
+        192,
+        374,
+        368
+      ],
+      "unit": "m s-1",
+      "long_name": "Wind speed (gust)",
+      "standard_name": "wind_speed_of_gust",
+      "short_name": "gust"
+    },
     "wind_u_100m": {
       "dimensions": [
         "init_time",

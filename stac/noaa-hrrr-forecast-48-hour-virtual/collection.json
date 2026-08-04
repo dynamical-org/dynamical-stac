@@ -1035,7 +1035,7 @@
       ],
       "unit": "W m-2",
       "long_name": "Ground heat flux",
-      "standard_name": "downward_heat_flux_in_soil",
+      "standard_name": "upward_heat_flux_at_ground_level_in_soil",
       "short_name": "gflux"
     },
     "high_cloud_cover": {
@@ -1519,9 +1519,9 @@
         1799
       ],
       "unit": "m s-1",
-      "long_name": "10 metre wind speed",
+      "long_name": "Time-maximum 10 metre wind speed",
       "standard_name": "wind_speed",
-      "short_name": "10si"
+      "short_name": "max_10si"
     },
     "maximum_wind_u_component_10m": {
       "dimensions": [
@@ -2552,7 +2552,7 @@
         1059,
         1799
       ],
-      "unit": "s-1",
+      "unit": "m s-1",
       "long_name": "Vertical u-component shear",
       "short_name": "vucsh"
     },
@@ -2570,7 +2570,7 @@
         1059,
         1799
       ],
-      "unit": "s-1",
+      "unit": "m s-1",
       "long_name": "Vertical u-component shear",
       "short_name": "vucsh"
     },
@@ -2588,7 +2588,7 @@
         1059,
         1799
       ],
-      "unit": "s-1",
+      "unit": "m s-1",
       "long_name": "Vertical v-component shear",
       "short_name": "vvcsh"
     },
@@ -2606,7 +2606,7 @@
         1059,
         1799
       ],
-      "unit": "s-1",
+      "unit": "m s-1",
       "long_name": "Vertical v-component shear",
       "short_name": "vvcsh"
     },
