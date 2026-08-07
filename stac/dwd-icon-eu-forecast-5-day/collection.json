@@ -64,7 +64,7 @@
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"dwd-icon-eu-forecast-5-day\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-04-01T00\", latitude=50, longitude=10).max()",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"dwd-icon-eu-forecast-5-day\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-04-01T00\", latitude=50, longitude=10).max()",
           "language": "python"
         },
         {
