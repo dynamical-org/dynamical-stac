@@ -64,7 +64,7 @@
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"noaa-mrms-conus-analysis-hourly\", chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\")",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-mrms-conus-analysis-hourly\", chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\")",
           "language": "python"
         },
         {

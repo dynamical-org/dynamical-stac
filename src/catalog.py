@@ -15,7 +15,7 @@ REFORMATTERS_ROOT = (
 REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 
 # Prepended to every example snippet so users see the required package versions.
-_DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.7.0"
+_DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.8.0"
 
 
 def s3_to_https_url(s3_href: str, region: str) -> str:
@@ -500,7 +500,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "projection, with spatial indexing along the `x` and `y` "
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
-            "Note: `dynamical-catalog>=0.7.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_18_hour_virtual/template_config.py",
@@ -565,7 +565,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "projection, with spatial indexing along the `x` and `y` "
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
-            "Note: `dynamical-catalog>=0.7.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_48_hour_virtual/template_config.py",

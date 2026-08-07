@@ -70,7 +70,7 @@
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.7.0\n\nds = dynamical_catalog.open(\"ecmwf-ifs-ens-forecast-15-day-0-25-degree\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", latitude=0, longitude=0).max()",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"ecmwf-ifs-ens-forecast-15-day-0-25-degree\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", latitude=0, longitude=0).max()",
           "language": "python"
         },
         {
