@@ -72,6 +72,12 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-aifs-single-forecast-virtual/collection.json",
+      "type": "application/json",
+      "title": "ECMWF AIFS Single forecast, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/ecmwf-aifs-ens-forecast/collection.json",
       "type": "application/json",
       "title": "ECMWF AIFS ENS forecast"
