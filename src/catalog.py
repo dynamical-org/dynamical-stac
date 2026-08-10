@@ -657,6 +657,42 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
+        id="ecmwf-aifs-single-forecast-virtual",
+        icechunk_href="s3://dynamical-ecmwf-aifs-single/ecmwf-aifs-single-forecast-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://ecmwf-forecasts/",),
+        model_id="ecmwf-aifs-single",
+        description_summary=(
+            "This dataset is an archive of past and present ECMWF AIFS Single "
+            "forecasts, optimized for spatial (map) access patterns. Forecasts "
+            "are identified by an initialization time (`init_time`) denoting "
+            "the start time of the model run, and step forward along the "
+            "`lead_time` dimension from 0 to 360 hours (15 days) at a 6 hourly "
+            "step.\n\n"
+            "Chunks reference the bytes of ECMWF's original GRIB files and are "
+            "decoded on read, so this archive carries every variable ECMWF "
+            "publishes for AIFS Single. Surface and single-level variables are "
+            "at the dataset root; variables carried on pressure levels are in "
+            "the `pressure_level` group.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.5`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_single/forecast_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("ecmwf-aifs-single-forecast-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-03-01T00", lead_time="24h")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
+                'ds_pressure = dynamical_catalog.open("ecmwf-aifs-single-forecast-virtual", group="pressure_level", chunks=None)\n'
+                'ds_pressure["geopotential_height"].sel(pressure_level=500)',
+            ),
+        ),
+        notebooks=(_quickstart_notebook("ecmwf-aifs-single-forecast-virtual"),),
+        additional_terms=ECMWF_TERMS,
+    ),
+    CatalogItem(
         id="ecmwf-aifs-ens-forecast",
         icechunk_href="s3://dynamical-ecmwf-aifs-ens/ecmwf-aifs-ens-forecast/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
