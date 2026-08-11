@@ -77,6 +77,20 @@ jobs:
         env:
           TARGET_ID: ${{ matrix.id }}
 
+  # Fixed-name aggregate of the whole compat matrix. Branch protection requires
+  # this context instead of the per-target `compat (...)` ones, whose names come
+  # and go with PyPI releases; a required context that stops being reported
+  # blocks every PR indefinitely. `always()` means a discover failure, which
+  # leaves compat skipped rather than failed, is caught here too.
+  compat-required:
+    needs: compat
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULT: ${{ needs.compat.result }}
+        run: test "$RESULT" = success
+
   notify-on-failure:
     needs: test
     if: failure() && github.event_name == 'repository_dispatch'
