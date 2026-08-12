@@ -75,7 +75,7 @@ def test_examples_found() -> None:
     _PYTHON_EXAMPLES,
     ids=[f"{cid}:{title}:{label}" for cid, title, label, _ in _PYTHON_EXAMPLES],
 )
-def test_example_executes(
+def test_example_executes(  # noqa: PLR0917
     dynamical_catalog_fixture: object,
     served_catalog: tuple[pathlib.Path, str],
     collection_id: str,
