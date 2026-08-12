@@ -63,7 +63,7 @@ def fetch_releases(package: str = PACKAGE, min_version: str = MIN_VERSION) -> li
     excluding pre-releases and fully-yanked versions.
     """
     url = f"https://pypi.org/pypi/{package}/json"
-    with urllib.request.urlopen(url, timeout=_PYPI_TIMEOUT_SECONDS) as resp:  # noqa: S310
+    with urllib.request.urlopen(url, timeout=_PYPI_TIMEOUT_SECONDS) as resp:
         data = json.loads(resp.read())
 
     floor = _version_tuple(min_version)
