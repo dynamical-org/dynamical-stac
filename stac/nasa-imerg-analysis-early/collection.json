@@ -23,6 +23,12 @@
       "title": "Dataset documentation"
     },
     {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/nasa-imerg-analysis-early/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/nasa-imerg-analysis-early.ipynb",
       "type": "application/x-ipynb+json",

@@ -23,6 +23,12 @@
       "title": "Dataset documentation"
     },
     {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/dwd-icon-eu-forecast-5-day/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day.ipynb",
       "type": "application/x-ipynb+json",

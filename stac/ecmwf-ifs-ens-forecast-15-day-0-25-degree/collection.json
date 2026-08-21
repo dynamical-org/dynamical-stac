@@ -29,6 +29,12 @@
       "title": "Dataset documentation"
     },
     {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ecmwf-ifs-ens-forecast-15-day-0-25-degree/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-15-day-0-25-degree.ipynb",
       "type": "application/x-ipynb+json",

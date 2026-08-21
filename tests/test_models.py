@@ -90,6 +90,16 @@ def test_about_url_and_icechunk_href() -> None:
     assert c.icechunk_href == "s3://b/p/"
 
 
+def test_about_links_cover_docs_and_validation_report() -> None:
+    c = _valid_input(id="ds")
+    collection = c.to_pystac_collection()
+    about = [link for link in collection.links if link.rel == "about"]
+    assert [(link.title, link.target) for link in about] == [
+        ("Dataset documentation", "https://dynamical.org/catalog/ds/"),
+        ("Validation report", "https://dynamical.org/catalog/ds/validation/"),
+    ]
+
+
 # Use a real catalog id so ``CatalogItem.description_details`` can resolve its
 # matching prose file; these tests don't inspect description content.
 _TEST_ID = "noaa-gfs-analysis"
