@@ -266,7 +266,8 @@
       "unit": "W m-2",
       "long_name": "Surface diffuse short-wave radiation flux",
       "standard_name": "surface_diffuse_downwelling_shortwave_flux_in_air",
-      "short_name": "aswdifd_s"
+      "short_name": "aswdifd_s",
+      "comment": "Average flux since the previous forecast step."
     },
     "downward_direct_short_wave_radiation_flux_surface": {
       "dimensions": [
@@ -292,7 +293,7 @@
       "long_name": "Surface direct short-wave radiation flux",
       "standard_name": "surface_direct_downwelling_shortwave_flux_in_air",
       "short_name": "aswdir_s",
-      "comment": "Average value since the previous forecast step."
+      "comment": "Average flux since the previous forecast step."
     },
     "precipitable_water_atmosphere": {
       "dimensions": [

@@ -699,7 +699,7 @@
       "unit": "m",
       "long_name": "Echo top",
       "short_name": "retop",
-      "comment": "-999 encodes no echo; CF-aware readers mask it to NaN."
+      "comment": "NaN where no radar echo was detected."
     },
     "effective_layer_helicity_surface": {
       "dimensions": [
@@ -903,7 +903,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where no cloud was detected."
     },
     "geopotential_height_cloud_ceiling": {
       "dimensions": [
@@ -922,7 +923,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where no cloud ceiling was detected."
     },
     "geopotential_height_cloud_top": {
       "dimensions": [
@@ -941,7 +943,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height_at_cloud_top",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where no cloud was detected."
     },
     "geopotential_height_equilibrium_level": {
       "dimensions": [
@@ -1686,7 +1689,7 @@
       "unit": "percent",
       "long_name": "Percent frozen precipitation",
       "short_name": "cpofp",
-      "comment": "-50 encodes no/undefined frozen precipitation; CF-aware readers mask it to NaN."
+      "comment": "NaN where there is no precipitation."
     },
     "planetary_boundary_layer_height_surface": {
       "dimensions": [
@@ -1819,7 +1822,8 @@
       "unit": "Pa",
       "long_name": "Pressure",
       "standard_name": "air_pressure_at_cloud_base",
-      "short_name": "pres"
+      "short_name": "pres",
+      "comment": "NaN where no cloud was detected."
     },
     "pressure_cloud_top": {
       "dimensions": [
@@ -1838,7 +1842,8 @@
       "unit": "Pa",
       "long_name": "Pressure",
       "standard_name": "air_pressure_at_cloud_top",
-      "short_name": "pres"
+      "short_name": "pres",
+      "comment": "NaN where no cloud was detected."
     },
     "pressure_highest_tropospheric_freezing_level": {
       "dimensions": [
