@@ -23,6 +23,12 @@
       "title": "Dataset documentation"
     },
     {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-gefs-analysis/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-gefs-analysis.ipynb",
       "type": "application/x-ipynb+json",

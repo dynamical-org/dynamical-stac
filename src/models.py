@@ -567,6 +567,12 @@ class CollectionInput(BaseModel):
     def about_url(self) -> str:
         return f"https://dynamical.org/catalog/{self.id}/"
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def validation_url(self) -> str:
+        """Per-dataset validation report, published under the dataset page."""
+        return f"{self.about_url}validation/"
+
     @classmethod
     def from_dataset(
         cls,
@@ -785,6 +791,14 @@ class CollectionInput(BaseModel):
                 target=self.about_url,
                 media_type="text/html",
                 title="Dataset documentation",
+            )
+        )
+        collection.add_link(
+            pystac.Link(
+                rel="about",
+                target=self.validation_url,
+                media_type="text/html",
+                title="Validation report",
             )
         )
         for notebook in self.notebooks:

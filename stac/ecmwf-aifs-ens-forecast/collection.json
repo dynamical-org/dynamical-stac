@@ -29,6 +29,12 @@
       "title": "Dataset documentation"
     },
     {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ecmwf-aifs-ens-forecast/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-aifs-ens-forecast.ipynb",
       "type": "application/x-ipynb+json",
