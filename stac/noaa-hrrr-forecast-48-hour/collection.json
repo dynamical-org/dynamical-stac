@@ -338,7 +338,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where no cloud ceiling was detected."
     },
     "percent_frozen_precipitation_surface": {
       "dimensions": [
@@ -363,7 +364,7 @@
       "unit": "percent",
       "long_name": "Percent frozen precipitation",
       "short_name": "cpofp",
-      "comment": "-50 encodes no/undefined frozen precipitation; CF-aware readers mask it to NaN."
+      "comment": "NaN where there is no precipitation."
     },
     "precipitable_water_atmosphere": {
       "dimensions": [
@@ -663,7 +664,8 @@
       ],
       "unit": "W m-2",
       "long_name": "Visible Beam Downward Solar Flux",
-      "short_name": "vbdsf"
+      "short_name": "vbdsf",
+      "comment": "Direct normal irradiance \u2014 the flux perpendicular to the solar beam, so it exceeds the horizontal downward shortwave flux when the sun is low. Values inflate without bound in a narrow band of grid cells at sunrise, reaching 10000. Mask values > 1361, the solar constant."
     },
     "wind_gust_surface": {
       "dimensions": [

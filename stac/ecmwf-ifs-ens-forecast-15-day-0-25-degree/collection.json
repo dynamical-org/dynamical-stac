@@ -212,7 +212,8 @@
       "unit": "W m-2",
       "long_name": "Surface downward long-wave radiation flux",
       "standard_name": "surface_downwelling_longwave_flux_in_air",
-      "short_name": "sdlwrf"
+      "short_name": "sdlwrf",
+      "comment": "Average flux since the previous forecast step."
     },
     "downward_short_wave_radiation_flux_surface": {
       "dimensions": [
@@ -240,7 +241,8 @@
       "unit": "W m-2",
       "long_name": "Surface downward short-wave radiation flux",
       "standard_name": "surface_downwelling_shortwave_flux_in_air",
-      "short_name": "sdswrf"
+      "short_name": "sdswrf",
+      "comment": "Average flux since the previous forecast step."
     },
     "geopotential_height_500hpa": {
       "dimensions": [
