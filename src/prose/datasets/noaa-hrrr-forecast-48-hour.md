@@ -14,6 +14,10 @@ Forecasts initialized through 2020-12-02T06 UTC include data only for the first 
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}

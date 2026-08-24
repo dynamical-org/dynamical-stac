@@ -19,9 +19,6 @@ upgrade. The four fixed surface fields (land-sea mask, surface geopotential
 height, and the slope and standard deviation of sub-grid orography) are carried
 only at the 0 hour lead time.
 
-See the [validation report](https://dynamical.org/catalog/ecmwf-aifs-single-forecast-virtual/validation/)
-for complete details.
-
 ### Storage
 
 {{ storage_aws_open_data }}
@@ -29,3 +26,7 @@ for complete details.
 ### Chunks
 
 {{ chunking_unsharded }}
+
+### Validation report
+
+{{ validation_report }}

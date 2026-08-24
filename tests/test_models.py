@@ -8,6 +8,7 @@ import pytest
 import xarray as xr
 
 from catalog import (
+    CATALOG_ITEMS,
     AdditionalTerms,
     CatalogItem,
     DatasetExample,
@@ -98,6 +99,22 @@ def test_about_links_cover_docs_and_validation_report() -> None:
         ("Dataset documentation", "https://dynamical.org/catalog/ds/"),
         ("Validation report", "https://dynamical.org/catalog/ds/validation/"),
     ]
+
+
+def test_every_dataset_details_links_to_its_validation_report() -> None:
+    for item in CATALOG_ITEMS:
+        section = (
+            "### Validation report\n\n"
+            f"Review the [validation report](https://dynamical.org/catalog/{item.id}/validation/) "
+            "to understand variable availability, missing data, known quirks, fill values, "
+            "and approximate spatial, temporal, and value distributions."
+        )
+        details = item.description_details("chunking table")
+
+        assert details.count("### Validation report") == 1
+        assert section in details
+        if "### Compression" in details:
+            assert f"{section}\n\n### Compression" in details
 
 
 # Use a real catalog id so ``CatalogItem.description_details`` can resolve its

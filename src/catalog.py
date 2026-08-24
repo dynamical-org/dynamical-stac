@@ -135,6 +135,12 @@ FRAGMENTS: dict[str, str] = {
         "The element count and coordinate span of this dataset:\n\n"
         "{{ chunking_table }}"
     ),
+    # References {{ validation_url }} — supplied per-dataset at load time.
+    "validation_report": (
+        "Review the [validation report]({{ validation_url }}) to understand "
+        "variable availability, missing data, known quirks, fill values, and "
+        "approximate spatial, temporal, and value distributions."
+    ),
     # References {{ reformatter_url }} — supplied per-dataset at load time.
     "compression": (
         "The data values in this dataset have been rounded in their binary "
@@ -316,7 +322,9 @@ class CatalogItem(BaseModel):
         dataset page with a dangling table.
         """
         text = _load_prose(
-            f"datasets/{self.id}.md", reformatter_url=self.reformatter_url
+            f"datasets/{self.id}.md",
+            reformatter_url=self.reformatter_url,
+            validation_url=f"https://dynamical.org/catalog/{self.id}/validation/",
         )
         if "{{ chunking_table }}" in text:
             if chunking_table is None:

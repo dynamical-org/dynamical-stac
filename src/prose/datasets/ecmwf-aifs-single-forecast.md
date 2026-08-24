@@ -16,6 +16,10 @@ on the ECMWF website.
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}
