@@ -15,6 +15,10 @@ Storage for the dynamical.org DWD ICON-EU grib archive is generously provided by
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}

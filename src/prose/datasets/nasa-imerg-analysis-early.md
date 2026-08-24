@@ -20,6 +20,10 @@ The source files this archive is constructed from are provided by NASA and acces
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}

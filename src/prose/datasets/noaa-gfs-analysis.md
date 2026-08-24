@@ -14,6 +14,10 @@ GFS starts a new model run every 6 hours and dynamical.org has created this anal
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}
