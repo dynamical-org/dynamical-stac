@@ -114,6 +114,7 @@ def test_every_dataset_details_links_to_its_validation_report() -> None:
         assert details.count("### Validation report") == 1
         assert section in details
         if "### Compression" in details:
+            assert details.count("### Compression") == 1
             assert f"{section}\n\n### Compression" in details
 
 
