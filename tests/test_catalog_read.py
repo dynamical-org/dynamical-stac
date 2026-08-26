@@ -1,4 +1,8 @@
-"""Integration tests: open every icechunk in the catalog and verify notebook URLs."""
+"""Integration tests: open every icechunk in the catalog and verify notebook URLs.
+
+The notebook check covers every URL the catalog declares; a staging item may
+declare none at all, and those simply drop out of the parametrization.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +14,10 @@ import pytest
 
 from catalog import _COLLECTION_IDS, CATALOG_ITEMS
 
+# Every notebook declared by any item — staging items included. Items with no
+# notebooks (only possible while staging, see
+# `CatalogItem._production_items_have_notebooks`) contribute nothing here, so
+# this covers exactly the notebook URLs the catalog actually publishes.
 _NOTEBOOK_SLUGS = sorted(
     {notebook.slug for item in CATALOG_ITEMS for notebook in item.notebooks}
 )

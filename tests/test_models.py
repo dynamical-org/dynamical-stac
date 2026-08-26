@@ -62,6 +62,12 @@ def _valid_input(**overrides: object) -> CollectionInput:
     return CollectionInput(**defaults)  # type: ignore[arg-type]
 
 
+def test_no_notebooks_renders_no_example_links() -> None:
+    # Staging-only datasets can be published before their notebook exists.
+    collection = _valid_input(notebooks=()).to_pystac_collection()
+    assert [link for link in collection.links if link.rel == "example"] == []
+
+
 def test_notebook_links_pair_github_and_colab_per_notebook() -> None:
     c = _valid_input(
         notebooks=(
@@ -188,6 +194,32 @@ def test_catalog_item_rejects_quickstart_slug_not_matching_id() -> None:
             icechunk_region="us-west-2",
             **{**_PROSE_KWARGS, "notebooks": (bad_notebook,)},  # type: ignore[arg-type]
         )
+
+
+def test_catalog_item_rejects_production_item_without_notebooks() -> None:
+    with pytest.raises(
+        pydantic.ValidationError, match="must declare at least one notebook"
+    ):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **{**_PROSE_KWARGS, "notebooks": ()},  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_allows_staging_item_without_notebooks() -> None:
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+        icechunk_region="us-west-2",
+        **{  # type: ignore[arg-type]
+            **_PROSE_KWARGS,
+            "notebooks": (),
+            "staging": True,
+        },
+    )
+    assert item.notebooks == ()
 
 
 def test_catalog_item_allows_non_quickstart_notebook_with_any_slug() -> None:

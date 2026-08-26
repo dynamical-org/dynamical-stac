@@ -833,7 +833,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where the freezing level is at or below ground."
     },
     "geopotential_height_253k": {
       "dimensions": [
@@ -950,7 +951,7 @@
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height_at_cloud_top",
       "short_name": "gh",
-      "comment": "NaN where no cloud was detected."
+      "comment": "NaN where no cloud top was detected."
     },
     "geopotential_height_equilibrium_level": {
       "dimensions": [
@@ -969,7 +970,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "Where no equilibrium level exists the source reports terrain height plus about 20 m rather than a missing value. Mask by convective available potential energy, which is 0 at those points."
     },
     "geopotential_height_highest_tropospheric_freezing_level": {
       "dimensions": [
@@ -988,7 +990,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where the freezing level is at or below ground."
     },
     "geopotential_height_level_of_free_convection": {
       "dimensions": [
@@ -1007,7 +1010,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "The source reports a height everywhere, including where no free convection is possible, and marks those points in no other way. Mask by convective available potential energy, which is 0 at those points."
     },
     "geopotential_height_surface": {
       "dimensions": [
@@ -1101,7 +1105,7 @@
       ],
       "unit": "1",
       "long_name": "Ice cover (1=ice, 0=no ice)",
-      "standard_name": "sea_ice_area_fraction",
+      "standard_name": "floating_ice_area_fraction",
       "short_name": "icec"
     },
     "land_sea_mask_surface": {
@@ -1271,7 +1275,7 @@
       "unit": "kg m-3",
       "long_name": "Mass density",
       "short_name": "mdens",
-      "comment": "Near-surface smoke concentration. Source values at init_times before 2021-12-21T18Z are in ug m-3; NOAA corrected the encoding to kg m-3 from that cycle onward, so multiply earlier values by 1e-9 to compare."
+      "comment": "Near-surface smoke concentration. Source values at init_times before 2021-12-21T14Z are in ug m-3; NOAA corrected the encoding to kg m-3 from that cycle onward, so multiply earlier values by 1e-9 to compare."
     },
     "maximum_column_integrated_graupel_atmosphere": {
       "dimensions": [
@@ -1548,7 +1552,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Maximum 10 metre wind speed u component",
-      "short_name": "maxuw"
+      "short_name": "maxuw",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "maximum_wind_v_component_10m": {
       "dimensions": [
@@ -1566,7 +1571,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Maximum 10 metre wind speed v component",
-      "short_name": "maxvw"
+      "short_name": "maxvw",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "medium_cloud_cover": {
       "dimensions": [
@@ -1849,7 +1855,7 @@
       "long_name": "Pressure",
       "standard_name": "air_pressure_at_cloud_top",
       "short_name": "pres",
-      "comment": "NaN where no cloud was detected."
+      "comment": "NaN where no cloud top was detected."
     },
     "pressure_highest_tropospheric_freezing_level": {
       "dimensions": [
@@ -2415,7 +2421,8 @@
       ],
       "unit": "m s-1",
       "long_name": "U-component storm motion",
-      "short_name": "ustm"
+      "short_name": "ustm",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "upward_long_wave_radiation_flux_surface": {
       "dimensions": [
@@ -2509,7 +2516,8 @@
       ],
       "unit": "m s-1",
       "long_name": "V-component storm motion",
-      "short_name": "vstm"
+      "short_name": "vstm",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "vegetation_surface": {
       "dimensions": [
@@ -2565,7 +2573,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Vertical u-component shear",
-      "short_name": "vucsh"
+      "short_name": "vucsh",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "vertical_u_component_shear_0_6000m": {
       "dimensions": [
@@ -2583,7 +2592,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Vertical u-component shear",
-      "short_name": "vucsh"
+      "short_name": "vucsh",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "vertical_v_component_shear_0_1000m": {
       "dimensions": [
@@ -2601,7 +2611,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Vertical v-component shear",
-      "short_name": "vvcsh"
+      "short_name": "vvcsh",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "vertical_v_component_shear_0_6000m": {
       "dimensions": [
@@ -2619,7 +2630,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Vertical v-component shear",
-      "short_name": "vvcsh"
+      "short_name": "vvcsh",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "vertical_velocity_geometric_0p5_0p8_sigma": {
       "dimensions": [
@@ -2748,8 +2760,9 @@
       ],
       "unit": "m s-1",
       "long_name": "10 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "10u"
+      "standard_name": "x_wind",
+      "short_name": "10u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "wind_u_80m": {
       "dimensions": [
@@ -2767,8 +2780,9 @@
       ],
       "unit": "m s-1",
       "long_name": "80 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "80u"
+      "standard_name": "x_wind",
+      "short_name": "80u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "wind_v_10m": {
       "dimensions": [
@@ -2786,8 +2800,9 @@
       ],
       "unit": "m s-1",
       "long_name": "10 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "10v"
+      "standard_name": "y_wind",
+      "short_name": "10v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "wind_v_80m": {
       "dimensions": [
@@ -2805,8 +2820,9 @@
       ],
       "unit": "m s-1",
       "long_name": "80 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "80v"
+      "standard_name": "y_wind",
+      "short_name": "80v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "model_level/cloud_ice_mixing_ratio": {
       "dimensions": [
@@ -2931,7 +2947,7 @@
       "unit": "kg m-3",
       "long_name": "Mass density",
       "short_name": "mdens",
-      "comment": "Smoke concentration. Source values at init_times before 2021-12-21T18Z are in ug m-3; NOAA corrected the encoding to kg m-3 from that cycle onward, so multiply earlier values by 1e-9 to compare."
+      "comment": "Smoke concentration. Source values at init_times before 2021-12-21T14Z are in ug m-3; NOAA corrected the encoding to kg m-3 from that cycle onward, so multiply earlier values by 1e-9 to compare."
     },
     "model_level/number_concentration_cloud_droplets": {
       "dimensions": [
@@ -3198,8 +3214,9 @@
       ],
       "unit": "m s-1",
       "long_name": "U component of wind",
-      "standard_name": "eastward_wind",
-      "short_name": "u"
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "model_level/wind_v": {
       "dimensions": [
@@ -3219,8 +3236,9 @@
       ],
       "unit": "m s-1",
       "long_name": "V component of wind",
-      "standard_name": "northward_wind",
-      "short_name": "v"
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "pressure_level/absolute_vorticity": {
       "dimensions": [
@@ -3489,8 +3507,9 @@
       ],
       "unit": "m s-1",
       "long_name": "U component of wind",
-      "standard_name": "eastward_wind",
-      "short_name": "u"
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "pressure_level/wind_v": {
       "dimensions": [
@@ -3510,8 +3529,9 @@
       ],
       "unit": "m s-1",
       "long_name": "V component of wind",
-      "standard_name": "northward_wind",
-      "short_name": "v"
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     }
   },
   "dynamical-org:chunking": {
