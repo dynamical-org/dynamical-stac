@@ -289,7 +289,10 @@ class CatalogItem(BaseModel):
     description_summary: str = Field(min_length=1)
     reformatter_url: str = Field(min_length=1)
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
-    notebooks: tuple[DatasetNotebook, ...] = Field(min_length=1)
+    # Optional only while a dataset is unreleased: a staging item may have no
+    # notebook written yet. Enforced non-empty for production items by
+    # `_production_items_have_notebooks`.
+    notebooks: tuple[DatasetNotebook, ...] = ()
     additional_terms: AdditionalTerms | None = None
     # Unreleased dataset: excluded from the production catalog, published only to
     # stac-staging so it can be previewed before going live. See generate.py.
@@ -334,6 +337,22 @@ class CatalogItem(BaseModel):
                 )
             text = text.replace("{{ chunking_table }}", chunking_table)
         return text
+
+    @model_validator(mode="after")
+    def _production_items_have_notebooks(self) -> CatalogItem:
+        """Every dataset in the production catalog links a real notebook.
+
+        Staging items are exempt so an unreleased dataset can be previewed on
+        stac-staging before its notebook exists; flipping ``staging`` to False
+        then fails validation until a notebook is added.
+        """
+        if not self.staging and not self.notebooks:
+            raise ValueError(
+                f"CatalogItem {self.id!r} is in the production catalog, so it "
+                f"must declare at least one notebook (notebooks may only be "
+                f"omitted while staging=True)"
+            )
+        return self
 
     @model_validator(mode="after")
     def _quickstart_slug_matches_id(self) -> CatalogItem:
