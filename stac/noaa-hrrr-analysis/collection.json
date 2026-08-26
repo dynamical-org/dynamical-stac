@@ -639,8 +639,9 @@
       ],
       "unit": "m s-1",
       "long_name": "10 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "10u"
+      "standard_name": "x_wind",
+      "short_name": "10u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "wind_u_80m": {
       "dimensions": [
@@ -661,8 +662,9 @@
       ],
       "unit": "m s-1",
       "long_name": "80 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "80u"
+      "standard_name": "x_wind",
+      "short_name": "80u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "wind_v_10m": {
       "dimensions": [
@@ -683,8 +685,9 @@
       ],
       "unit": "m s-1",
       "long_name": "10 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "10v"
+      "standard_name": "y_wind",
+      "short_name": "10v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "wind_v_80m": {
       "dimensions": [
@@ -705,8 +708,9 @@
       ],
       "unit": "m s-1",
       "long_name": "80 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "80v"
+      "standard_name": "y_wind",
+      "short_name": "80v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     }
   },
   "dynamical-org:chunking": {
