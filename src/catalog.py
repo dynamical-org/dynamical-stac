@@ -770,6 +770,48 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
+        id="ecmwf-ifs-ens-forecast-46-day-1-5-degree",
+        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-1-5-degree/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="ecmwf-ifs-ens",
+        description_summary=(
+            "This dataset is an archive of ECMWF IFS ENS sub-seasonal-range "
+            "forecasts. Forecasts are identified by an initialization time "
+            "(`init_time`) denoting the start time of the model run, as well "
+            "as by the `ensemble_member`. Each forecast steps forward along "
+            "the `lead_time` dimension from 0 to 1104 hours (0 to 46 days) at "
+            "a 24 hourly step, and carries 101 ensemble members on a global "
+            "1.5 degree grid. This dataset contains the 00 UTC initialization "
+            "times only.\n\n"
+            "Because the step is 24 hourly, most surface variables are daily "
+            "means or rates rather than instantaneous values — hence the "
+            "`average_` prefixes. Surface and single-level variables are at "
+            "the dataset root; the six variables carried on pressure levels "
+            "are in the `pressure_level` group.\n\n"
+            "Note: ECMWF's licence holds sub-seasonal-range forecasts back for "
+            "48 hours, so this is not a real-time dataset — each "
+            "initialization becomes available about two days after its "
+            "`init_time`."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_46_day_1_5_degree/template_config.py",
+        examples=(
+            _example(
+                "Maximum ensemble temperature",
+                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-1-5-degree", chunks=None)\n'
+                'ds["average_temperature_2m"].sel(init_time="2026-08-01T00", latitude=0, longitude=0).max()',
+            ),
+            _example(
+                "Ensemble spread of the large scale flow",
+                'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-1-5-degree", group="pressure_level", chunks=None)\n'
+                'ds_pressure["geopotential_height"].sel(init_time="2026-08-01T00", lead_time="10d", pressure_level=500).std("ensemble_member")',
+            ),
+        ),
+        # No notebook yet: dynamical-org/notebooks#52 adds the quickstart. Staging
+        # items may omit it; re-add before flipping staging=False, which requires it.
+        additional_terms=ECMWF_TERMS,
+        staging=True,
+    ),
+    CatalogItem(
         id="dwd-icon-eu-forecast-5-day",
         icechunk_href="s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
