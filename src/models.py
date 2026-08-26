@@ -363,7 +363,9 @@ def _human_spatial(magnitude: float, dim: str, units: str) -> str | None:
     when a known spatial axis carries coordinate units we don't handle yet,
     rather than silently dropping it from the chunk/shard summary.
     """
-    if units in ("degree_north", "degree_east"):
+    # A rotated pole grid's grid_latitude/grid_longitude carry "degrees": angles on
+    # the rotated sphere rather than the metres of a projected grid.
+    if units in ("degree_north", "degree_east", "degrees"):
         return f"{_num(magnitude)}°"
     if units == "m":
         if magnitude >= 1000:
