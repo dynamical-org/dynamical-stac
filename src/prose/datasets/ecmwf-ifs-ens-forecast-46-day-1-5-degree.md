@@ -34,12 +34,24 @@ single-level variables are at the dataset root. Temperature, specific humidity, 
 components, vertical velocity and geopotential height are carried on 10 pressure levels
 (1000, 925, 850, 700, 500, 300, 200, 100, 50 and 10 hPa) in the `pressure_level` group.
 
-Two absences are worth knowing about before you plan around this dataset. `precipitation_convective_surface`
-is the only precipitation rate carried — there is no total precipitation. And wind is available only on
-pressure levels, as `wind_u` and `wind_v`; there are no 10 metre winds, though
-`eastward_turbulent_surface_stress` and `northward_turbulent_surface_stress` do describe the
-surface momentum flux. Both reflect the variable set retrieved from ECDS into the grib archive
-this dataset is built from.
+**The 0 hour lead time carries no surface data.** A 24 hour statistic needs a preceding day, so 27
+of the 29 root variables are entirely NaN at `lead_time=0`; only `pressure_reduced_to_mean_sea_level`
+and `pressure_surface`, which are instantaneous, have values there. Every variable in the
+`pressure_level` group is instantaneous and is present at the 0 hour lead time. Selecting
+`lead_time=slice("24h", None)` is the safe default for surface fields.
+
+Several variables are masked to the domain they describe, and read as NaN outside it:
+`sea_surface_temperature` and `sea_ice_area_fraction` over land; the soil moisture, soil temperature
+and runoff fields over ocean; and `snow_albedo_surface` and `snow_density_surface` wherever there is
+no snow. In the `pressure_level` group, `specific_humidity` is not provided above 200 hPa and is
+NaN on the 100, 50 and 10 hPa levels.
+
+Two absences are worth knowing about before you plan around this dataset.
+`precipitation_convective_surface` is the only precipitation rate carried — there is no total
+precipitation. And wind is available only on pressure levels, as `wind_u` and `wind_v`; there are
+no 10 metre winds, though `eastward_turbulent_surface_stress` and
+`northward_turbulent_surface_stress` do describe the surface momentum flux. Both reflect the
+variable set retrieved from ECDS into the grib archive this dataset is built from.
 
 ### Ensemble members
 
