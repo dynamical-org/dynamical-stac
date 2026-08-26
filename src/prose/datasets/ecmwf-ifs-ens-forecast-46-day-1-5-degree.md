@@ -48,10 +48,13 @@ NaN on the 100, 50 and 10 hPa levels.
 
 Two absences are worth knowing about before you plan around this dataset.
 `precipitation_convective_surface` is the only precipitation rate carried — there is no total
-precipitation. And wind is available only on pressure levels, as `wind_u` and `wind_v`; there are
-no 10 metre winds, though `eastward_turbulent_surface_stress` and
-`northward_turbulent_surface_stress` do describe the surface momentum flux. Both reflect the
-variable set retrieved from ECDS into the grib archive this dataset is built from.
+precipitation — and wind is available only on pressure levels, as `wind_u` and `wind_v`, with no
+10 metre winds. At the surface, `eastward_turbulent_surface_stress` and
+`northward_turbulent_surface_stress` are what describe the momentum flux here.
+
+Neither absence is a limit of the sub-seasonal forecast itself. ECMWF publishes total
+precipitation and the 10 metre winds for it, but on a 6 hourly step rather than the 24 hourly step
+of this dataset, and the grib archive this dataset is built from does not currently retrieve them.
 
 ### Ensemble members
 
