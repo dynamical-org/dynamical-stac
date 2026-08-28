@@ -2,10 +2,12 @@
 
 Each collection advertises its validation report as an ``about`` link titled
 "Validation report", pointing at
-``https://dynamical.org/catalog/{id}/validation/``. The website renders that
-page from the report the reformatter publishes to the
-``dataset-validation-reports`` bucket under the dataset id, so this checks the
-bucket rather than the rendered page.
+``https://dynamical.org/catalog/{id}/validation/``. The website builds that
+page by fetching ``validation_summary.md`` from the
+``dataset-validation-reports`` bucket under the dataset id (see
+``_data/validationReports.js`` in dynamical.org), so this checks that file
+rather than the rendered page. A 404 there is what leaves the page an empty
+shell.
 
 Checking the source rather than the rendered page keeps this test meaningful
 for a dataset being added: the website can only render a collection already in
@@ -77,9 +79,9 @@ def _fetch(url: str) -> str:
 def test_validation_report_is_published(collection_id: str, href: str) -> None:
     assert href == f"https://dynamical.org/catalog/{collection_id}/validation/"
 
-    report_url = f"{_REPORTS_BASE_URL}/{collection_id}/latest/validation_report.html"
+    report_url = f"{_REPORTS_BASE_URL}/{collection_id}/latest/validation_summary.md"
     try:
-        html = _fetch(report_url)
+        markdown = _fetch(report_url)
     except urllib.error.HTTPError as e:
         pytest.fail(
             f"{report_url} returned {e.code}; the website renders "
@@ -87,6 +89,4 @@ def test_validation_report_is_published(collection_id: str, href: str) -> None:
             f"(or republish it under that id if the dataset was renamed)"
         )
 
-    assert '<h2 id="summary">Summary</h2>' in html, (
-        f"{report_url} is missing the Summary section"
-    )
+    assert "\n## Summary\n" in markdown, f"{report_url} is missing the Summary section"
