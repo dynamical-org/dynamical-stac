@@ -383,7 +383,8 @@
       "unit": "dBZ",
       "long_name": "Maximum/Composite radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refc"
+      "short_name": "refc",
+      "comment": "-10 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "convective_available_potential_energy_0_3000m": {
       "dimensions": [
@@ -591,7 +592,8 @@
       "unit": "dBZ",
       "long_name": "Derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refd"
+      "short_name": "refd",
+      "comment": "-10 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "derived_radar_reflectivity_263k": {
       "dimensions": [
@@ -610,7 +612,8 @@
       "unit": "dBZ",
       "long_name": "Derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refd"
+      "short_name": "refd",
+      "comment": "-10 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "derived_radar_reflectivity_4000m": {
       "dimensions": [
@@ -629,7 +632,8 @@
       "unit": "dBZ",
       "long_name": "Derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refd"
+      "short_name": "refd",
+      "comment": "-10 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "dew_point_temperature_2m": {
       "dimensions": [
@@ -795,8 +799,9 @@
         1799
       ],
       "unit": "kg m-2",
-      "long_name": "Frozen precipitation",
-      "short_name": "frozr"
+      "long_name": "Ice pellets",
+      "short_name": "frozr",
+      "comment": "Ice pellet (sleet) accumulation from the source's FROZR element, despite this variable's name. For all frozen precipitation, multiply total_precipitation_run_total_surface by percent_frozen_precipitation_surface / 100."
     },
     "frozen_precipitation_surface": {
       "dimensions": [
@@ -813,8 +818,9 @@
         1799
       ],
       "unit": "kg m-2",
-      "long_name": "Frozen precipitation",
-      "short_name": "frozr"
+      "long_name": "Ice pellets",
+      "short_name": "frozr",
+      "comment": "Ice pellet (sleet) accumulation from the source's FROZR element, despite this variable's name. For all frozen precipitation, multiply total_precipitation_surface by percent_frozen_precipitation_surface / 100."
     },
     "geopotential_height_0c_isotherm": {
       "dimensions": [
@@ -853,7 +859,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where the 253 K level is at or below ground."
     },
     "geopotential_height_263k": {
       "dimensions": [
@@ -872,7 +879,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where the 263 K level is at or below ground."
     },
     "geopotential_height_adiabatic_condensation_level": {
       "dimensions": [
@@ -911,7 +919,7 @@
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
       "short_name": "gh",
-      "comment": "NaN where no cloud was detected."
+      "comment": "NaN where no cloud was detected. Due to bit-packing in the source, heights above 8191.875 m wrap to that much below their true value, affecting about 8% of cells with cloud; use pressure_cloud_base instead."
     },
     "geopotential_height_cloud_ceiling": {
       "dimensions": [
@@ -1087,7 +1095,8 @@
       "unit": "dBZ",
       "long_name": "Hourly maximum of simulated reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "maxref"
+      "short_name": "maxref",
+      "comment": "0 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "ice_cover_surface": {
       "dimensions": [
@@ -1313,7 +1322,8 @@
       "unit": "dBZ",
       "long_name": "Derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refd"
+      "short_name": "refd",
+      "comment": "0 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "maximum_downward_vertical_velocity_100_1000mb": {
       "dimensions": [
@@ -1815,7 +1825,8 @@
       "unit": "Pa",
       "long_name": "Pressure",
       "standard_name": "air_pressure",
-      "short_name": "pres"
+      "short_name": "pres",
+      "comment": "Where the freezing level is at or below ground this reports the surface pressure; geopotential_height_0c_isotherm is NaN in the same locations."
     },
     "pressure_cloud_base": {
       "dimensions": [
@@ -1874,7 +1885,8 @@
       "unit": "Pa",
       "long_name": "Pressure",
       "standard_name": "air_pressure",
-      "short_name": "pres"
+      "short_name": "pres",
+      "comment": "Where the freezing level is at or below ground this reports the surface pressure; geopotential_height_highest_tropospheric_freezing_level is NaN in the same locations."
     },
     "pressure_of_lifted_parcel_level_255_0mb": {
       "dimensions": [
@@ -2268,9 +2280,9 @@
         1799
       ],
       "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
+      "long_name": "Skin temperature",
+      "standard_name": "surface_temperature",
+      "short_name": "skt"
     },
     "total_cloud_cover_atmosphere": {
       "dimensions": [
@@ -2306,7 +2318,7 @@
         1799
       ],
       "unit": "percent",
-      "long_name": "Total cloud cover",
+      "long_name": "Boundary layer cloud cover",
       "standard_name": "cloud_area_fraction_in_atmosphere_layer",
       "short_name": "tcc"
     },
@@ -2705,7 +2717,8 @@
       ],
       "unit": "W m-2",
       "long_name": "Visible Beam Downward Solar Flux",
-      "short_name": "vbdsf"
+      "short_name": "vbdsf",
+      "comment": "Broadband and direct-normal despite this variable's name: not visible-band, and measured perpendicular to the sun's rays rather than on a horizontal surface."
     },
     "visible_diffuse_downward_solar_flux_surface": {
       "dimensions": [
@@ -2723,7 +2736,8 @@
       ],
       "unit": "W m-2",
       "long_name": "Visible Diffuse Downward Solar Flux",
-      "short_name": "vddsf"
+      "short_name": "vddsf",
+      "comment": "Broadband despite this variable's name, not visible-band."
     },
     "wind_gust_surface": {
       "dimensions": [
