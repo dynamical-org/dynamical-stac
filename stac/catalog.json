@@ -60,6 +60,12 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-hrrr-analysis-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR analysis, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/noaa-mrms-conus-analysis-hourly/collection.json",
       "type": "application/json",
       "title": "NOAA MRMS CONUS analysis, hourly"
