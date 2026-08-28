@@ -638,6 +638,41 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis"),),
     ),
     CatalogItem(
+        id="noaa-hrrr-analysis-virtual",
+        icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-analysis-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",),
+        model_id="noaa-hrrr",
+        description_summary=(
+            "This analysis dataset is an archive of the model's best estimate "
+            "of past weather, optimized for spatial (map) access patterns. It "
+            "is created by concatenating the first hour of each historical "
+            "forecast to provide a dataset with dimensions time, x, and y.\n\n"
+            "This dataset uses the native HRRR Lambert Conformal Conic "
+            "projection, with spatial indexing along the `x` and `y` "
+            "dimensions. The example notebook shows how to use the embedded "
+            "spatial reference to select geographic areas of interest.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.5`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/analysis_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-hrrr-analysis-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level and model_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-hrrr-analysis-virtual", group="pressure_level", chunks=None)\n'
+                'ds_model = dynamical_catalog.open("noaa-hrrr-analysis-virtual", group="model_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["temperature"].sel(pressure_level=500)',
+            ),
+        ),
+        notebooks=(_quickstart_notebook("noaa-hrrr-analysis-virtual"),),
+        staging=False,
+    ),
+    CatalogItem(
         id="noaa-mrms-conus-analysis-hourly",
         icechunk_href="s3://dynamical-noaa-mrms/noaa-mrms-conus-analysis-hourly/v0.3.0.icechunk/",
         icechunk_region="us-west-2",
