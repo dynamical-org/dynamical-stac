@@ -937,10 +937,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="eccc-hrdps",
         description_summary=(
             "This dataset is an archive of past and present HRDPS continental "
-            "forecasts. Forecasts are identified by an initialization time "
-            "(`init_time`) denoting the start of the model run and step forward "
-            "in time along the `lead_time` dimension, hourly out to 48 hours, "
-            "four times a day."
+            "forecasts. Forecasts are identified by four daily initialization "
+            "times (`init_time`) denoting the start of the model run and step "
+            "forward in time along the `lead_time` dimension, hourly out to "
+            "48 hours."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/eccc/hrdps/forecast/template_config.py",
         examples=(
