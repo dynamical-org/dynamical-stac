@@ -30,6 +30,10 @@ Storage for the dynamical.org ECCC HRDPS grib archive is generously provided by
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}
