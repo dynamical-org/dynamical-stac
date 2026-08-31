@@ -280,8 +280,7 @@ MODELS: dict[str, Model] = {
             "The High Resolution Deterministic Prediction System (HRDPS) is the 2.5 km limited-area "
             "weather forecast model operated by Environment and Climate Change Canada (ECCC), Canada's "
             "national meteorological service. Its continental domain covers Canada and the northern "
-            "United States on a rotated latitude-longitude grid, at a resolution that resolves terrain "
-            "channelling, lake breezes and individual convective storms."
+            "United States at a resolution that captures fine-scale weather features."
         ),
     ),
 }
@@ -938,20 +937,17 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="eccc-hrdps",
         description_summary=(
             "This dataset is an archive of past and present HRDPS continental "
-            "forecasts on the model's native 2.5 km rotated latitude-longitude "
-            "grid. Forecasts are identified by an initialization time "
+            "forecasts. Forecasts are identified by an initialization time "
             "(`init_time`) denoting the start of the model run and step forward "
             "in time along the `lead_time` dimension, hourly out to 48 hours, "
-            "from the 00, 06, 12 and 18 hour UTC initialization times. Winds are "
-            "published as speed and direction rather than u and v components, "
-            "because the source components are relative to the rotated grid."
+            "four times a day."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/eccc/hrdps/forecast/template_config.py",
         examples=(
             _example(
-                "Temperature at a place and time",
+                "Temperature map at a time",
                 'ds = dynamical_catalog.open("eccc-hrdps-forecast", chunks=None)\n'
-                'ds["temperature_2m"].sel(init_time="2026-08-01T00", lead_time="12h").max()',
+                'ds["temperature_2m"].sel(init_time="2026-08-01T00", lead_time="12h")',
             ),
         ),
         notebooks=(_quickstart_notebook("eccc-hrdps-forecast"),),
