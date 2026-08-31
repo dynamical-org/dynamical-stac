@@ -273,6 +273,16 @@ MODELS: dict[str, Model] = {
             "spanning the TRMM and GPM satellite eras."
         ),
     ),
+    "eccc-hrdps": Model(
+        id="eccc-hrdps",
+        name="ECCC HRDPS",
+        description=(
+            "The High Resolution Deterministic Prediction System (HRDPS) is the 2.5 km limited-area "
+            "weather forecast model operated by Environment and Climate Change Canada (ECCC), Canada's "
+            "national meteorological service. Its continental domain covers Canada and the northern "
+            "United States at a resolution that captures fine-scale weather features."
+        ),
+    ),
 }
 
 
@@ -401,6 +411,11 @@ class CatalogItem(BaseModel):
 ECMWF_TERMS = AdditionalTerms(
     href="https://apps.ecmwf.int/datasets/licences/general/",  # type: ignore[arg-type]
     title="ECMWF Terms of Use (additional terms)",
+)
+
+ECCC_TERMS = AdditionalTerms(
+    href="https://eccc-msc.github.io/open-data/licence/readme_en/",  # type: ignore[arg-type]
+    title="ECCC Data Servers End-use Licence (additional terms)",
 )
 
 # Cross-model notebook referenced by multiple datasets.
@@ -914,6 +929,30 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_quickstart_notebook("nasa-imerg-analysis-late"),),
+    ),
+    CatalogItem(
+        id="eccc-hrdps-forecast",
+        icechunk_href="s3://dynamical-eccc-hrdps/eccc-hrdps-forecast/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="eccc-hrdps",
+        description_summary=(
+            "This dataset is an archive of past and present HRDPS continental "
+            "forecasts. Forecasts are identified by four daily initialization "
+            "times (`init_time`) denoting the start of the model run and step "
+            "forward in time along the `lead_time` dimension, hourly out to "
+            "48 hours."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/eccc/hrdps/forecast/template_config.py",
+        examples=(
+            _example(
+                "Temperature map at a time",
+                'ds = dynamical_catalog.open("eccc-hrdps-forecast", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-08-01T00", lead_time="12h")',
+            ),
+        ),
+        notebooks=(_quickstart_notebook("eccc-hrdps-forecast"),),
+        additional_terms=ECCC_TERMS,
+        staging=True,
     ),
 ]
 
