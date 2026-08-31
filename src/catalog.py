@@ -952,7 +952,6 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
         notebooks=(_quickstart_notebook("eccc-hrdps-forecast"),),
         additional_terms=ECCC_TERMS,
-        staging=True,
     ),
 ]
 

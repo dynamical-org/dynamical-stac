@@ -1,0 +1,683 @@
+{
+  "type": "Collection",
+  "id": "eccc-hrdps-forecast",
+  "stac_version": "1.1.0",
+  "description": "Weather forecasts from the High Resolution Deterministic Prediction System (HRDPS) continental domain, operated by Environment and Climate Change Canada (ECCC).",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "license",
+      "href": "https://eccc-msc.github.io/open-data/licence/readme_en/",
+      "type": "text/html",
+      "title": "ECCC Data Servers End-use Licence (additional terms)"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/eccc-hrdps-forecast/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/eccc-hrdps-forecast/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/eccc-hrdps-forecast.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "Quickstart (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/eccc-hrdps-forecast.ipynb",
+      "type": "text/html",
+      "title": "Quickstart (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.dynamical.org/eccc-hrdps-forecast/collection.json",
+      "type": "application/json",
+      "title": "ECCC HRDPS forecast"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "ECCC HRDPS data processed by dynamical.org from Environment and Climate Change Canada, used under the ECCC Data Servers End-use Licence version 2.1 (https://eccc-msc.github.io/open-data/licence/readme_en/).",
+  "version": "0.1.0",
+  "model_id": "eccc-hrdps",
+  "model_name": "ECCC HRDPS",
+  "description_summary": "This dataset is an archive of past and present HRDPS continental forecasts. Forecasts are identified by four daily initialization times (`init_time`) denoting the start of the model run and step forward in time along the `lead_time` dimension, hourly out to 48 hours.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by\n[ECCC MSC Open Data](https://eccc-msc.github.io/open-data/msc-data/nwp_hrdps/readme_hrdps-datamart_en/)\nand the [dynamical.org ECCC HRDPS grib archive](https://source.coop/dynamical/eccc-hrdps-grib)\non [Source Cooperative](https://source.coop/).\n\n### Storage\n\nIcechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\nStorage for the dynamical.org ECCC HRDPS grib archive is generously provided by\n[Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative.\n\n### Chunks & shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk | shard |\n|---|---|---|\n| init_time | 1 (6 hours) | 1 (6 hours) |\n| lead_time | 49 (49 hours) | 49 (49 hours) |\n| y | 258 (~5.805\u00b0) | 1290 (29.025\u00b0) |\n| x | 254 (~5.715\u00b0) | 2540 (57.15\u00b0) |\n| **uncompressed** | 12.2 MiB | 612.5 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/eccc-hrdps-forecast/validation/) to understand variable availability, missing data, known quirks, fill values, and approximate spatial, temporal, and value distributions.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/eccc/hrdps/forecast/template_config.py).",
+  "description_model": "The High Resolution Deterministic Prediction System (HRDPS) is the 2.5 km limited-area weather forecast model operated by Environment and Climate Change Canada (ECCC), Canada's national meteorological service. Its continental domain covers Canada and the northern United States at a resolution that captures fine-scale weather features.",
+  "examples": [
+    {
+      "title": "Temperature map at a time",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"eccc-hrdps-forecast\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-08-01T00\", lead_time=\"12h\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"eccc-hrdps-forecast\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-08-01T00\", lead_time=\"12h\")",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2026-07-09T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        172800
+      ],
+      "unit": "seconds",
+      "size": 49
+    },
+    "x": {
+      "type": "spatial",
+      "extent": [
+        -14.82122000000004,
+        42.30628300000001
+      ],
+      "axis": "x",
+      "unit": "degrees",
+      "size": 2540
+    },
+    "y": {
+      "type": "spatial",
+      "extent": [
+        -12.302501,
+        16.700001
+      ],
+      "axis": "y",
+      "unit": "degrees",
+      "size": 1290
+    }
+  },
+  "cube:variables": {
+    "categorical_precipitation_type_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "1",
+      "long_name": "Precipitation type",
+      "short_name": "ptype",
+      "comment": "1=Rain; 2=Rain/snow; 3=Freezing rain; 4=Ice pellets; 5=Snow; 6=None; 7=Drizzle; 8=Freezing drizzle; 9=Freezing rain/ice pellets. NaN at lead time 0."
+    },
+    "convective_available_potential_energy_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective available potential energy",
+      "standard_name": "atmosphere_convective_available_potential_energy",
+      "short_name": "cape",
+      "comment": "Negative values are source markers rather than energies and cover roughly half the domain. Mask values < -0.1."
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf",
+      "comment": "Average flux since the previous forecast step."
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf",
+      "comment": "Average flux since the previous forecast step."
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "snow_water_equivalent_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "m",
+      "long_name": "Snow depth water equivalent",
+      "standard_name": "lwe_thickness_of_surface_snow_amount",
+      "short_name": "sd"
+    },
+    "specific_humidity_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "1",
+      "long_name": "Specific humidity",
+      "standard_name": "specific_humidity",
+      "short_name": "q"
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc",
+      "comment": "NaN at lead time 0."
+    },
+    "wind_direction_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "degree",
+      "long_name": "10 metre wind direction",
+      "standard_name": "wind_from_direction",
+      "short_name": "10wdir",
+      "comment": "Direction the wind blows from, clockwise from true north rather than from the rotated grid's north."
+    },
+    "wind_direction_80m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "degree",
+      "long_name": "80 metre wind direction",
+      "standard_name": "wind_from_direction",
+      "short_name": "80wdir",
+      "comment": "Direction the wind blows from, clockwise from true north rather than from the rotated grid's north."
+    },
+    "wind_gust_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "m s-1",
+      "long_name": "Wind speed (gust)",
+      "standard_name": "wind_speed_of_gust",
+      "short_name": "gust",
+      "comment": "Peak wind speed at this time step, including sub-grid turbulence. Not a maximum since the previous forecast step."
+    },
+    "wind_speed_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "10si"
+    },
+    "wind_speed_80m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "shards": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "unit": "m s-1",
+      "long_name": "80 metre wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "80si"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        49,
+        258,
+        254
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "49 hours",
+        "y": "~5.805\u00b0",
+        "x": "~5.715\u00b0"
+      },
+      "uncompressed_size_bytes": 12844272,
+      "uncompressed_size": "12.2 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        49,
+        1290,
+        2540
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "49 hours",
+        "y": "29.025\u00b0",
+        "x": "57.15\u00b0"
+      },
+      "uncompressed_size_bytes": 642213600,
+      "uncompressed_size": "612.5 MiB"
+    }
+  },
+  "title": "ECCC HRDPS forecast",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -152.7306671142578,
+          27.284597396850586,
+          -40.708560943603516,
+          70.61148071289062
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-07-09T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Canada"
+    ],
+    "spatial_resolution": [
+      "2.5 km"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2026-07-09 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-48 hours ahead"
+    ],
+    "forecast_resolution": [
+      "Hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-eccc-hrdps/eccc-hrdps-forecast/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-eccc-hrdps.s3.us-west-2.amazonaws.com/eccc-hrdps-forecast/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}
