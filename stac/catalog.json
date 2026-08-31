@@ -107,6 +107,12 @@
       "title": "NASA IMERG analysis, late"
     },
     {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/eccc-hrdps-forecast/collection.json",
+      "type": "application/json",
+      "title": "ECCC HRDPS forecast"
+    },
+    {
       "rel": "self",
       "href": "https://stac.dynamical.org/catalog.json",
       "type": "application/json",
