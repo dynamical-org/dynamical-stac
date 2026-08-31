@@ -31,6 +31,10 @@ For most of the time range of the archive the source data is available at 0.25-d
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}

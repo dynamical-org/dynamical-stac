@@ -17,6 +17,10 @@ Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}

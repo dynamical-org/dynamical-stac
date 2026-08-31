@@ -62,7 +62,7 @@
   "model_id": "noaa-hrrr",
   "model_name": "NOAA HRRR",
   "description_summary": "This dataset is an archive of past and present HRRR forecasts, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, and step forward hourly along the `lead_time` dimension out to 18 hours. A new forecast is initialized every hour.\n\nThis dataset uses the native HRRR Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.\n\nNote: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.5`) is required.",
-  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Data availability\n\nThe archive spans init times from 2018-07-13T12 UTC to the present. A number of\nfields change behavior at the HRRR version 3 \u2192 version 4 upgrade on 2020-12-02,\nand some variables are incomplete before that date.\n\nSee the [validation report](https://dynamical.org/catalog/noaa-hrrr-forecast-18-hour-virtual/validation/)\nfor complete details.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (1 hour) |\n| lead_time | 1 (1 hour) |\n| y | 1059 (3177 km) |\n| x | 1799 (5397 km) |\n| **uncompressed** | 14.5 MiB |",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (1 hour) |\n| lead_time | 1 (1 hour) |\n| y | 1059 (3177 km) |\n| x | 1799 (5397 km) |\n| **uncompressed** | 14.5 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-hrrr-forecast-18-hour-virtual/validation/) to understand variable availability, missing data, known quirks, fill values, and approximate spatial, temporal, and value distributions.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/hrrr/forecast_18_hour_virtual/template_config.py).",
   "description_model": "The High-Resolution Rapid Refresh (HRRR) is a NOAA real-time 3-km resolution, hourly updated, cloud-resolving, convection-allowing atmospheric model, initialized by 3km grids with 3km radar assimilation. Radar data is assimilated in the HRRR every 15 min over a 1-h period adding further detail to that provided by the hourly data assimilation from the 13km radar-enhanced Rapid Refresh.",
   "examples": [
     {
@@ -383,7 +383,8 @@
       "unit": "dBZ",
       "long_name": "Maximum/Composite radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refc"
+      "short_name": "refc",
+      "comment": "-10 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "convective_available_potential_energy_0_3000m": {
       "dimensions": [
@@ -591,7 +592,8 @@
       "unit": "dBZ",
       "long_name": "Derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refd"
+      "short_name": "refd",
+      "comment": "-10 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "derived_radar_reflectivity_263k": {
       "dimensions": [
@@ -610,7 +612,8 @@
       "unit": "dBZ",
       "long_name": "Derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refd"
+      "short_name": "refd",
+      "comment": "-10 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "derived_radar_reflectivity_4000m": {
       "dimensions": [
@@ -629,7 +632,8 @@
       "unit": "dBZ",
       "long_name": "Derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refd"
+      "short_name": "refd",
+      "comment": "-10 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "dew_point_temperature_2m": {
       "dimensions": [
@@ -795,8 +799,9 @@
         1799
       ],
       "unit": "kg m-2",
-      "long_name": "Frozen precipitation",
-      "short_name": "frozr"
+      "long_name": "Ice pellets",
+      "short_name": "frozr",
+      "comment": "Ice pellet (sleet) accumulation from the source's FROZR element, despite this variable's name. For all frozen precipitation, multiply total_precipitation_run_total_surface by percent_frozen_precipitation_surface / 100."
     },
     "frozen_precipitation_surface": {
       "dimensions": [
@@ -813,8 +818,9 @@
         1799
       ],
       "unit": "kg m-2",
-      "long_name": "Frozen precipitation",
-      "short_name": "frozr"
+      "long_name": "Ice pellets",
+      "short_name": "frozr",
+      "comment": "Ice pellet (sleet) accumulation from the source's FROZR element, despite this variable's name. For all frozen precipitation, multiply total_precipitation_surface by percent_frozen_precipitation_surface / 100."
     },
     "geopotential_height_0c_isotherm": {
       "dimensions": [
@@ -833,7 +839,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where the freezing level is at or below ground."
     },
     "geopotential_height_253k": {
       "dimensions": [
@@ -852,7 +859,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where the 253 K level is at or below ground."
     },
     "geopotential_height_263k": {
       "dimensions": [
@@ -871,7 +879,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where the 263 K level is at or below ground."
     },
     "geopotential_height_adiabatic_condensation_level": {
       "dimensions": [
@@ -910,7 +919,7 @@
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
       "short_name": "gh",
-      "comment": "NaN where no cloud was detected."
+      "comment": "NaN where no cloud was detected. Due to bit-packing in the source, heights above 8191.875 m wrap to that much below their true value, affecting about 8% of cells with cloud; use pressure_cloud_base instead."
     },
     "geopotential_height_cloud_ceiling": {
       "dimensions": [
@@ -950,7 +959,7 @@
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height_at_cloud_top",
       "short_name": "gh",
-      "comment": "NaN where no cloud was detected."
+      "comment": "NaN where no cloud top was detected."
     },
     "geopotential_height_equilibrium_level": {
       "dimensions": [
@@ -969,7 +978,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "Where no equilibrium level exists the source reports terrain height plus about 20 m rather than a missing value. Mask by convective available potential energy, which is 0 at those points."
     },
     "geopotential_height_highest_tropospheric_freezing_level": {
       "dimensions": [
@@ -988,7 +998,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "NaN where the freezing level is at or below ground."
     },
     "geopotential_height_level_of_free_convection": {
       "dimensions": [
@@ -1007,7 +1018,8 @@
       "unit": "m",
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
-      "short_name": "gh"
+      "short_name": "gh",
+      "comment": "The source reports a height everywhere, including where no free convection is possible, and marks those points in no other way. Mask by convective available potential energy, which is 0 at those points."
     },
     "geopotential_height_surface": {
       "dimensions": [
@@ -1083,7 +1095,8 @@
       "unit": "dBZ",
       "long_name": "Hourly maximum of simulated reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "maxref"
+      "short_name": "maxref",
+      "comment": "0 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "ice_cover_surface": {
       "dimensions": [
@@ -1101,7 +1114,7 @@
       ],
       "unit": "1",
       "long_name": "Ice cover (1=ice, 0=no ice)",
-      "standard_name": "sea_ice_area_fraction",
+      "standard_name": "floating_ice_area_fraction",
       "short_name": "icec"
     },
     "land_sea_mask_surface": {
@@ -1271,7 +1284,7 @@
       "unit": "kg m-3",
       "long_name": "Mass density",
       "short_name": "mdens",
-      "comment": "Near-surface smoke concentration. Source values at init_times before 2021-12-21T18Z are in ug m-3; NOAA corrected the encoding to kg m-3 from that cycle onward, so multiply earlier values by 1e-9 to compare."
+      "comment": "Near-surface smoke concentration. Source values at init_times before 2021-12-21T14Z are in ug m-3; NOAA corrected the encoding to kg m-3 from that cycle onward, so multiply earlier values by 1e-9 to compare."
     },
     "maximum_column_integrated_graupel_atmosphere": {
       "dimensions": [
@@ -1309,7 +1322,8 @@
       "unit": "dBZ",
       "long_name": "Derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refd"
+      "short_name": "refd",
+      "comment": "0 dBZ is the source's no-echo floor: those cells mean no echo was detected, not a measured value."
     },
     "maximum_downward_vertical_velocity_100_1000mb": {
       "dimensions": [
@@ -1548,7 +1562,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Maximum 10 metre wind speed u component",
-      "short_name": "maxuw"
+      "short_name": "maxuw",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "maximum_wind_v_component_10m": {
       "dimensions": [
@@ -1566,7 +1581,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Maximum 10 metre wind speed v component",
-      "short_name": "maxvw"
+      "short_name": "maxvw",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "medium_cloud_cover": {
       "dimensions": [
@@ -1809,7 +1825,8 @@
       "unit": "Pa",
       "long_name": "Pressure",
       "standard_name": "air_pressure",
-      "short_name": "pres"
+      "short_name": "pres",
+      "comment": "Where the freezing level is at or below ground this reports the surface pressure; geopotential_height_0c_isotherm is NaN in the same locations."
     },
     "pressure_cloud_base": {
       "dimensions": [
@@ -1849,7 +1866,7 @@
       "long_name": "Pressure",
       "standard_name": "air_pressure_at_cloud_top",
       "short_name": "pres",
-      "comment": "NaN where no cloud was detected."
+      "comment": "NaN where no cloud top was detected."
     },
     "pressure_highest_tropospheric_freezing_level": {
       "dimensions": [
@@ -1868,7 +1885,8 @@
       "unit": "Pa",
       "long_name": "Pressure",
       "standard_name": "air_pressure",
-      "short_name": "pres"
+      "short_name": "pres",
+      "comment": "Where the freezing level is at or below ground this reports the surface pressure; geopotential_height_highest_tropospheric_freezing_level is NaN in the same locations."
     },
     "pressure_of_lifted_parcel_level_255_0mb": {
       "dimensions": [
@@ -2262,9 +2280,9 @@
         1799
       ],
       "unit": "degree_Celsius",
-      "long_name": "Temperature",
-      "standard_name": "air_temperature",
-      "short_name": "t"
+      "long_name": "Skin temperature",
+      "standard_name": "surface_temperature",
+      "short_name": "skt"
     },
     "total_cloud_cover_atmosphere": {
       "dimensions": [
@@ -2300,7 +2318,7 @@
         1799
       ],
       "unit": "percent",
-      "long_name": "Total cloud cover",
+      "long_name": "Boundary layer cloud cover",
       "standard_name": "cloud_area_fraction_in_atmosphere_layer",
       "short_name": "tcc"
     },
@@ -2415,7 +2433,8 @@
       ],
       "unit": "m s-1",
       "long_name": "U-component storm motion",
-      "short_name": "ustm"
+      "short_name": "ustm",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "upward_long_wave_radiation_flux_surface": {
       "dimensions": [
@@ -2509,7 +2528,8 @@
       ],
       "unit": "m s-1",
       "long_name": "V-component storm motion",
-      "short_name": "vstm"
+      "short_name": "vstm",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "vegetation_surface": {
       "dimensions": [
@@ -2565,7 +2585,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Vertical u-component shear",
-      "short_name": "vucsh"
+      "short_name": "vucsh",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "vertical_u_component_shear_0_6000m": {
       "dimensions": [
@@ -2583,7 +2604,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Vertical u-component shear",
-      "short_name": "vucsh"
+      "short_name": "vucsh",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "vertical_v_component_shear_0_1000m": {
       "dimensions": [
@@ -2601,7 +2623,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Vertical v-component shear",
-      "short_name": "vvcsh"
+      "short_name": "vvcsh",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "vertical_v_component_shear_0_6000m": {
       "dimensions": [
@@ -2619,7 +2642,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Vertical v-component shear",
-      "short_name": "vvcsh"
+      "short_name": "vvcsh",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "vertical_velocity_geometric_0p5_0p8_sigma": {
       "dimensions": [
@@ -2693,7 +2717,8 @@
       ],
       "unit": "W m-2",
       "long_name": "Visible Beam Downward Solar Flux",
-      "short_name": "vbdsf"
+      "short_name": "vbdsf",
+      "comment": "Broadband and direct-normal despite this variable's name: not visible-band, and measured perpendicular to the sun's rays rather than on a horizontal surface."
     },
     "visible_diffuse_downward_solar_flux_surface": {
       "dimensions": [
@@ -2711,7 +2736,8 @@
       ],
       "unit": "W m-2",
       "long_name": "Visible Diffuse Downward Solar Flux",
-      "short_name": "vddsf"
+      "short_name": "vddsf",
+      "comment": "Broadband despite this variable's name, not visible-band."
     },
     "wind_gust_surface": {
       "dimensions": [
@@ -2748,8 +2774,9 @@
       ],
       "unit": "m s-1",
       "long_name": "10 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "10u"
+      "standard_name": "x_wind",
+      "short_name": "10u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "wind_u_80m": {
       "dimensions": [
@@ -2767,8 +2794,9 @@
       ],
       "unit": "m s-1",
       "long_name": "80 metre U wind component",
-      "standard_name": "eastward_wind",
-      "short_name": "80u"
+      "standard_name": "x_wind",
+      "short_name": "80u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "wind_v_10m": {
       "dimensions": [
@@ -2786,8 +2814,9 @@
       ],
       "unit": "m s-1",
       "long_name": "10 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "10v"
+      "standard_name": "y_wind",
+      "short_name": "10v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "wind_v_80m": {
       "dimensions": [
@@ -2805,8 +2834,9 @@
       ],
       "unit": "m s-1",
       "long_name": "80 metre V wind component",
-      "standard_name": "northward_wind",
-      "short_name": "80v"
+      "standard_name": "y_wind",
+      "short_name": "80v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "model_level/cloud_ice_mixing_ratio": {
       "dimensions": [
@@ -2931,7 +2961,7 @@
       "unit": "kg m-3",
       "long_name": "Mass density",
       "short_name": "mdens",
-      "comment": "Smoke concentration. Source values at init_times before 2021-12-21T18Z are in ug m-3; NOAA corrected the encoding to kg m-3 from that cycle onward, so multiply earlier values by 1e-9 to compare."
+      "comment": "Smoke concentration. Source values at init_times before 2021-12-21T14Z are in ug m-3; NOAA corrected the encoding to kg m-3 from that cycle onward, so multiply earlier values by 1e-9 to compare."
     },
     "model_level/number_concentration_cloud_droplets": {
       "dimensions": [
@@ -3198,8 +3228,9 @@
       ],
       "unit": "m s-1",
       "long_name": "U component of wind",
-      "standard_name": "eastward_wind",
-      "short_name": "u"
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "model_level/wind_v": {
       "dimensions": [
@@ -3219,8 +3250,9 @@
       ],
       "unit": "m s-1",
       "long_name": "V component of wind",
-      "standard_name": "northward_wind",
-      "short_name": "v"
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     },
     "pressure_level/absolute_vorticity": {
       "dimensions": [
@@ -3489,8 +3521,9 @@
       ],
       "unit": "m s-1",
       "long_name": "U component of wind",
-      "standard_name": "eastward_wind",
-      "short_name": "u"
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
     },
     "pressure_level/wind_v": {
       "dimensions": [
@@ -3510,8 +3543,9 @@
       ],
       "unit": "m s-1",
       "long_name": "V component of wind",
-      "standard_name": "northward_wind",
-      "short_name": "v"
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
     }
   },
   "dynamical-org:chunking": {

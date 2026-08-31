@@ -1,8 +1,8 @@
 {
   "type": "Collection",
-  "id": "noaa-hrrr-forecast-48-hour-virtual",
+  "id": "noaa-hrrr-analysis-virtual",
   "stac_version": "1.1.0",
-  "description": "Weather forecasts from the High-Resolution Rapid Refresh (HRRR) model operated by NOAA NWS NCEP.",
+  "description": "Analysis data from the High-Resolution Rapid Refresh (HRRR) model operated by NOAA NWS NCEP.",
   "links": [
     {
       "rel": "root",
@@ -18,33 +18,33 @@
     },
     {
       "rel": "about",
-      "href": "https://dynamical.org/catalog/noaa-hrrr-forecast-48-hour-virtual/",
+      "href": "https://dynamical.org/catalog/noaa-hrrr-analysis-virtual/",
       "type": "text/html",
       "title": "Dataset documentation"
     },
     {
       "rel": "about",
-      "href": "https://dynamical.org/catalog/noaa-hrrr-forecast-48-hour-virtual/validation/",
+      "href": "https://dynamical.org/catalog/noaa-hrrr-analysis-virtual/validation/",
       "type": "text/html",
       "title": "Validation report"
     },
     {
       "rel": "example",
-      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-hrrr-forecast-48-hour-virtual.ipynb",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-hrrr-analysis-virtual.ipynb",
       "type": "application/x-ipynb+json",
       "title": "Quickstart (GitHub)"
     },
     {
       "rel": "example",
-      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-hrrr-forecast-48-hour-virtual.ipynb",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-hrrr-analysis-virtual.ipynb",
       "type": "text/html",
       "title": "Quickstart (Colab)"
     },
     {
       "rel": "self",
-      "href": "https://stac.dynamical.org/noaa-hrrr-forecast-48-hour-virtual/collection.json",
+      "href": "https://stac.dynamical.org/noaa-hrrr-analysis-virtual/collection.json",
       "type": "application/json",
-      "title": "NOAA HRRR forecast, 48 hour, virtual"
+      "title": "NOAA HRRR analysis, virtual"
     },
     {
       "rel": "parent",
@@ -58,11 +58,11 @@
     "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
   ],
   "attribution": "NOAA NWS NCEP HRRR data processed by dynamical.org from NOAA Open Data Dissemination archives.",
-  "version": "0.5.0",
+  "version": "0.1.0",
   "model_id": "noaa-hrrr",
   "model_name": "NOAA HRRR",
-  "description_summary": "This dataset is an archive of past and present HRRR forecasts, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, and step forward hourly along the `lead_time` dimension out to 48 hours. This dataset contains only the 00, 06, 12, and 18 hour UTC initialization times which produce the full length, 48 hour forecast.\n\nThis dataset uses the native HRRR Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.\n\nNote: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.5`) is required.",
-  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Data availability\n\nThe archive spans init times from 2018-07-13T12 UTC to the present. A number of\nfields change behavior at the HRRR version 3 \u2192 version 4 upgrade on 2020-12-02,\nand some variables are incomplete before that date.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (6 hours) |\n| lead_time | 1 (1 hour) |\n| y | 1059 (3177 km) |\n| x | 1799 (5397 km) |\n| **uncompressed** | 14.5 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-hrrr-forecast-48-hour-virtual/validation/) to understand variable availability, missing data, known quirks, fill values, and approximate spatial, temporal, and value distributions.",
+  "description_summary": "This analysis dataset is an archive of the model's best estimate of past weather, optimized for spatial (map) access patterns. It is created by concatenating the first hour of each historical forecast to provide a dataset with dimensions time, x, and y.\n\nThis dataset uses the native HRRR Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.\n\nNote: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.5`) is required.",
+  "description_details": "### Construction\n\nHRRR starts a new model run every hour and dynamical.org has created this analysis by\nconcatenating the shortest available forecast step of each run along the time dimension.\nInstantaneous variables are read from forecast hour 0 of the run initialized at that time.\n\nVariables that describe the preceding hour \u2014 accumulations and hourly maxima and minima \u2014\nhave no value at hour 0, so they are read from forecast hour 1 of the run initialized an\nhour earlier and describe the hour ending at their timestamp. A few instantaneous fields\nthat HRRR does not diagnose at hour 0, including precipitation rate, the lightning fields\nand aerosol optical thickness, are read from forecast hour 1 as well.\n\n### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Data availability\n\nThe archive spans hourly times from 2014-10-01T00 UTC to the present. Many fields change\nbehavior at the HRRR version upgrades \u2014 version 2 on 2016-08-23, version 3 on 2018-07-12\nand version 4 on 2020-12-02 \u2014 and a number of variables begin at one of those dates. See\nthe [validation report](https://dynamical.org/catalog/noaa-hrrr-analysis-virtual/validation/) for details.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| time | 1 (1 hour) |\n| y | 1059 (3177 km) |\n| x | 1799 (5397 km) |\n| **uncompressed** | 14.5 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-hrrr-analysis-virtual/validation/) to understand variable availability, missing data, known quirks, fill values, and approximate spatial, temporal, and value distributions.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/noaa/hrrr/analysis_virtual/template_config.py).",
   "description_model": "The High-Resolution Rapid Refresh (HRRR) is a NOAA real-time 3-km resolution, hourly updated, cloud-resolving, convection-allowing atmospheric model, initialized by 3km grids with 3km radar assimilation. Radar data is assimilated in the HRRR every 15 min over a 1-h period adding further detail to that provided by the hourly data assimilation from the 13km radar-enhanced Rapid Refresh.",
   "examples": [
     {
@@ -70,34 +70,25 @@
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", lead_time=\"24h\")\n\n# Variables with a vertical dimension live in the pressure_level and model_level groups\nds_pressure = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour-virtual\", group=\"pressure_level\", chunks=None)\nds_model = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour-virtual\", group=\"model_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(pressure_level=500)",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-hrrr-analysis-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")\n\n# Variables with a vertical dimension live in the pressure_level and model_level groups\nds_pressure = dynamical_catalog.open(\"noaa-hrrr-analysis-virtual\", group=\"pressure_level\", chunks=None)\nds_model = dynamical_catalog.open(\"noaa-hrrr-analysis-virtual\", group=\"model_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(pressure_level=500)",
           "language": "python"
         },
         {
           "label": "pystac + icechunk",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-hrrr-forecast-48-hour-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-hrrr-bdp-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", lead_time=\"24h\")\n\n# Variables with a vertical dimension live in the pressure_level and model_level groups\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_model = xr.open_zarr(session.store, group=\"model_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(pressure_level=500)",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-hrrr-analysis-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-hrrr-bdp-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")\n\n# Variables with a vertical dimension live in the pressure_level and model_level groups\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_model = xr.open_zarr(session.store, group=\"model_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(pressure_level=500)",
           "language": "python"
         }
       ]
     }
   ],
   "cube:dimensions": {
-    "init_time": {
+    "time": {
       "type": "temporal",
       "extent": [
-        "2018-07-13T12:00:00Z",
+        "2014-10-01T00:00:00Z",
         null
       ],
       "unit": "seconds since 1970-01-01"
-    },
-    "lead_time": {
-      "type": "other",
-      "extent": [
-        0,
-        172800
-      ],
-      "unit": "seconds",
-      "size": 49
     },
     "x": {
       "type": "spatial",
@@ -141,14 +132,12 @@
   "cube:variables": {
     "aerosol_optical_thickness_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -160,14 +149,12 @@
     },
     "baseflow_groundwater_runoff_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -179,14 +166,12 @@
     },
     "best_4_layer_lifted_index_180_0mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -198,14 +183,12 @@
     },
     "brightness_temperature_channel_113": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -217,14 +200,12 @@
     },
     "brightness_temperature_channel_114": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -236,14 +217,12 @@
     },
     "brightness_temperature_channel_123": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -255,14 +234,12 @@
     },
     "brightness_temperature_channel_124": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -274,14 +251,12 @@
     },
     "categorical_freezing_rain_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -293,14 +268,12 @@
     },
     "categorical_ice_pellets_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -312,14 +285,12 @@
     },
     "categorical_rain_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -331,14 +302,12 @@
     },
     "categorical_snow_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -350,14 +319,12 @@
     },
     "column_integrated_mass_density_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -368,14 +335,12 @@
     },
     "composite_reflectivity": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -388,14 +353,12 @@
     },
     "convective_available_potential_energy_0_3000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -407,14 +370,12 @@
     },
     "convective_available_potential_energy_180_0mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -426,14 +387,12 @@
     },
     "convective_available_potential_energy_255_0mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -445,14 +404,12 @@
     },
     "convective_available_potential_energy_90_0mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -464,14 +421,12 @@
     },
     "convective_available_potential_energy_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -483,14 +438,12 @@
     },
     "convective_inhibition_180_0mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -502,14 +455,12 @@
     },
     "convective_inhibition_255_0mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -521,14 +472,12 @@
     },
     "convective_inhibition_90_0mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -540,14 +489,12 @@
     },
     "convective_inhibition_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -559,14 +506,12 @@
     },
     "critical_angle_0_500m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -577,14 +522,12 @@
     },
     "derived_radar_reflectivity_1000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -597,14 +540,12 @@
     },
     "derived_radar_reflectivity_263k": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -617,14 +558,12 @@
     },
     "derived_radar_reflectivity_4000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -637,14 +576,12 @@
     },
     "dew_point_temperature_2m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -656,14 +593,12 @@
     },
     "downward_long_wave_radiation_flux_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -675,14 +610,12 @@
     },
     "downward_short_wave_radiation_flux_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -694,14 +627,12 @@
     },
     "echo_top": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -713,14 +644,12 @@
     },
     "effective_layer_helicity_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -731,14 +660,12 @@
     },
     "enhanced_stretching_potential_0_3000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -749,32 +676,29 @@
     },
     "freezing_rain_run_total_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
       ],
       "unit": "kg m-2",
       "long_name": "Freezing Rain",
-      "short_name": "frzr"
+      "short_name": "frzr",
+      "comment": "Accumulated over the one hour ending at this time."
     },
     "friction_velocity_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -786,14 +710,12 @@
     },
     "frozen_precipitation_run_total_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -801,18 +723,16 @@
       "unit": "kg m-2",
       "long_name": "Ice pellets",
       "short_name": "frozr",
-      "comment": "Ice pellet (sleet) accumulation from the source's FROZR element, despite this variable's name. For all frozen precipitation, multiply total_precipitation_run_total_surface by percent_frozen_precipitation_surface / 100."
+      "comment": "Identical to the one hour accumulated frozen_precipitation_surface in this analysis dataset. Ice pellet (sleet) accumulation from the source's FROZR element, despite this variable's name. For all frozen precipitation, multiply total_precipitation_run_total_surface by percent_frozen_precipitation_surface / 100."
     },
     "frozen_precipitation_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -824,14 +744,12 @@
     },
     "geopotential_height_0c_isotherm": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -844,14 +762,12 @@
     },
     "geopotential_height_253k": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -864,14 +780,12 @@
     },
     "geopotential_height_263k": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -884,14 +798,12 @@
     },
     "geopotential_height_adiabatic_condensation_level": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -903,14 +815,12 @@
     },
     "geopotential_height_cloud_base": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -923,14 +833,12 @@
     },
     "geopotential_height_cloud_ceiling": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -943,14 +851,12 @@
     },
     "geopotential_height_cloud_top": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -963,14 +869,12 @@
     },
     "geopotential_height_equilibrium_level": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -983,14 +887,12 @@
     },
     "geopotential_height_highest_tropospheric_freezing_level": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1003,14 +905,12 @@
     },
     "geopotential_height_level_of_free_convection": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1023,14 +923,12 @@
     },
     "geopotential_height_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1042,14 +940,12 @@
     },
     "ground_heat_flux_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1061,14 +957,12 @@
     },
     "high_cloud_cover": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1080,14 +974,12 @@
     },
     "hourly_maximum_radar_reflectivity_1000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1100,14 +992,12 @@
     },
     "ice_cover_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1119,14 +1009,12 @@
     },
     "land_sea_mask_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1138,14 +1026,12 @@
     },
     "latent_heat_flux_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1157,14 +1043,12 @@
     },
     "layer_thickness_261k_256k": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1175,14 +1059,12 @@
     },
     "leaf_area_index_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1194,14 +1076,12 @@
     },
     "lightning_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1212,14 +1092,12 @@
     },
     "lightning_threat_1m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1231,14 +1109,12 @@
     },
     "lightning_threat_2m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1250,14 +1126,12 @@
     },
     "low_cloud_cover": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1269,14 +1143,12 @@
     },
     "mass_density_8m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1288,14 +1160,12 @@
     },
     "maximum_column_integrated_graupel_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1307,14 +1177,12 @@
     },
     "maximum_derived_radar_reflectivity_263k": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1327,14 +1195,12 @@
     },
     "maximum_downward_vertical_velocity_100_1000mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1345,14 +1211,12 @@
     },
     "maximum_hail_diameter_0p1sigma": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1363,14 +1227,12 @@
     },
     "maximum_hail_diameter_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1381,14 +1243,12 @@
     },
     "maximum_hail_diameter_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1399,14 +1259,12 @@
     },
     "maximum_relative_vorticity_1000_0m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1418,14 +1276,12 @@
     },
     "maximum_relative_vorticity_2000_0m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1437,14 +1293,12 @@
     },
     "maximum_updraft_helicity_2000_0m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1455,14 +1309,12 @@
     },
     "maximum_updraft_helicity_3000_0m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1473,14 +1325,12 @@
     },
     "maximum_updraft_helicity_5000_2000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1491,14 +1341,12 @@
     },
     "maximum_upward_vertical_velocity_100_1000mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1510,14 +1358,12 @@
     },
     "maximum_vegetation_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1529,14 +1375,12 @@
     },
     "maximum_wind_speed_10m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1548,14 +1392,12 @@
     },
     "maximum_wind_u_component_10m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1567,14 +1409,12 @@
     },
     "maximum_wind_v_component_10m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1586,14 +1426,12 @@
     },
     "medium_cloud_cover": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1605,14 +1443,12 @@
     },
     "minimum_updraft_helicity_2000_0m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1623,14 +1459,12 @@
     },
     "minimum_updraft_helicity_3000_0m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1641,14 +1475,12 @@
     },
     "minimum_updraft_helicity_5000_2000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1659,14 +1491,12 @@
     },
     "minimum_vegetation_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1678,14 +1508,12 @@
     },
     "moisture_availability_0m_underground": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1696,14 +1524,12 @@
     },
     "percent_frozen_precipitation_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1715,14 +1541,12 @@
     },
     "planetary_boundary_layer_height_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1734,14 +1558,12 @@
     },
     "plant_canopy_surface_water_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1753,14 +1575,12 @@
     },
     "potential_temperature_2m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1772,14 +1592,12 @@
     },
     "precipitable_water_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1791,14 +1609,12 @@
     },
     "precipitation_rate_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1810,14 +1626,12 @@
     },
     "pressure_0c_isotherm": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1830,14 +1644,12 @@
     },
     "pressure_cloud_base": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1850,14 +1662,12 @@
     },
     "pressure_cloud_top": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1870,14 +1680,12 @@
     },
     "pressure_highest_tropospheric_freezing_level": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1890,14 +1698,12 @@
     },
     "pressure_of_lifted_parcel_level_255_0mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1909,14 +1715,12 @@
     },
     "pressure_reduced_to_mean_sea_level": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1928,14 +1732,12 @@
     },
     "pressure_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1947,14 +1749,12 @@
     },
     "relative_humidity_0c_isotherm": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1966,14 +1766,12 @@
     },
     "relative_humidity_2m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -1985,14 +1783,12 @@
     },
     "relative_humidity_highest_tropospheric_freezing_level": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2004,14 +1800,12 @@
     },
     "relative_humidity_with_respect_to_precipitable_water_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2022,14 +1816,12 @@
     },
     "sensible_heat_flux_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2041,14 +1833,12 @@
     },
     "snow_area_fraction_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2060,14 +1850,12 @@
     },
     "snow_thickness_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2079,14 +1867,12 @@
     },
     "snow_water_equivalent_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2098,14 +1884,12 @@
     },
     "snowfall_water_equivalent_run_total_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2113,18 +1897,17 @@
       "unit": "kg m-2",
       "long_name": "Snowfall water equivalent",
       "standard_name": "snowfall_amount",
-      "short_name": "sf"
+      "short_name": "sf",
+      "comment": "Identical to the one hour accumulated snowfall_water_equivalent_surface in this analysis dataset."
     },
     "snowfall_water_equivalent_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2136,14 +1919,12 @@
     },
     "specific_humidity_2m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2155,14 +1936,12 @@
     },
     "storm_relative_helicity_1000_0m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2173,14 +1952,12 @@
     },
     "storm_relative_helicity_3000_0m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2191,14 +1968,12 @@
     },
     "storm_surface_runoff_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2210,14 +1985,12 @@
     },
     "surface_lifted_index_500_1000mb": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2229,14 +2002,12 @@
     },
     "surface_roughness_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2248,14 +2019,12 @@
     },
     "temperature_2m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2267,14 +2036,12 @@
     },
     "temperature_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2286,14 +2053,12 @@
     },
     "total_cloud_cover_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2305,14 +2070,12 @@
     },
     "total_cloud_cover_boundary_layer": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2324,14 +2087,12 @@
     },
     "total_column_cloud_ice_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2343,14 +2104,12 @@
     },
     "total_column_cloud_water_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2362,14 +2121,12 @@
     },
     "total_precipitation_run_total_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2377,18 +2134,17 @@
       "unit": "kg m-2",
       "long_name": "Total precipitation",
       "standard_name": "precipitation_amount",
-      "short_name": "tp"
+      "short_name": "tp",
+      "comment": "Identical to the one hour accumulated total_precipitation_surface in this analysis dataset."
     },
     "total_precipitation_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2400,14 +2156,12 @@
     },
     "total_snowfall_run_total_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2415,18 +2169,17 @@
       "unit": "m",
       "long_name": "Total snowfall",
       "standard_name": "thickness_of_snowfall_amount",
-      "short_name": "asnow"
+      "short_name": "asnow",
+      "comment": "Accumulated over the one hour ending at this time."
     },
     "u_component_storm_motion_0_6000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2438,14 +2191,12 @@
     },
     "upward_long_wave_radiation_flux_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2457,14 +2208,12 @@
     },
     "upward_long_wave_radiation_flux_top_of_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2476,14 +2225,12 @@
     },
     "upward_short_wave_radiation_flux_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2495,14 +2242,12 @@
     },
     "upward_short_wave_radiation_flux_top_of_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2514,14 +2259,12 @@
     },
     "v_component_storm_motion_0_6000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2533,14 +2276,12 @@
     },
     "vegetation_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2552,14 +2293,12 @@
     },
     "vegetation_type_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2571,14 +2310,12 @@
     },
     "vertical_u_component_shear_0_1000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2590,14 +2327,12 @@
     },
     "vertical_u_component_shear_0_6000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2609,14 +2344,12 @@
     },
     "vertical_v_component_shear_0_1000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2628,14 +2361,12 @@
     },
     "vertical_v_component_shear_0_6000m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2647,14 +2378,12 @@
     },
     "vertical_velocity_geometric_0p5_0p8_sigma": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2666,14 +2395,12 @@
     },
     "vertically_integrated_liquid_atmosphere": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2684,14 +2411,12 @@
     },
     "visibility_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2703,14 +2428,12 @@
     },
     "visible_beam_downward_solar_flux_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2722,14 +2445,12 @@
     },
     "visible_diffuse_downward_solar_flux_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2741,14 +2462,12 @@
     },
     "wind_gust_surface": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2760,14 +2479,12 @@
     },
     "wind_u_10m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2780,14 +2497,12 @@
     },
     "wind_u_80m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2800,14 +2515,12 @@
     },
     "wind_v_10m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2820,14 +2533,12 @@
     },
     "wind_v_80m": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799
@@ -2840,15 +2551,13 @@
     },
     "model_level/cloud_ice_mixing_ratio": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -2861,15 +2570,13 @@
     },
     "model_level/cloud_mixing_ratio": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -2882,15 +2589,13 @@
     },
     "model_level/fraction_of_cloud_cover": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -2903,15 +2608,13 @@
     },
     "model_level/geopotential_height": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -2924,15 +2627,13 @@
     },
     "model_level/graupel": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -2944,15 +2645,13 @@
     },
     "model_level/mass_density": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -2965,15 +2664,13 @@
     },
     "model_level/number_concentration_cloud_droplets": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -2985,15 +2682,13 @@
     },
     "model_level/number_concentration_cloud_ice": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3005,15 +2700,13 @@
     },
     "model_level/number_concentration_ice_friendly_aerosol": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3026,15 +2719,13 @@
     },
     "model_level/number_concentration_rain": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3046,15 +2737,13 @@
     },
     "model_level/number_concentration_water_friendly_aerosol": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3067,15 +2756,13 @@
     },
     "model_level/pressure": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3088,15 +2775,13 @@
     },
     "model_level/rain_mixing_ratio": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3108,15 +2793,13 @@
     },
     "model_level/snow_mixing_ratio": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3128,15 +2811,13 @@
     },
     "model_level/specific_humidity": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3149,15 +2830,13 @@
     },
     "model_level/temperature": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3170,15 +2849,13 @@
     },
     "model_level/turbulent_kinetic_energy": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3191,15 +2868,13 @@
     },
     "model_level/vertical_velocity": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3212,15 +2887,13 @@
     },
     "model_level/wind_u": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3234,15 +2907,13 @@
     },
     "model_level/wind_v": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "model_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3256,15 +2927,13 @@
     },
     "pressure_level/absolute_vorticity": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3277,15 +2946,13 @@
     },
     "pressure_level/cloud_ice_mixing_ratio": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3298,15 +2965,13 @@
     },
     "pressure_level/cloud_mixing_ratio": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3319,15 +2984,13 @@
     },
     "pressure_level/dew_point_temperature": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3340,15 +3003,13 @@
     },
     "pressure_level/geopotential_height": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3361,15 +3022,13 @@
     },
     "pressure_level/graupel": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3381,15 +3040,13 @@
     },
     "pressure_level/rain_mixing_ratio": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3401,15 +3058,13 @@
     },
     "pressure_level/relative_humidity": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3422,15 +3077,13 @@
     },
     "pressure_level/snow_mixing_ratio": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3442,15 +3095,13 @@
     },
     "pressure_level/specific_humidity": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3463,15 +3114,13 @@
     },
     "pressure_level/temperature": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3484,15 +3133,13 @@
     },
     "pressure_level/vertical_velocity": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3505,15 +3152,13 @@
     },
     "pressure_level/wind_u": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3527,15 +3172,13 @@
     },
     "pressure_level/wind_v": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x",
         "pressure_level"
       ],
       "type": "data",
       "chunks": [
-        1,
         1,
         1059,
         1799,
@@ -3552,20 +3195,17 @@
     "dtype": "float64",
     "chunk": {
       "dimensions": [
-        "init_time",
-        "lead_time",
+        "time",
         "y",
         "x"
       ],
       "shape": [
         1,
-        1,
         1059,
         1799
       ],
       "lengths": {
-        "init_time": "6 hours",
-        "lead_time": "1 hour",
+        "time": "1 hour",
         "y": "3177 km",
         "x": "5397 km"
       },
@@ -3573,7 +3213,7 @@
       "uncompressed_size": "14.5 MiB"
     }
   },
-  "title": "NOAA HRRR forecast, 48 hour, virtual",
+  "title": "NOAA HRRR analysis, virtual",
   "extent": {
     "spatial": {
       "bbox": [
@@ -3588,7 +3228,7 @@
     "temporal": {
       "interval": [
         [
-          "2018-07-13T12:00:00Z",
+          "2014-10-01T00:00:00Z",
           null
         ]
       ]
@@ -3603,21 +3243,15 @@
       "3 km"
     ],
     "time_domain": [
-      "Forecasts initialized 2018-07-13 12:00:00 UTC to Present"
+      "2014-10-01 00:00:00 UTC to Present"
     ],
     "time_resolution": [
-      "Forecasts initialized every 6 hours"
-    ],
-    "forecast_domain": [
-      "Forecast lead time 0-48 hours ahead"
-    ],
-    "forecast_resolution": [
-      "Hourly"
+      "1 hour"
     ]
   },
   "assets": {
     "icechunk": {
-      "href": "s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour-virtual/v0.5.0.icechunk/",
+      "href": "s3://dynamical-noaa-hrrr/noaa-hrrr-analysis-virtual/v0.1.0.icechunk/",
       "type": "application/x-icechunk",
       "title": "Icechunk v2 repository",
       "xarray:open_kwargs": {
@@ -3643,7 +3277,7 @@
       ]
     },
     "icechunk-https": {
-      "href": "https://dynamical-noaa-hrrr.s3.us-west-2.amazonaws.com/noaa-hrrr-forecast-48-hour-virtual/v0.5.0.icechunk",
+      "href": "https://dynamical-noaa-hrrr.s3.us-west-2.amazonaws.com/noaa-hrrr-analysis-virtual/v0.1.0.icechunk",
       "type": "application/x-icechunk",
       "title": "Icechunk v2 repository (HTTPS)",
       "xarray:open_kwargs": {

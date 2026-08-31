@@ -22,6 +22,10 @@ This dataset has NaN values where source data are unavailable.
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}

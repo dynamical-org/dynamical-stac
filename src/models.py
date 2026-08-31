@@ -543,7 +543,10 @@ class CollectionInput(BaseModel):
     description_details: str = Field(min_length=1)
     description_model: str = Field(min_length=1)
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
-    notebooks: tuple[DatasetNotebook, ...] = Field(min_length=1)
+    # May be empty: staging-only datasets can be published before their
+    # notebook exists, in which case the collection carries no `example`
+    # links. `CatalogItem` requires at least one for production datasets.
+    notebooks: tuple[DatasetNotebook, ...] = ()
 
     @field_validator("bbox")
     @classmethod

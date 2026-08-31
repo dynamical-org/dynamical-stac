@@ -8,6 +8,7 @@ import pytest
 import xarray as xr
 
 from catalog import (
+    CATALOG_ITEMS,
     AdditionalTerms,
     CatalogItem,
     DatasetExample,
@@ -61,6 +62,12 @@ def _valid_input(**overrides: object) -> CollectionInput:
     return CollectionInput(**defaults)  # type: ignore[arg-type]
 
 
+def test_no_notebooks_renders_no_example_links() -> None:
+    # Staging-only datasets can be published before their notebook exists.
+    collection = _valid_input(notebooks=()).to_pystac_collection()
+    assert [link for link in collection.links if link.rel == "example"] == []
+
+
 def test_notebook_links_pair_github_and_colab_per_notebook() -> None:
     c = _valid_input(
         notebooks=(
@@ -98,6 +105,23 @@ def test_about_links_cover_docs_and_validation_report() -> None:
         ("Dataset documentation", "https://dynamical.org/catalog/ds/"),
         ("Validation report", "https://dynamical.org/catalog/ds/validation/"),
     ]
+
+
+def test_every_dataset_details_links_to_its_validation_report() -> None:
+    for item in CATALOG_ITEMS:
+        section = (
+            "### Validation report\n\n"
+            f"Review the [validation report](https://dynamical.org/catalog/{item.id}/validation/) "
+            "to understand variable availability, missing data, known quirks, fill values, "
+            "and approximate spatial, temporal, and value distributions."
+        )
+        details = item.description_details("chunking table")
+
+        assert details.count("### Validation report") == 1
+        assert section in details
+        if "### Compression" in details:
+            assert details.count("### Compression") == 1
+            assert f"{section}\n\n### Compression" in details
 
 
 # Use a real catalog id so ``CatalogItem.description_details`` can resolve its
@@ -170,6 +194,32 @@ def test_catalog_item_rejects_quickstart_slug_not_matching_id() -> None:
             icechunk_region="us-west-2",
             **{**_PROSE_KWARGS, "notebooks": (bad_notebook,)},  # type: ignore[arg-type]
         )
+
+
+def test_catalog_item_rejects_production_item_without_notebooks() -> None:
+    with pytest.raises(
+        pydantic.ValidationError, match="must declare at least one notebook"
+    ):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **{**_PROSE_KWARGS, "notebooks": ()},  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_allows_staging_item_without_notebooks() -> None:
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+        icechunk_region="us-west-2",
+        **{  # type: ignore[arg-type]
+            **_PROSE_KWARGS,
+            "notebooks": (),
+            "staging": True,
+        },
+    )
+    assert item.notebooks == ()
 
 
 def test_catalog_item_allows_non_quickstart_notebook_with_any_slug() -> None:

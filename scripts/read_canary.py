@@ -106,6 +106,9 @@ def read_canary() -> None:
             status=status,
             monitor_config=monitor_config,
         )
+        # Modal may reclaim the container the moment this function returns; an
+        # unflushed terminal check-in is lost and reads as a hung run.
+        sentry_sdk.flush()
 
     collection_ids = sorted(load_catalog())
 

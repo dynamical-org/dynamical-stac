@@ -23,6 +23,10 @@ Operational data is additionally accessed from [NCEP](https://mrms.ncep.noaa.gov
 
 {{ chunking }}
 
+### Validation report
+
+{{ validation_report }}
+
 ### Compression
 
 {{ compression }}

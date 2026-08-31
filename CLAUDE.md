@@ -32,7 +32,10 @@ Adding a new dataset typically requires all of:
   `https://github.com/dynamical-org/notebooks/blob/main/{slug}.ipynb` for each
   `DatasetNotebook.slug` on the item — `tests/test_catalog_read.py::test_notebook_url_exists`
   asserts HTTP 200. The Quickstart notebook's slug must equal the dataset
-  `id` (enforced by `CatalogItem._quickstart_slug_matches_id`).
+  `id` (enforced by `CatalogItem._quickstart_slug_matches_id`). Production
+  items must declare at least one notebook (enforced by
+  `CatalogItem._production_items_have_notebooks`); only staging items may
+  leave `notebooks` empty.
 - Regenerated `stac/` output (see above).
 
 ## Staging datasets
@@ -44,9 +47,13 @@ only when `STAC_INCLUDE_STAGING=1` (set by `upload-stac-staging.yml`, which runs
 on every push to `main` and uploads to the `stac-staging` bucket). Flip the flag
 to `False` and merge to release the dataset to production.
 
-A staging dataset still needs its prose file and notebook (those tests run over
-all items). Because staging items aren't in the committed `stac/`, regenerating
-locally with `./scripts/generate` won't show them — use
+A staging dataset still needs its prose file, but its notebook is optional: a
+staging item may omit `notebooks` entirely (its collection then carries no
+`example` links) until the notebook is written. Any notebook it *does* declare
+is still HEADed for a 200 by `test_notebook_url_exists`, and flipping
+`staging=False` fails validation until at least one notebook is present.
+Because staging items aren't in the committed `stac/`, regenerating locally
+with `./scripts/generate` won't show them — use
 `STAC_INCLUDE_STAGING=1 ./scripts/generate` to preview the staging catalog.
 
 dynamical.org Cloudflare PR previews build against `stac-staging`, so a staging
