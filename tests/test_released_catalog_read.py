@@ -1,6 +1,6 @@
 """Integration test: every supported `dynamical-catalog` release on PyPI
-(plus the `main` canary) must still open every collection in the locally
-generated STAC.
+must still open every production collection, while the `main` canary must open
+the staging-inclusive locally generated STAC.
 
 `tests/test_catalog_read.py` exercises whatever `dynamical-catalog` is
 installed into the project venv via the in-process
@@ -10,10 +10,11 @@ and stopped emitting `icechunk:storage.{bucket,prefix,region}`, both of
 which silently broke 0.3.0 consumers.
 
 Each target is installed into an isolated env via `uv run --with` and the
-check runs in a subprocess so it can't share import state with the
-project venv. The full `open + read first variable` flow runs against
-the just-generated STAC, so CI fails the moment a backwards-incompatible
-change lands.
+check runs in a subprocess so it can't share import state with the project
+venv. Released versions read the production-only root because staging may
+exercise a contract that has not shipped yet; canary refs read every staging
+collection so that new contract is proven before release. The full `open + read
+first variable` flow runs against the just-generated STAC.
 
 The set of targets is built fresh on every run by
 `scripts/compat_matrix.py`, which queries PyPI for non-yanked stable
@@ -40,7 +41,7 @@ import textwrap
 
 import pytest
 
-from catalog import _COLLECTION_IDS
+from catalog import CATALOG_ITEMS
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 _SCRIPTS_DIR = REPO_ROOT / "scripts"
@@ -88,6 +89,14 @@ def _install_spec(target: str) -> str:
     return f"{PACKAGE} @ git+{_DYNAMICAL_CATALOG_REPO}@{target}"
 
 
+def _catalog_filename(target: str) -> str:
+    return (
+        "catalog-production.json"
+        if re.fullmatch(r"\d+\.\d+\.\d+", target)
+        else "catalog.json"
+    )
+
+
 _HARNESS = textwrap.dedent(
     """
     import json, math, sys
@@ -95,10 +104,10 @@ _HARNESS = textwrap.dedent(
     import gribberish.zarr  # registers the GribberishCodec for virtual datasets
     from dynamical_catalog import _stac
 
-    root_url, collection_ids_json = sys.argv[1], sys.argv[2]
+    catalog_url, collection_ids_json = sys.argv[1], sys.argv[2]
     collection_ids = json.loads(collection_ids_json)
 
-    _stac.STAC_CATALOG_URL = root_url + "/catalog.json"
+    _stac.STAC_CATALOG_URL = catalog_url
     _stac.clear_cache()
 
     for cid in collection_ids:
@@ -128,6 +137,8 @@ def test_released_dynamical_catalog_opens_every_collection(
         pytest.skip("uv not available; cannot install released dynamical-catalog")
 
     _, root_url = served_catalog
+    staging = not re.fullmatch(r"\d+\.\d+\.\d+", target)
+    collection_ids = [item.id for item in CATALOG_ITEMS if staging or not item.staging]
     harness = tmp_path / "harness.py"
     harness.write_text(_HARNESS)
 
@@ -148,8 +159,8 @@ def test_released_dynamical_catalog_opens_every_collection(
             _ZARR_SPEC,
             "python",
             str(harness),
-            root_url,
-            json.dumps(_COLLECTION_IDS),
+            f"{root_url}/{_catalog_filename(target)}",
+            json.dumps(collection_ids),
         ],
         check=True,
     )

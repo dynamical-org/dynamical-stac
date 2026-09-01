@@ -19,12 +19,13 @@ _TEST_ID = "noaa-gfs-analysis"
 def _catalog_item(
     item_id: str = _TEST_ID,
     icechunk_href: str = f"s3://test-bucket/{_TEST_ID}/v0.icechunk/",
+    icechunk_region: str | None = "us-west-2",
     virtual_chunk_container_prefixes: tuple[str, ...] = (),
 ) -> CatalogItem:
     return CatalogItem(
         id=item_id,
         icechunk_href=icechunk_href,
-        icechunk_region="us-west-2",
+        icechunk_region=icechunk_region,
         virtual_chunk_container_prefixes=virtual_chunk_container_prefixes,
         model_id="noaa-gfs",
         description_summary="test summary",
@@ -95,6 +96,16 @@ def test_from_dataset_coerces_naive_time_to_utc() -> None:
     result = CollectionInput.from_dataset(item, ds)
     assert result.temporal_start.tzinfo is dt.UTC
     assert result.temporal_start == dt.datetime(2020, 1, 1, tzinfo=dt.UTC)
+
+
+def test_from_dataset_uses_cf_standard_names_for_geographic_xy_bbox() -> None:
+    ds = _synthetic_dataset().rename({"latitude": "y", "longitude": "x"})
+    ds["y"].attrs.update(standard_name="latitude", units="degree_north")
+    ds["x"].attrs.update(standard_name="longitude", units="degree_east")
+
+    result = CollectionInput.from_dataset(_catalog_item(), ds)
+
+    assert result.bbox == (100.0, -10.0, 120.0, 10.0)
 
 
 def _synthetic_subgroup() -> xr.Dataset:
@@ -313,8 +324,35 @@ def test_icechunk_https_asset_advertises_virtual_chunk_containers() -> None:
     ]
 
 
-def test_catalog_item_rejects_non_s3_virtual_chunk_container_prefix() -> None:
-    with pytest.raises(ValueError, match="only authorizes anonymous S3"):
+def test_https_repository_and_chunk_container_need_no_storage_options() -> None:
+    item = _catalog_item(
+        icechunk_href=f"https://data.example.org/{_TEST_ID}/v0.icechunk/",
+        icechunk_region=None,
+        virtual_chunk_container_prefixes=("https://chunks.example.org/data/",),
+    )
+    collection = CollectionInput.from_dataset(item, _synthetic_dataset())
+    assets = collection.to_pystac_collection().to_dict()["assets"]
+
+    assert assets["icechunk"]["href"] == (
+        f"https://data.example.org/{_TEST_ID}/v0.icechunk/"
+    )
+    assert "xarray:storage_options" not in assets["icechunk"]
+    assert assets["icechunk"]["icechunk:virtual_chunk_containers"] == [
+        {
+            "url_prefix": "https://chunks.example.org/data/",
+            "credentials": {"type": "http"},
+        }
+    ]
+    pystac_code = collection.to_pystac_collection().to_dict()["examples"][0][
+        "variants"
+    ][1]["code"]
+    assert '"https://chunks.example.org/data/": icechunk.Credentials.HttpAccess()' in (
+        pystac_code
+    )
+
+
+def test_catalog_item_rejects_unsupported_virtual_chunk_container_prefix() -> None:
+    with pytest.raises(ValueError, match="supported anonymous scheme"):
         _catalog_item(virtual_chunk_container_prefixes=("gs://nope/",))
 
 

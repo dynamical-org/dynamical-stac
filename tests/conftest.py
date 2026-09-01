@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import http.server
+import json
 import pathlib
 import socketserver
 import sys
@@ -12,6 +13,7 @@ import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
 
+from catalog import CATALOG_ITEMS
 from generate import generate
 
 
@@ -55,6 +57,18 @@ def served_catalog(
     with _serve(tmp_path) as port:
         root_url = f"http://127.0.0.1:{port}"
         generate(tmp_path, root_href=root_url, include_staging=True)
+        root_path = tmp_path / "catalog.json"
+        production_ids = {item.id for item in CATALOG_ITEMS if not item.staging}
+        production_root = json.loads(root_path.read_text())
+        production_root["links"] = [
+            link
+            for link in production_root["links"]
+            if link.get("rel") != "child"
+            or pathlib.PurePosixPath(link["href"]).parent.name in production_ids
+        ]
+        (tmp_path / "catalog-production.json").write_text(
+            json.dumps(production_root, indent=2)
+        )
         yield tmp_path, root_url
 
 

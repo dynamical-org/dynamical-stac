@@ -3,6 +3,7 @@ from __future__ import annotations
 import concurrent.futures
 import os
 import pathlib
+from urllib.parse import urlparse
 
 import gribberish.zarr  # noqa: F401 -- registers the GribberishCodec used by virtual datasets
 import icechunk
@@ -38,16 +39,31 @@ def _open_icechunk(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]
     group name; ``from_dataset`` flattens their variables into the collection.
     Single-group stores yield an empty dict.
     """
-    storage = icechunk.s3_storage(
-        bucket=item.icechunk_bucket,
-        prefix=item.icechunk_prefix,
-        region=item.icechunk_region,
-        anonymous=True,
-    )
+    scheme = urlparse(item.icechunk_href).scheme
+    if scheme == "s3":
+        assert item.icechunk_region is not None
+        storage = icechunk.s3_storage(
+            bucket=item.icechunk_bucket,
+            prefix=item.icechunk_prefix,
+            region=item.icechunk_region,
+            anonymous=True,
+        )
+    elif scheme == "https":
+        storage = icechunk.http_storage(base_url=item.icechunk_href.rstrip("/"))
+    else:
+        raise ValueError(f"Unsupported icechunk repository scheme: {scheme!r}")
+
+    def credentials(prefix: str) -> object:
+        if prefix.startswith("s3://"):
+            return icechunk.s3_anonymous_credentials()
+        if prefix.startswith("https://"):
+            return icechunk.Credentials.HttpAccess()
+        raise ValueError(f"Unsupported virtual chunk container prefix: {prefix!r}")
+
     authorize = (
         icechunk.containers_credentials(
             {
-                prefix: icechunk.s3_anonymous_credentials()
+                prefix: credentials(prefix)
                 for prefix in item.virtual_chunk_container_prefixes
             }
         )

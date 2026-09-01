@@ -252,6 +252,16 @@ MODELS: dict[str, Model] = {
             "obtain the best possible estimate of the current state of the Earth system."
         ),
     ),
+    "google-weathernext2": Model(
+        id="google-weathernext2",
+        name="Google WeatherNext 2",
+        description=(
+            "WeatherNext 2 is Google's global medium-range probabilistic "
+            "weather forecasting model. It produces a 64-member ensemble on "
+            "a 0.25 degree grid, initialized four times daily with forecasts "
+            "extending to 15 days."
+        ),
+    ),
     "dwd-icon-eu": Model(
         id="dwd-icon-eu",
         name="DWD ICON-EU",
@@ -290,10 +300,10 @@ class CatalogItem(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     id: str = Field(min_length=1)
-    icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
-    icechunk_region: Literal["us-west-2"]  # add additional as needed
-    # Virtual datasets reference GRIB bytes in public source buckets; readers must
-    # be told which container prefixes to authorize anonymously to resolve them.
+    icechunk_href: str = Field(pattern=r"^(?:s3|https)://[^/]+/.+$")
+    icechunk_region: Literal["us-west-2"] | None = None  # add additional as needed
+    # Virtual datasets reference chunks in public source stores; readers must be
+    # told which container prefixes to authorize anonymously to resolve them.
     virtual_chunk_container_prefixes: tuple[str, ...] = ()
     model_id: str = Field(min_length=1)
     description_summary: str = Field(min_length=1)
@@ -324,7 +334,21 @@ class CatalogItem(BaseModel):
         with only ``pystac`` + ``icechunk`` (no ``dynamical-catalog``); see
         ``icechunk.http_storage``.
         """
+        if self.icechunk_href.startswith("https://"):
+            return self.icechunk_href.rstrip("/")
+        assert self.icechunk_region is not None
         return s3_to_https_url(self.icechunk_href, self.icechunk_region)
+
+    @model_validator(mode="after")
+    def _s3_icechunk_href_has_region(self) -> CatalogItem:
+        if self.icechunk_href.startswith("s3://") and self.icechunk_region is None:
+            raise ValueError("s3 icechunk_href requires icechunk_region")
+        if (
+            self.icechunk_href.startswith("https://")
+            and self.icechunk_region is not None
+        ):
+            raise ValueError("https icechunk_href must omit icechunk_region")
+        return self
 
     def description_details(self, chunking_table: str | None = None) -> str:
         """Long-form prose from ``prose/datasets/{id}.md``.
@@ -385,16 +409,12 @@ class CatalogItem(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _virtual_chunk_container_prefixes_are_s3(self) -> CatalogItem:
+    def _virtual_chunk_container_prefixes_are_public(self) -> CatalogItem:
         for prefix in self.virtual_chunk_container_prefixes:
-            if not prefix.startswith("s3://"):
+            if not prefix.startswith(("s3://", "https://")):
                 raise ValueError(
-                    f"{self.id} virtual chunk container {prefix!r} must be an "
-                    f"s3:// URL: dynamical-catalog only authorizes anonymous S3 "
-                    f"virtual chunk access, so a non-S3 source can be advertised "
-                    f"but never read. icechunk supports other backends (GCS, "
-                    f"Azure, HTTP); extend dynamical-catalog's reader first to "
-                    f"use one here."
+                    f"{self.id} virtual chunk container {prefix!r} must use a "
+                    f"supported anonymous scheme (s3:// or https://)"
                 )
         return self
 
@@ -859,6 +879,73 @@ CATALOG_ITEMS: list[CatalogItem] = [
         # No notebook yet: dynamical-org/notebooks#52 adds the quickstart. Staging
         # items may omit it; re-add before flipping staging=False, which requires it.
         additional_terms=ECMWF_TERMS,
+        staging=True,
+    ),
+    CatalogItem(
+        id="google-weathernext2-forecast-historical-virtual",
+        icechunk_href=(
+            "https://google-weathernext2.r2.dynamical.org/"
+            "google-weathernext2-forecast-historical-virtual/v0.1.0.icechunk/"
+        ),
+        virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        model_id="google-weathernext2",
+        description_summary=(
+            "This dataset is the fixed 2022-2024 archive of Google "
+            "WeatherNext 2 forecasts, optimized for spatial (map) access "
+            "patterns. Forecasts are identified by an initialization time "
+            "(`init_time`) and one of 64 `ensemble_member` values, then step "
+            "forward from 6 to 360 hours (15 days) along the `lead_time` "
+            "dimension at a 6 hourly interval. Surface variables are at the "
+            "dataset root; variables carried on pressure levels are in the "
+            "`pressure_level` group."
+        ),
+        reformatter_url=(
+            f"{REFORMATTERS_ROOT}/google/weathernext2/"
+            "forecast_historical_virtual/template_config.py"
+        ),
+        examples=(
+            _example(
+                "Hurricane Beryl ensemble pressure",
+                'ds = dynamical_catalog.open("google-weathernext2-forecast-historical-virtual", chunks=None)\n'
+                'ds["pressure_reduced_to_mean_sea_level"].sel(init_time="2024-07-04T00", lead_time="96h", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))',
+            ),
+        ),
+        # notebooks#56 adds one combined historical + operational quickstart.
+        # Link it after that PR merges; staging items may omit notebooks.
+        staging=True,
+    ),
+    CatalogItem(
+        id="google-weathernext2-forecast-operational-virtual",
+        icechunk_href=(
+            "https://google-weathernext2.r2.dynamical.org/"
+            "google-weathernext2-forecast-operational-virtual/v0.1.0.icechunk/"
+        ),
+        virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        model_id="google-weathernext2",
+        description_summary=(
+            "This dataset is the 2025-present archive of Google WeatherNext 2 "
+            "forecasts, optimized for spatial (map) access patterns and "
+            "updated behind a strict 48-hour publication boundary. Forecasts "
+            "are identified by an initialization time (`init_time`) and one "
+            "of 64 `ensemble_member` values, then step forward from 6 to 360 "
+            "hours (15 days) along the `lead_time` dimension at a 6 hourly "
+            "interval. Surface variables are at the dataset root; variables "
+            "carried on pressure levels are in the `pressure_level` group."
+        ),
+        reformatter_url=(
+            f"{REFORMATTERS_ROOT}/google/weathernext2/"
+            "forecast_operational_virtual/template_config.py"
+        ),
+        examples=(
+            _example(
+                "Day-10 ensemble wind scenarios",
+                'ds = dynamical_catalog.open("google-weathernext2-forecast-operational-virtual", chunks=None)\n'
+                'latest = ds.isel(init_time=-1).sel(lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
+                '(latest["wind_u_100m"] ** 2 + latest["wind_v_100m"] ** 2) ** 0.5',
+            ),
+        ),
+        # notebooks#56 adds one combined historical + operational quickstart.
+        # Link it after that PR merges; staging items may omit notebooks.
         staging=True,
     ),
     CatalogItem(

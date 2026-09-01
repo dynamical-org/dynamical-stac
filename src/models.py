@@ -77,12 +77,20 @@ _CATALOG_OPEN_RE = re.compile(
 )
 
 
+def _virtual_credentials_code(prefix: str) -> str:
+    if prefix.startswith("s3://"):
+        return "icechunk.s3_anonymous_credentials()"
+    if prefix.startswith("https://"):
+        return "icechunk.Credentials.HttpAccess()"
+    raise ValueError(f"Unsupported virtual chunk container prefix: {prefix!r}")
+
+
 def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> str:
     """Imports + STAC lookup + icechunk session for the pystac open variant.
 
-    Virtual datasets additionally authorize anonymous S3 reads of their GRIB
-    chunk containers (icechunk only opens the repo over HTTPS; the referenced
-    source chunks still live in public S3 buckets).
+    Virtual datasets additionally authorize anonymous reads of their chunk
+    containers. Repositories always use the ``icechunk-https`` asset here;
+    referenced chunks may live in public S3 or HTTPS storage.
     """
     lines = [
         "import icechunk",
@@ -96,7 +104,7 @@ def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> s
     ]
     if virtual_prefixes:
         entries = ", ".join(
-            f'"{prefix}": icechunk.s3_anonymous_credentials()'
+            f'"{prefix}": {_virtual_credentials_code(prefix)}'
             for prefix in virtual_prefixes
         )
         lines += [
@@ -491,11 +499,30 @@ def _wrap_longitude(lon: xr.DataArray) -> xr.DataArray:
 
 
 def _bbox(ds: xr.Dataset) -> tuple[float, float, float, float]:
-    if "latitude" not in ds.coords or "longitude" not in ds.coords:
+    lat = next(
+        (
+            coord
+            for coord in ds.coords.values()
+            if coord.name == "latitude"
+            or coord.attrs.get("standard_name") == "latitude"
+        ),
+        None,
+    )
+    lon = next(
+        (
+            coord
+            for coord in ds.coords.values()
+            if coord.name == "longitude"
+            or coord.attrs.get("standard_name") == "longitude"
+        ),
+        None,
+    )
+    if lat is None or lon is None:
         raise ValueError(
-            f"Dataset missing latitude/longitude coords; has {list(ds.coords)}"
+            "Dataset missing coordinates identified as latitude/longitude; "
+            f"has {list(ds.coords)}"
         )
-    lat, lon = ds.latitude, _wrap_longitude(ds.longitude)
+    lon = _wrap_longitude(lon)
     return (float(lon.min()), float(lat.min()), float(lon.max()), float(lat.max()))
 
 
@@ -529,8 +556,8 @@ class CollectionInput(BaseModel):
     cube_dimensions: dict[str, CubeDimension]
     cube_variables: dict[str, CubeVariable]
     chunking: Chunking | None = None
-    icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
-    icechunk_region: str = Field(min_length=1)
+    icechunk_href: str = Field(pattern=r"^(?:s3|https)://[^/]+/.+$")
+    icechunk_region: str | None = Field(default=None, min_length=1)
     icechunk_https_href: str = Field(pattern=r"^https://[^/]+/.+$")
     virtual_chunk_container_prefixes: tuple[str, ...] = ()
     attribution: str = Field(min_length=1)
@@ -723,21 +750,25 @@ class CollectionInput(BaseModel):
                 self.chunking.model_dump(exclude_none=True)
             )
 
-        virtual_chunk_containers = [
-            {
-                "url_prefix": prefix,
-                "credentials": {"type": "s3", "anonymous": True},
-            }
-            for prefix in self.virtual_chunk_container_prefixes
-        ]
+        virtual_chunk_containers = []
+        for prefix in self.virtual_chunk_container_prefixes:
+            credentials = (
+                {"type": "s3", "anonymous": True}
+                if prefix.startswith("s3://")
+                else {"type": "http"}
+            )
+            virtual_chunk_containers.append(
+                {"url_prefix": prefix, "credentials": credentials}
+            )
 
         icechunk_extra_fields: dict[str, object] = {
             "xarray:open_kwargs": {"engine": "zarr"},
-            "xarray:storage_options": {
+        }
+        if self.icechunk_region is not None:
+            icechunk_extra_fields["xarray:storage_options"] = {
                 "anon": True,
                 "client_kwargs": {"region_name": self.icechunk_region},
-            },
-        }
+            }
         if virtual_chunk_containers:
             icechunk_extra_fields["icechunk:virtual_chunk_containers"] = (
                 virtual_chunk_containers

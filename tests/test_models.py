@@ -165,11 +165,42 @@ def test_icechunk_https_href_puts_region_in_domain_and_strips_trailing_slash() -
     )
 
 
-def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
+def test_catalog_item_uses_https_icechunk_href_directly() -> None:
+    href = f"https://data.example.org/{_TEST_ID}/v1.0.icechunk/"
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=href,
+        icechunk_region=None,
+        **_PROSE_KWARGS,  # type: ignore[arg-type]
+    )
+    assert item.icechunk_https_href == href.rstrip("/")
+
+
+def test_catalog_item_rejects_unsupported_icechunk_href() -> None:
     with pytest.raises(pydantic.ValidationError):
         CatalogItem(
             id=_TEST_ID,
-            icechunk_href=f"https://not-s3/{_TEST_ID}/",
+            icechunk_href=f"http://not-public/{_TEST_ID}/",
+            icechunk_region="us-west-2",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_requires_region_for_s3_icechunk_href() -> None:
+    with pytest.raises(pydantic.ValidationError, match="requires icechunk_region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://bucket/{_TEST_ID}/v1.icechunk/",
+            icechunk_region=None,
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_rejects_region_for_https_icechunk_href() -> None:
+    with pytest.raises(pydantic.ValidationError, match="must omit icechunk_region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"https://data.example.org/{_TEST_ID}/v1.icechunk/",
             icechunk_region="us-west-2",
             **_PROSE_KWARGS,  # type: ignore[arg-type]
         )
