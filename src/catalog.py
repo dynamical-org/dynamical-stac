@@ -137,9 +137,9 @@ FRAGMENTS: dict[str, str] = {
     ),
     # References {{ validation_url }} — supplied per-dataset at load time.
     "validation_report": (
-        "Review the [validation report]({{ validation_url }}) to understand "
-        "variable availability, missing data, known quirks, fill values, and "
-        "approximate spatial, temporal, and value distributions."
+        "Review the [validation report]({{ validation_url }}) for variable "
+        "availability, missing data, known quirks, fill values, value "
+        "distributions, and sample plots."
     ),
     # References {{ reformatter_url }} — supplied per-dataset at load time.
     "compression": (
