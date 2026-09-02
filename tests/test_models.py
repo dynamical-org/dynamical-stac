@@ -112,8 +112,8 @@ def test_every_dataset_details_links_to_its_validation_report() -> None:
         section = (
             "### Validation report\n\n"
             f"Review the [validation report](https://dynamical.org/catalog/{item.id}/validation/) "
-            "to understand variable availability, missing data, known quirks, fill values, "
-            "and approximate spatial, temporal, and value distributions."
+            "for variable availability, missing data, known quirks, fill values, "
+            "value distributions, and sample plots."
         )
         details = item.description_details("chunking table")
 
