@@ -10,7 +10,7 @@ import pystac
 import xarray as xr
 import zarr
 
-from catalog import CATALOG_ITEMS, CatalogItem
+from catalog import CATALOG_ITEMS, CatalogItem, url_scheme
 from models import CollectionInput
 
 ROOT_HREF = os.environ.get("STAC_ROOT_HREF", "https://stac.dynamical.org")
@@ -22,12 +22,51 @@ CATALOG_TITLE = "dynamical.org STAC Catalog"
 # leaves it unset and gets the production catalog.
 INCLUDE_STAGING = os.environ.get("STAC_INCLUDE_STAGING") == "1"
 
+# Test items (CatalogItem.test=True) are synthetic fixtures read by
+# dynamical-catalog's integration tests: excluded from production *and* staging,
+# published only to stac-test. The test deploy sets STAC_INCLUDE_TEST=1 (plus
+# STAC_INCLUDE_STAGING=1, making stac-test a superset of stac-staging).
+INCLUDE_TEST = os.environ.get("STAC_INCLUDE_TEST") == "1"
+
 
 def _select_items(
-    items: list[CatalogItem], *, include_staging: bool
+    items: list[CatalogItem], *, include_staging: bool, include_test: bool
 ) -> list[CatalogItem]:
-    """Production excludes staging items; the staging catalog includes them."""
-    return [item for item in items if include_staging or not item.staging]
+    """Filter the catalog down to one tier.
+
+    Production excludes staging and test items; the staging catalog adds the
+    staging items; the test catalog adds both.
+    """
+    return [
+        item
+        for item in items
+        if (include_staging or not item.staging) and (include_test or not item.test)
+    ]
+
+
+def _container_credentials(
+    prefix: str,
+) -> icechunk.S3Credentials.Anonymous | icechunk.GcsCredentials.Anonymous:
+    """Anonymous virtual chunk container credentials for ``prefix``'s backend."""
+    if url_scheme(prefix) == "s3":
+        return icechunk.s3_anonymous_credentials()
+    return icechunk.gcs_credentials(anonymous=True)
+
+
+def _storage(item: CatalogItem) -> icechunk.Storage:
+    """Anonymous read-only storage for the item's repository, by href scheme."""
+    if item.icechunk_scheme == "gs":
+        return icechunk.gcs_storage(
+            bucket=item.icechunk_bucket,
+            prefix=item.icechunk_prefix,
+            anonymous=True,
+        )
+    return icechunk.s3_storage(
+        bucket=item.icechunk_bucket,
+        prefix=item.icechunk_prefix,
+        region=item.icechunk_region,
+        anonymous=True,
+    )
 
 
 def _open_icechunk(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
@@ -38,16 +77,11 @@ def _open_icechunk(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]
     group name; ``from_dataset`` flattens their variables into the collection.
     Single-group stores yield an empty dict.
     """
-    storage = icechunk.s3_storage(
-        bucket=item.icechunk_bucket,
-        prefix=item.icechunk_prefix,
-        region=item.icechunk_region,
-        anonymous=True,
-    )
+    storage = _storage(item)
     authorize = (
         icechunk.containers_credentials(
             {
-                prefix: icechunk.s3_anonymous_credentials()
+                prefix: _container_credentials(prefix)
                 for prefix in item.virtual_chunk_container_prefixes
             }
         )
@@ -85,6 +119,7 @@ def generate(
     output_dir: pathlib.Path,
     root_href: str = ROOT_HREF,
     include_staging: bool = INCLUDE_STAGING,
+    include_test: bool = INCLUDE_TEST,
 ) -> None:
     catalog = pystac.Catalog(
         id="dynamical-org",
@@ -92,7 +127,9 @@ def generate(
         description="Cloud-optimized weather and climate datasets from dynamical.org",
     )
 
-    items = _select_items(CATALOG_ITEMS, include_staging=include_staging)
+    items = _select_items(
+        CATALOG_ITEMS, include_staging=include_staging, include_test=include_test
+    )
 
     def _load(
         item: CatalogItem,

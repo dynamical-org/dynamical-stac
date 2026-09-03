@@ -18,6 +18,8 @@ from catalog import (
     DatasetExample,
     DatasetLicense,
     DatasetNotebook,
+    StorageScheme,
+    url_scheme,
 )
 
 NOTEBOOKS_REPO_BASE = "https://github.com/dynamical-org/notebooks/blob/main"
@@ -77,12 +79,26 @@ _CATALOG_OPEN_RE = re.compile(
 )
 
 
+# `credentials.type` advertised for a virtual chunk container, keyed by the
+# scheme of its url_prefix. icechunk names the Google backend "gcs" while the
+# URL scheme is "gs".
+_CONTAINER_CREDENTIALS_TYPE: dict[StorageScheme, str] = {"s3": "s3", "gs": "gcs"}
+
+# The icechunk call that builds anonymous credentials for a container, by scheme.
+# Rendered verbatim into the pystac open snippet.
+_CONTAINER_CREDENTIALS_CALL: dict[StorageScheme, str] = {
+    "s3": "icechunk.s3_anonymous_credentials()",
+    "gs": "icechunk.gcs_credentials(anonymous=True)",
+}
+
+
 def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> str:
     """Imports + STAC lookup + icechunk session for the pystac open variant.
 
-    Virtual datasets additionally authorize anonymous S3 reads of their GRIB
+    Virtual datasets additionally authorize anonymous reads of their source
     chunk containers (icechunk only opens the repo over HTTPS; the referenced
-    source chunks still live in public S3 buckets).
+    source chunks still live in public S3 or GCS buckets, so the credentials
+    call follows each prefix's scheme).
     """
     lines = [
         "import icechunk",
@@ -96,7 +112,7 @@ def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> s
     ]
     if virtual_prefixes:
         entries = ", ".join(
-            f'"{prefix}": icechunk.s3_anonymous_credentials()'
+            f'"{prefix}": {_CONTAINER_CREDENTIALS_CALL[url_scheme(prefix)]}'
             for prefix in virtual_prefixes
         )
         lines += [
@@ -364,8 +380,16 @@ def _human_spatial(magnitude: float, dim: str, units: str) -> str | None:
     rather than silently dropping it from the chunk/shard summary.
     """
     # A rotated pole grid's grid_latitude/grid_longitude carry "degrees": angles on
-    # the rotated sphere rather than the metres of a projected grid.
-    if units in ("degree_north", "degree_east", "degrees"):
+    # the rotated sphere rather than the metres of a projected grid. CF allows the
+    # singular and plural spellings interchangeably: reformatters emits the
+    # singular, stores written elsewhere (e.g. the GCS test fixture) the plural.
+    if units in (
+        "degree_north",
+        "degree_east",
+        "degrees_north",
+        "degrees_east",
+        "degrees",
+    ):
         return f"{_num(magnitude)}°"
     if units == "m":
         if magnitude >= 1000:
@@ -529,8 +553,9 @@ class CollectionInput(BaseModel):
     cube_dimensions: dict[str, CubeDimension]
     cube_variables: dict[str, CubeVariable]
     chunking: Chunking | None = None
-    icechunk_href: str = Field(pattern=r"^s3://[^/]+/.+$")
-    icechunk_region: str = Field(min_length=1)
+    icechunk_href: str = Field(pattern=r"^(s3|gs)://[^/]+/.+$")
+    # S3 only; GCS stores carry no region. See `CatalogItem._region_matches_scheme`.
+    icechunk_region: str | None = None
     icechunk_https_href: str = Field(pattern=r"^https://[^/]+/.+$")
     virtual_chunk_container_prefixes: tuple[str, ...] = ()
     attribution: str = Field(min_length=1)
@@ -544,8 +569,9 @@ class CollectionInput(BaseModel):
     description_model: str = Field(min_length=1)
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
     # May be empty: staging-only datasets can be published before their
-    # notebook exists, in which case the collection carries no `example`
-    # links. `CatalogItem` requires at least one for production datasets.
+    # notebook exists, and test fixtures never get one, in which case the
+    # collection carries no `example` links. `CatalogItem` requires at least
+    # one for production datasets.
     notebooks: tuple[DatasetNotebook, ...] = ()
 
     @field_validator("bbox")
@@ -726,17 +752,27 @@ class CollectionInput(BaseModel):
         virtual_chunk_containers = [
             {
                 "url_prefix": prefix,
-                "credentials": {"type": "s3", "anonymous": True},
+                "credentials": {
+                    "type": _CONTAINER_CREDENTIALS_TYPE[url_scheme(prefix)],
+                    "anonymous": True,
+                },
             }
             for prefix in self.virtual_chunk_container_prefixes
         ]
 
-        icechunk_extra_fields: dict[str, object] = {
-            "xarray:open_kwargs": {"engine": "zarr"},
-            "xarray:storage_options": {
+        # Anonymous filesystem options for the reader, by backend: s3fs takes
+        # `anon` + a region, gcsfs takes `token="anon"` and has no region.
+        storage_options: dict[str, object] = (
+            {"token": "anon"}
+            if url_scheme(self.icechunk_href) == "gs"
+            else {
                 "anon": True,
                 "client_kwargs": {"region_name": self.icechunk_region},
-            },
+            }
+        )
+        icechunk_extra_fields: dict[str, object] = {
+            "xarray:open_kwargs": {"engine": "zarr"},
+            "xarray:storage_options": storage_options,
         }
         if virtual_chunk_containers:
             icechunk_extra_fields["icechunk:virtual_chunk_containers"] = (
