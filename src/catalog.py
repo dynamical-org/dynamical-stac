@@ -14,25 +14,33 @@ REFORMATTERS_ROOT = (
 )
 REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 
-# Prepended to every example snippet so users see the required package versions.
-_DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.8.0"
+# Prepended to every example snippet so users see the required package version.
+# `_example` takes a higher floor for datasets whose storage the 0.8.0 reader
+# can't open (gs://, az:// and https:// repositories need 1.0.0).
+_DEFAULT_MIN_DYNAMICAL_CATALOG = "0.8.0"
 
 
-# Object-store schemes a repository (or a virtual chunk container) may use.
-# All are readable anonymously by the generator and by dynamical-catalog.
-StorageScheme = Literal["s3", "gs", "az"]
+def _dynamical_catalog_import(min_version: str) -> str:
+    return f"import dynamical_catalog  # dynamical-catalog>={min_version}"
 
-_STORAGE_SCHEMES: tuple[StorageScheme, ...] = ("s3", "gs", "az")
+
+# Storage schemes a repository (or a virtual chunk container) may use: the
+# object stores `s3`, `gs` and `az`, plus `https` for a repository or container
+# served anonymously over plain HTTPS. All are readable anonymously by the
+# generator and by dynamical-catalog.
+StorageScheme = Literal["s3", "gs", "az", "https"]
+
+_STORAGE_SCHEMES: tuple[StorageScheme, ...] = ("s3", "gs", "az", "https")
 
 
 def url_scheme(href: str) -> StorageScheme:
-    """Scheme of a supported object-store URL, i.e. ``s3``, ``gs`` or ``az``."""
+    """Scheme of a supported storage URL, i.e. ``s3``, ``gs``, ``az`` or ``https``."""
     scheme = href.split("://", 1)[0]
     for supported in _STORAGE_SCHEMES:
         if scheme == supported:
             return supported
     expected = ", ".join(f"{s}://" for s in _STORAGE_SCHEMES)
-    raise ValueError(f"unsupported object-store URL {href!r}: expected {expected}")
+    raise ValueError(f"unsupported storage URL {href!r}: expected {expected}")
 
 
 def s3_to_https_url(s3_href: str, region: str) -> str:
@@ -128,9 +136,17 @@ class DatasetNotebook(BaseModel):
     title: str = Field(min_length=1)
 
 
-def _example(title: str, body: str) -> DatasetExample:
-    """Build an example, prepending the standard dynamical_catalog import preamble."""
-    return DatasetExample(title=title, code=f"{_DYNAMICAL_CATALOG_IMPORT}\n\n{body}")
+def _example(
+    title: str, body: str, min_version: str = _DEFAULT_MIN_DYNAMICAL_CATALOG
+) -> DatasetExample:
+    """Build an example, prepending the standard dynamical_catalog import preamble.
+
+    ``min_version`` is the oldest dynamical-catalog release that can open the
+    dataset; it is rendered into the import comment users copy.
+    """
+    return DatasetExample(
+        title=title, code=f"{_dynamical_catalog_import(min_version)}\n\n{body}"
+    )
 
 
 # Shared prose fragments, substituted into markdown files via {{ name }} tokens.
@@ -301,6 +317,16 @@ MODELS: dict[str, Model] = {
             "obtain the best possible estimate of the current state of the Earth system."
         ),
     ),
+    "google-weathernext2": Model(
+        id="google-weathernext2",
+        name="Google WeatherNext 2",
+        description=(
+            "WeatherNext 2 is Google's global medium-range probabilistic "
+            "weather forecasting model. It produces a 64-member ensemble on "
+            "a 0.25 degree grid, initialized four times daily with forecasts "
+            "extending to 15 days."
+        ),
+    ),
     "dwd-icon-eu": Model(
         id="dwd-icon-eu",
         name="DWD ICON-EU",
@@ -347,20 +373,22 @@ class CatalogItem(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     id: str = Field(min_length=1)
-    # The netloc is the bucket for `s3://` and `gs://`; for `az://` it is the
-    # blob *container* (Azure's storage account lives in `icechunk_account`, not
-    # in the URL).
-    icechunk_href: str = Field(pattern=r"^(s3|gs|az)://[^/]+/.+$")
+    # The netloc is the bucket for `s3://` and `gs://`, the blob *container* for
+    # `az://` (Azure's storage account lives in `icechunk_account`, not in the
+    # URL), and the host for `https://` (a repository served anonymously over
+    # plain HTTPS, e.g. from an R2 custom domain; advertised with its trailing
+    # slash stripped, as `icechunk.http_storage` requires).
+    icechunk_href: str = Field(pattern=r"^(s3|gs|az|https)://[^/]+/.+$")
     # S3 only: the region is part of the store's HTTPS domain and of the reader's
-    # storage options. GCS and Azure have no region in either, so `gs://` and
-    # `az://` items omit it. Enforced by `_region_matches_scheme`.
+    # storage options. GCS, Azure and HTTPS have no region in either, so `gs://`,
+    # `az://` and `https://` items omit it. Enforced by `_region_matches_scheme`.
     icechunk_region: Literal["us-west-2"] | None = None  # add additional as needed
     # Azure only: the storage account that owns the container. It is absent from
     # the `az://` URL but needed for both the HTTPS domain and the reader's
     # storage options. Enforced by `_account_matches_scheme`.
     icechunk_account: str | None = None
-    # Virtual datasets reference GRIB bytes in public source buckets; readers must
-    # be told which container prefixes to authorize anonymously to resolve them.
+    # Virtual datasets reference chunks in public source stores; readers must be
+    # told which container prefixes to authorize anonymously to resolve them.
     virtual_chunk_container_prefixes: tuple[str, ...] = ()
     model_id: str = Field(min_length=1)
     description_summary: str = Field(min_length=1)
@@ -405,8 +433,12 @@ class CatalogItem(BaseModel):
         with only ``pystac`` + ``icechunk`` (no ``dynamical-catalog``); see
         ``icechunk.http_storage``. S3 stores put the region in the domain; GCS
         stores are served from a single ``storage.googleapis.com`` host; Azure
-        stores put the storage account in the domain.
+        stores put the storage account in the domain; an ``https://`` store is
+        already public HTTPS and is advertised unchanged apart from stripping
+        any trailing slash.
         """
+        if self.icechunk_scheme == "https":
+            return self.icechunk_href.rstrip("/")
         if self.icechunk_scheme == "gs":
             return gs_to_https_url(self.icechunk_href)
         if self.icechunk_scheme == "az":
@@ -525,15 +557,15 @@ class CatalogItem(BaseModel):
     @model_validator(mode="after")
     def _virtual_chunk_container_prefixes_are_supported(self) -> CatalogItem:
         for prefix in self.virtual_chunk_container_prefixes:
-            if not prefix.startswith(("s3://", "gs://", "az://")):
+            if not prefix.startswith(("s3://", "gs://", "az://", "https://")):
                 raise ValueError(
                     f"{self.id} virtual chunk container {prefix!r} must be an "
-                    f"s3://, gs:// or az:// URL: dynamical-catalog only "
-                    f"authorizes anonymous S3, GCS and Azure virtual chunk "
-                    f"access (gs:// and az:// need dynamical-catalog >= 1.0.0), "
-                    f"so a source on any other backend can be advertised but "
-                    f"never read. icechunk supports more backends (HTTP); extend "
-                    f"dynamical-catalog's reader first to use one here."
+                    f"s3://, gs://, az:// or https:// URL: dynamical-catalog only "
+                    f"authorizes anonymous S3, GCS, Azure and HTTPS virtual chunk "
+                    f"access (gs://, az:// and https:// need dynamical-catalog "
+                    f">= 1.0.0), so a source on any other backend "
+                    f"can be advertised but never read. Extend dynamical-catalog's "
+                    f"reader first to use one here."
                 )
         return self
 
@@ -1001,6 +1033,75 @@ CATALOG_ITEMS: list[CatalogItem] = [
         staging=True,
     ),
     CatalogItem(
+        id="google-weathernext2-forecast-historical-virtual",
+        icechunk_href=(
+            "https://google-weathernext2.r2.dynamical.org/"
+            "google-weathernext2-forecast-historical-virtual/v0.1.0.icechunk/"
+        ),
+        virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        model_id="google-weathernext2",
+        description_summary=(
+            "This dataset is the fixed 2022-2024 archive of Google "
+            "WeatherNext 2 forecasts, optimized for spatial (map) access "
+            "patterns. Forecasts are identified by an initialization time "
+            "(`init_time`) and one of 64 `ensemble_member` values, then step "
+            "forward from 6 to 360 hours (15 days) along the `lead_time` "
+            "dimension at a 6 hourly interval. Surface variables are at the "
+            "dataset root; variables carried on pressure levels are in the "
+            "`pressure_level` group."
+        ),
+        reformatter_url=(
+            f"{REFORMATTERS_ROOT}/google/weathernext2/"
+            "forecast_historical_virtual/template_config.py"
+        ),
+        examples=(
+            _example(
+                "Hurricane Beryl ensemble pressure",
+                'ds = dynamical_catalog.open("google-weathernext2-forecast-historical-virtual", chunks=None)\n'
+                'ds["pressure_reduced_to_mean_sea_level"].sel(init_time="2024-07-04T00", lead_time="96h", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))',
+                min_version="1.0.0",  # https:// repository
+            ),
+        ),
+        # notebooks#56 adds one combined historical + operational quickstart.
+        # Link it after that PR merges; staging items may omit notebooks.
+        staging=True,
+    ),
+    CatalogItem(
+        id="google-weathernext2-forecast-operational-virtual",
+        icechunk_href=(
+            "https://google-weathernext2.r2.dynamical.org/"
+            "google-weathernext2-forecast-operational-virtual/v0.1.0.icechunk/"
+        ),
+        virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        model_id="google-weathernext2",
+        description_summary=(
+            "This dataset is the 2025-present archive of Google WeatherNext 2 "
+            "forecasts, optimized for spatial (map) access patterns and "
+            "updated behind a strict 48-hour publication boundary. Forecasts "
+            "are identified by an initialization time (`init_time`) and one "
+            "of 64 `ensemble_member` values, then step forward from 6 to 360 "
+            "hours (15 days) along the `lead_time` dimension at a 6 hourly "
+            "interval. Surface variables are at the dataset root; variables "
+            "carried on pressure levels are in the `pressure_level` group."
+        ),
+        reformatter_url=(
+            f"{REFORMATTERS_ROOT}/google/weathernext2/"
+            "forecast_operational_virtual/template_config.py"
+        ),
+        examples=(
+            _example(
+                "Day-10 ensemble wind scenarios",
+                'ds = dynamical_catalog.open("google-weathernext2-forecast-operational-virtual", chunks=None)\n'
+                'latest = ds.isel(init_time=-1).sel(lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
+                '(latest["wind_u_100m"] ** 2 + latest["wind_v_100m"] ** 2) ** 0.5',
+                min_version="1.0.0",  # https:// repository
+            ),
+        ),
+        # notebooks#56 adds one combined historical + operational quickstart.
+        # Link it after that PR merges; staging items may omit notebooks.
+        staging=True,
+    ),
+    CatalogItem(
         id="dwd-icon-eu-forecast-5-day",
         icechunk_href="s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1114,6 +1215,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Read the array",
                 'ds = dynamical_catalog.open("test-gcs-virtual", chunks=None)\n'
                 'ds["temperature_2m"].isel(time=0)',
+                min_version="1.0.0",  # gs:// repository
             ),
         ),
         notebooks=(),
@@ -1142,6 +1244,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Read the array",
                 'ds = dynamical_catalog.open("test-azure-virtual", chunks=None)\n'
                 'ds["temperature_2m"].isel(time=0)',
+                min_version="1.0.0",  # az:// repository
             ),
         ),
         notebooks=(),

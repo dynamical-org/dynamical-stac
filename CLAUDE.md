@@ -81,16 +81,24 @@ commit the result, the committed tree is production-only.
 Like staging items, a test item may omit `notebooks`. Unlike them it also has
 no validation report, so its prose omits that section.
 
-Repositories and virtual chunk containers may be `s3://`, `gs://` or `az://`.
-For `az://` the URL's netloc is the blob *container*, not a bucket.
-`icechunk_region` is required for `s3://` (it goes in the store's HTTPS domain
-and in the reader's storage options) and must be omitted for `gs://` and
-`az://`, which have no region. `icechunk_account` is the mirror image: required
-for `az://` (Azure's storage account is absent from the URL but needed for both
-the HTTPS domain and the reader's storage options) and must be omitted
-otherwise. The generator dispatches on the scheme in `generate._storage` /
+Repositories and virtual chunk containers may be `s3://`, `gs://`, `az://` or
+`https://` (a repository or container served anonymously over plain HTTPS, e.g.
+from an R2 custom domain). For `az://` the URL's netloc is the blob
+*container*, not a bucket. `icechunk_region` is required for `s3://` (it goes
+in the store's HTTPS domain and in the reader's storage options) and must be
+omitted for `gs://`, `az://` and `https://`, which have no region.
+`icechunk_account` is the mirror image: required for `az://` (Azure's storage
+account is absent from the URL but needed for both the HTTPS domain and the
+reader's storage options) and must be omitted otherwise. The generator
+dispatches on the scheme in `generate._storage` /
 `generate._container_credentials`, and the rendered collection carries
 `xarray:storage_options` of `{"anon": true, "client_kwargs": {...}}` for S3,
 `{"token": "anon"}` for GCS and `{"account_name": ..., "anon": true}` for
-Azure, with container `credentials.type` of `s3`, `gcs` or `azure`. Reading a
-`gs://` or `az://` dataset needs dynamical-catalog >= 1.0.0.
+Azure, and none at all for HTTPS (`icechunk.http_storage` takes no region or
+anon config). Container `credentials` are `{"type": "s3"|"gcs"|"azure",
+"anonymous": true}` for object stores and `{"type": "http"}` for HTTPS. An
+`https://` repository's `icechunk-https` asset is its href with any trailing
+slash removed. Reading a `gs://`, `az://` or `https://` dataset needs
+dynamical-catalog >= 1.0.0 (the previous release, 0.8.0, reads S3 only); the
+example snippets of those items pass `min_version="1.0.0"` to `_example` so
+the rendered import comment says so.

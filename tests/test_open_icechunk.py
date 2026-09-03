@@ -1,7 +1,7 @@
 """Unit tests for `generate._open_icechunk`'s per-backend dispatch.
 
 The store is never really opened: `icechunk.s3_storage`/`gcs_storage`/
-`azure_storage`, `icechunk.Repository.open`, `xr.open_zarr` and
+`azure_storage`/`http_storage`, `icechunk.Repository.open`, `xr.open_zarr` and
 `zarr.open_group` are all patched, so these assert only which icechunk
 constructor each href scheme reaches and with what arguments.
 """
@@ -21,6 +21,10 @@ _GCS_ID = "test-gcs-virtual"
 _AZ_ID = "test-azure-virtual"
 _AZ_ACCOUNT = "dynamicalicechunktest"
 _AZ_CONTAINER = "dynamical-icechunk-azure-demo"
+_HTTPS_ID = "google-weathernext2-forecast-historical-virtual"
+_HTTPS_HREF = (
+    f"https://google-weathernext2.r2.dynamical.org/{_HTTPS_ID}/v0.1.0.icechunk/"
+)
 
 _ITEM_KWARGS: dict[str, Any] = {
     "description_summary": "test summary",
@@ -69,6 +73,17 @@ def _azure_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
     )
 
 
+def _https_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
+    return CatalogItem(
+        id=_HTTPS_ID,
+        icechunk_href=_HTTPS_HREF,
+        virtual_chunk_container_prefixes=virtual_prefixes,
+        model_id="google-weathernext2",
+        staging=True,
+        **_ITEM_KWARGS,
+    )
+
+
 @pytest.fixture
 def storage_calls(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     """Record which storage constructor `_open_icechunk` reaches, and stub I/O."""
@@ -94,6 +109,10 @@ def storage_calls(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         calls["azure_storage"] = kwargs
         return "azure-storage"
 
+    def fake_http_storage(**kwargs: object) -> str:
+        calls["http_storage"] = kwargs
+        return "http-storage"
+
     def fake_open(storage: object, **kwargs: object) -> _Repo:
         calls["repository_open"] = (storage, kwargs)
         return _Repo()
@@ -101,6 +120,7 @@ def storage_calls(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(generate.icechunk, "s3_storage", fake_s3_storage)
     monkeypatch.setattr(generate.icechunk, "gcs_storage", fake_gcs_storage)
     monkeypatch.setattr(generate.icechunk, "azure_storage", fake_azure_storage)
+    monkeypatch.setattr(generate.icechunk, "http_storage", fake_http_storage)
     monkeypatch.setattr(generate.icechunk.Repository, "open", staticmethod(fake_open))
     monkeypatch.setattr(generate.xr, "open_zarr", lambda *a, **k: "dataset")
     monkeypatch.setattr(
@@ -152,6 +172,24 @@ def test_open_icechunk_uses_azure_storage_for_az_href(
     assert storage_calls["repository_open"][0] == "azure-storage"
 
 
+def test_open_icechunk_uses_http_storage_for_https_href(
+    storage_calls: dict[str, Any],
+) -> None:
+    generate._open_icechunk(_https_item(("https://wn.dynamical.org/chunks/",)))
+    assert "s3_storage" not in storage_calls
+    assert "gcs_storage" not in storage_calls
+    assert "azure_storage" not in storage_calls
+    # http_storage rejects a trailing slash on base_url.
+    assert storage_calls["http_storage"] == {"base_url": _HTTPS_HREF.rstrip("/")}
+    storage, kwargs = storage_calls["repository_open"]
+    assert storage == "http-storage"
+    authorize = kwargs["authorize_virtual_chunk_access"]
+    assert set(authorize) == {"https://wn.dynamical.org/chunks/"}
+    assert isinstance(
+        authorize["https://wn.dynamical.org/chunks/"], icechunk.Credentials.HttpAccess
+    )
+
+
 def test_open_icechunk_omits_authorization_without_virtual_containers(
     storage_calls: dict[str, Any],
 ) -> None:
@@ -164,11 +202,13 @@ def test_container_credentials_follow_the_prefix_scheme() -> None:
     s3_credentials = generate._container_credentials("s3://noaa-hrrr-bdp-pds/")
     gcs_credentials = generate._container_credentials("gs://some-bucket/source/")
     azure_credentials = generate._container_credentials("az://some-container/source/")
+    http_credentials = generate._container_credentials("https://example.com/source/")
     assert isinstance(s3_credentials, icechunk.S3Credentials.Anonymous)
     assert isinstance(gcs_credentials, icechunk.GcsCredentials.Anonymous)
     assert isinstance(azure_credentials, icechunk.AzureCredentials.Anonymous)
+    assert isinstance(http_credentials, icechunk.Credentials.HttpAccess)
 
 
 def test_container_credentials_reject_unsupported_scheme() -> None:
-    with pytest.raises(ValueError, match="unsupported object-store URL"):
-        generate._container_credentials("https://example.com/source/")
+    with pytest.raises(ValueError, match="unsupported storage URL"):
+        generate._container_credentials("ftp://example.com/source/")

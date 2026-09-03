@@ -50,6 +50,7 @@ def _container_credentials(
     icechunk.S3Credentials.Anonymous
     | icechunk.GcsCredentials.Anonymous
     | icechunk.AzureCredentials.Anonymous
+    | icechunk.Credentials.HttpAccess
 ):
     """Anonymous virtual chunk container credentials for ``prefix``'s backend."""
     scheme = url_scheme(prefix)
@@ -57,11 +58,17 @@ def _container_credentials(
         return icechunk.s3_anonymous_credentials()
     if scheme == "az":
         return icechunk.azure_anonymous_credentials()
+    if scheme == "https":
+        return icechunk.Credentials.HttpAccess()
     return icechunk.gcs_credentials(anonymous=True)
 
 
 def _storage(item: CatalogItem) -> icechunk.Storage:
     """Anonymous read-only storage for the item's repository, by href scheme."""
+    if item.icechunk_scheme == "https":
+        # `icechunk_https_href` is the href with any trailing slash stripped,
+        # which `http_storage` requires.
+        return icechunk.http_storage(base_url=item.icechunk_https_href)
     if item.icechunk_scheme == "gs":
         return icechunk.gcs_storage(
             bucket=item.icechunk_bucket,

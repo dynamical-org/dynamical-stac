@@ -166,11 +166,42 @@ def test_icechunk_https_href_puts_region_in_domain_and_strips_trailing_slash() -
     )
 
 
-def test_catalog_item_rejects_non_s3_icechunk_href() -> None:
+def test_catalog_item_uses_https_icechunk_href_directly() -> None:
+    href = f"https://data.example.org/{_TEST_ID}/v1.0.icechunk/"
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=href,
+        icechunk_region=None,
+        **_PROSE_KWARGS,  # type: ignore[arg-type]
+    )
+    assert item.icechunk_https_href == href.rstrip("/")
+
+
+def test_catalog_item_rejects_unsupported_icechunk_href() -> None:
     with pytest.raises(pydantic.ValidationError):
         CatalogItem(
             id=_TEST_ID,
-            icechunk_href=f"https://not-s3/{_TEST_ID}/",
+            icechunk_href=f"http://not-public/{_TEST_ID}/",
+            icechunk_region="us-west-2",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_requires_region_for_s3_icechunk_href() -> None:
+    with pytest.raises(pydantic.ValidationError, match="must set icechunk_region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://bucket/{_TEST_ID}/v1.icechunk/",
+            icechunk_region=None,
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_rejects_region_for_https_icechunk_href() -> None:
+    with pytest.raises(pydantic.ValidationError, match="which has no region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"https://data.example.org/{_TEST_ID}/v1.icechunk/",
             icechunk_region="us-west-2",
             **_PROSE_KWARGS,  # type: ignore[arg-type]
         )
@@ -468,3 +499,22 @@ def test_collection_input_renders_additional_terms_as_extra_license_link() -> No
 def test_additional_terms_rejects_empty_title() -> None:
     with pytest.raises(pydantic.ValidationError):
         AdditionalTerms(href="https://example.org/terms", title="")  # type: ignore[arg-type]
+
+
+def test_example_import_comment_carries_per_dataset_reader_floor() -> None:
+    """gs://, az:// and https:// datasets need dynamical-catalog 1.0.0; S3 keeps 0.8.0."""
+    by_id = {item.id: item for item in CATALOG_ITEMS}
+    for item_id in (
+        "google-weathernext2-forecast-historical-virtual",
+        "google-weathernext2-forecast-operational-virtual",
+        "test-gcs-virtual",
+        "test-azure-virtual",
+    ):
+        for example in by_id[item_id].examples:
+            assert example.code.startswith(
+                "import dynamical_catalog  # dynamical-catalog>=1.0.0\n"
+            ), example.code
+    for example in by_id["noaa-gfs-analysis"].examples:
+        assert example.code.startswith(
+            "import dynamical_catalog  # dynamical-catalog>=0.8.0\n"
+        ), example.code
