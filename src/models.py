@@ -82,13 +82,18 @@ _CATALOG_OPEN_RE = re.compile(
 # `credentials.type` advertised for a virtual chunk container, keyed by the
 # scheme of its url_prefix. icechunk names the Google backend "gcs" while the
 # URL scheme is "gs".
-_CONTAINER_CREDENTIALS_TYPE: dict[StorageScheme, str] = {"s3": "s3", "gs": "gcs"}
+_CONTAINER_CREDENTIALS_TYPE: dict[StorageScheme, str] = {
+    "s3": "s3",
+    "gs": "gcs",
+    "az": "azure",
+}
 
 # The icechunk call that builds anonymous credentials for a container, by scheme.
 # Rendered verbatim into the pystac open snippet.
 _CONTAINER_CREDENTIALS_CALL: dict[StorageScheme, str] = {
     "s3": "icechunk.s3_anonymous_credentials()",
     "gs": "icechunk.gcs_credentials(anonymous=True)",
+    "az": "icechunk.azure_anonymous_credentials()",
 }
 
 
@@ -97,8 +102,8 @@ def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> s
 
     Virtual datasets additionally authorize anonymous reads of their source
     chunk containers (icechunk only opens the repo over HTTPS; the referenced
-    source chunks still live in public S3 or GCS buckets, so the credentials
-    call follows each prefix's scheme).
+    source chunks still live in public S3, GCS or Azure containers, so the
+    credentials call follows each prefix's scheme).
     """
     lines = [
         "import icechunk",
@@ -553,9 +558,13 @@ class CollectionInput(BaseModel):
     cube_dimensions: dict[str, CubeDimension]
     cube_variables: dict[str, CubeVariable]
     chunking: Chunking | None = None
-    icechunk_href: str = Field(pattern=r"^(s3|gs)://[^/]+/.+$")
-    # S3 only; GCS stores carry no region. See `CatalogItem._region_matches_scheme`.
+    icechunk_href: str = Field(pattern=r"^(s3|gs|az)://[^/]+/.+$")
+    # S3 only; GCS and Azure stores carry no region. See
+    # `CatalogItem._region_matches_scheme`.
     icechunk_region: str | None = None
+    # Azure only: the storage account owning the container, absent from the
+    # `az://` href. See `CatalogItem._account_matches_scheme`.
+    icechunk_account: str | None = None
     icechunk_https_href: str = Field(pattern=r"^https://[^/]+/.+$")
     virtual_chunk_container_prefixes: tuple[str, ...] = ()
     attribution: str = Field(min_length=1)
@@ -669,6 +678,7 @@ class CollectionInput(BaseModel):
             chunking=chunking,
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
+            icechunk_account=item.icechunk_account,
             icechunk_https_href=item.icechunk_https_href,
             virtual_chunk_container_prefixes=item.virtual_chunk_container_prefixes,
             attribution=ds.attrs["attribution"],
@@ -761,15 +771,20 @@ class CollectionInput(BaseModel):
         ]
 
         # Anonymous filesystem options for the reader, by backend: s3fs takes
-        # `anon` + a region, gcsfs takes `token="anon"` and has no region.
-        storage_options: dict[str, object] = (
-            {"token": "anon"}
-            if url_scheme(self.icechunk_href) == "gs"
-            else {
+        # `anon` + a region, gcsfs takes `token="anon"` and has no region, adlfs
+        # takes `anon` + the storage account (dynamical-catalog reads
+        # `account_name` from here to build the Azure store).
+        scheme = url_scheme(self.icechunk_href)
+        storage_options: dict[str, object]
+        if scheme == "gs":
+            storage_options = {"token": "anon"}
+        elif scheme == "az":
+            storage_options = {"account_name": self.icechunk_account, "anon": True}
+        else:
+            storage_options = {
                 "anon": True,
                 "client_kwargs": {"region_name": self.icechunk_region},
             }
-        )
         icechunk_extra_fields: dict[str, object] = {
             "xarray:open_kwargs": {"engine": "zarr"},
             "xarray:storage_options": storage_options,
