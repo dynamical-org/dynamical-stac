@@ -18,6 +18,8 @@ from catalog import (
     DatasetExample,
     DatasetLicense,
     DatasetNotebook,
+    StorageScheme,
+    url_scheme,
 )
 
 NOTEBOOKS_REPO_BASE = "https://github.com/dynamical-org/notebooks/blob/main"
@@ -77,20 +79,45 @@ _CATALOG_OPEN_RE = re.compile(
 )
 
 
-def _virtual_credentials_code(prefix: str) -> str:
-    if prefix.startswith("s3://"):
-        return "icechunk.s3_anonymous_credentials()"
-    if prefix.startswith("https://"):
-        return "icechunk.Credentials.HttpAccess()"
-    raise ValueError(f"Unsupported virtual chunk container prefix: {prefix!r}")
+# `credentials.type` advertised for a virtual chunk container, keyed by the
+# scheme of its url_prefix. icechunk names the Google backend "gcs" while the
+# URL scheme is "gs", and the plain-HTTPS backend "http".
+_CONTAINER_CREDENTIALS_TYPE: dict[StorageScheme, str] = {
+    "s3": "s3",
+    "gs": "gcs",
+    "az": "azure",
+    "https": "http",
+}
+
+# The icechunk call that builds anonymous credentials for a container, by scheme.
+# Rendered verbatim into the pystac open snippet.
+_CONTAINER_CREDENTIALS_CALL: dict[StorageScheme, str] = {
+    "s3": "icechunk.s3_anonymous_credentials()",
+    "gs": "icechunk.gcs_credentials(anonymous=True)",
+    "az": "icechunk.azure_anonymous_credentials()",
+    "https": "icechunk.Credentials.HttpAccess()",
+}
+
+
+def _container_credentials_field(prefix: str) -> dict[str, object]:
+    """The ``credentials`` object advertised for a virtual chunk container.
+
+    Object-store backends carry an explicit ``anonymous`` flag; an HTTPS
+    container has no credential model at all, so it advertises only its type.
+    """
+    scheme = url_scheme(prefix)
+    if scheme == "https":
+        return {"type": _CONTAINER_CREDENTIALS_TYPE[scheme]}
+    return {"type": _CONTAINER_CREDENTIALS_TYPE[scheme], "anonymous": True}
 
 
 def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> str:
     """Imports + STAC lookup + icechunk session for the pystac open variant.
 
-    Virtual datasets additionally authorize anonymous reads of their chunk
-    containers. Repositories always use the ``icechunk-https`` asset here;
-    referenced chunks may live in public S3 or HTTPS storage.
+    Virtual datasets additionally authorize anonymous reads of their source
+    chunk containers (icechunk only opens the repo over HTTPS; the referenced
+    source chunks still live in public S3, GCS, Azure or HTTPS containers, so
+    the credentials call follows each prefix's scheme).
     """
     lines = [
         "import icechunk",
@@ -104,7 +131,7 @@ def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> s
     ]
     if virtual_prefixes:
         entries = ", ".join(
-            f'"{prefix}": {_virtual_credentials_code(prefix)}'
+            f'"{prefix}": {_CONTAINER_CREDENTIALS_CALL[url_scheme(prefix)]}'
             for prefix in virtual_prefixes
         )
         lines += [
@@ -372,8 +399,16 @@ def _human_spatial(magnitude: float, dim: str, units: str) -> str | None:
     rather than silently dropping it from the chunk/shard summary.
     """
     # A rotated pole grid's grid_latitude/grid_longitude carry "degrees": angles on
-    # the rotated sphere rather than the metres of a projected grid.
-    if units in ("degree_north", "degree_east", "degrees"):
+    # the rotated sphere rather than the metres of a projected grid. CF allows the
+    # singular and plural spellings interchangeably: reformatters emits the
+    # singular, stores written elsewhere (e.g. the GCS test fixture) the plural.
+    if units in (
+        "degree_north",
+        "degree_east",
+        "degrees_north",
+        "degrees_east",
+        "degrees",
+    ):
         return f"{_num(magnitude)}°"
     if units == "m":
         if magnitude >= 1000:
@@ -498,25 +533,32 @@ def _wrap_longitude(lon: xr.DataArray) -> xr.DataArray:
     return ((lon + 180.0) % 360.0) - 180.0
 
 
+def _geographic_coord(ds: xr.Dataset, name: str) -> xr.DataArray | None:
+    """The ``latitude``/``longitude`` coordinate, by name or CF ``standard_name``.
+
+    A coordinate literally named ``name`` wins. Otherwise fall back to the one
+    coordinate whose ``standard_name`` is ``name`` (WeatherNext carries
+    geographic coordinates on dimensions named ``y``/``x``); more than one such
+    match is ambiguous and rejected rather than picked by insertion order.
+    """
+    if name in ds.coords:
+        return ds.coords[name]
+    matches = [
+        coord
+        for coord in ds.coords.values()
+        if coord.attrs.get("standard_name") == name
+    ]
+    if len(matches) > 1:
+        raise ValueError(
+            f"Dataset has several coordinates with standard_name={name!r}: "
+            f"{[str(c.name) for c in matches]}"
+        )
+    return matches[0] if matches else None
+
+
 def _bbox(ds: xr.Dataset) -> tuple[float, float, float, float]:
-    lat = next(
-        (
-            coord
-            for coord in ds.coords.values()
-            if coord.name == "latitude"
-            or coord.attrs.get("standard_name") == "latitude"
-        ),
-        None,
-    )
-    lon = next(
-        (
-            coord
-            for coord in ds.coords.values()
-            if coord.name == "longitude"
-            or coord.attrs.get("standard_name") == "longitude"
-        ),
-        None,
-    )
+    lat = _geographic_coord(ds, "latitude")
+    lon = _geographic_coord(ds, "longitude")
     if lat is None or lon is None:
         raise ValueError(
             "Dataset missing coordinates identified as latitude/longitude; "
@@ -556,8 +598,13 @@ class CollectionInput(BaseModel):
     cube_dimensions: dict[str, CubeDimension]
     cube_variables: dict[str, CubeVariable]
     chunking: Chunking | None = None
-    icechunk_href: str = Field(pattern=r"^(?:s3|https)://[^/]+/.+$")
-    icechunk_region: str | None = Field(default=None, min_length=1)
+    icechunk_href: str = Field(pattern=r"^(s3|gs|az|https)://[^/]+/.+$")
+    # S3 only; GCS, Azure and HTTPS stores carry no region. See
+    # `CatalogItem._region_matches_scheme`.
+    icechunk_region: str | None = None
+    # Azure only: the storage account owning the container, absent from the
+    # `az://` href. See `CatalogItem._account_matches_scheme`.
+    icechunk_account: str | None = None
     icechunk_https_href: str = Field(pattern=r"^https://[^/]+/.+$")
     virtual_chunk_container_prefixes: tuple[str, ...] = ()
     attribution: str = Field(min_length=1)
@@ -571,8 +618,9 @@ class CollectionInput(BaseModel):
     description_model: str = Field(min_length=1)
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
     # May be empty: staging-only datasets can be published before their
-    # notebook exists, in which case the collection carries no `example`
-    # links. `CatalogItem` requires at least one for production datasets.
+    # notebook exists, and test fixtures never get one, in which case the
+    # collection carries no `example` links. `CatalogItem` requires at least
+    # one for production datasets.
     notebooks: tuple[DatasetNotebook, ...] = ()
 
     @field_validator("bbox")
@@ -670,6 +718,7 @@ class CollectionInput(BaseModel):
             chunking=chunking,
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
+            icechunk_account=item.icechunk_account,
             icechunk_https_href=item.icechunk_https_href,
             virtual_chunk_container_prefixes=item.virtual_chunk_container_prefixes,
             attribution=ds.attrs["attribution"],
@@ -684,6 +733,20 @@ class CollectionInput(BaseModel):
             examples=item.examples,
             notebooks=item.notebooks,
         )
+
+    def _storage_options(self) -> dict[str, object] | None:
+        """``xarray:storage_options`` for the ``icechunk`` asset, or None for HTTPS."""
+        scheme = url_scheme(self.icechunk_href)
+        if scheme == "https":
+            return None
+        if scheme == "gs":
+            return {"token": "anon"}
+        if scheme == "az":
+            return {"account_name": self.icechunk_account, "anon": True}
+        return {
+            "anon": True,
+            "client_kwargs": {"region_name": self.icechunk_region},
+        }
 
     def to_pystac_collection(self) -> pystac.Collection:
         extent = pystac.Extent(
@@ -750,25 +813,26 @@ class CollectionInput(BaseModel):
                 self.chunking.model_dump(exclude_none=True)
             )
 
-        virtual_chunk_containers = []
-        for prefix in self.virtual_chunk_container_prefixes:
-            credentials = (
-                {"type": "s3", "anonymous": True}
-                if prefix.startswith("s3://")
-                else {"type": "http"}
-            )
-            virtual_chunk_containers.append(
-                {"url_prefix": prefix, "credentials": credentials}
-            )
+        virtual_chunk_containers = [
+            {
+                "url_prefix": prefix,
+                "credentials": _container_credentials_field(prefix),
+            }
+            for prefix in self.virtual_chunk_container_prefixes
+        ]
 
         icechunk_extra_fields: dict[str, object] = {
             "xarray:open_kwargs": {"engine": "zarr"},
         }
-        if self.icechunk_region is not None:
-            icechunk_extra_fields["xarray:storage_options"] = {
-                "anon": True,
-                "client_kwargs": {"region_name": self.icechunk_region},
-            }
+        # Anonymous filesystem options for the reader, by backend: s3fs takes
+        # `anon` + a region, gcsfs takes `token="anon"` and has no region, adlfs
+        # takes `anon` + the storage account (dynamical-catalog reads
+        # `account_name` from here to build the Azure store). A plain-HTTPS
+        # repository takes none — `icechunk.http_storage` has no region/anon
+        # config — so its asset omits `xarray:storage_options` entirely.
+        storage_options = self._storage_options()
+        if storage_options is not None:
+            icechunk_extra_fields["xarray:storage_options"] = storage_options
         if virtual_chunk_containers:
             icechunk_extra_fields["icechunk:virtual_chunk_containers"] = (
                 virtual_chunk_containers

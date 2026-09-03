@@ -138,7 +138,12 @@ def test_released_dynamical_catalog_opens_every_collection(
 
     _, root_url = served_catalog
     staging = not re.fullmatch(r"\d+\.\d+\.\d+", target)
-    collection_ids = [item.id for item in CATALOG_ITEMS if staging or not item.staging]
+    # Test-tier fixtures are never in the served catalog (see `served_catalog`).
+    collection_ids = [
+        item.id
+        for item in CATALOG_ITEMS
+        if not item.test and (staging or not item.staging)
+    ]
     harness = tmp_path / "harness.py"
     harness.write_text(_HARNESS)
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import concurrent.futures
 import os
 import pathlib
-from urllib.parse import urlparse
 
 import gribberish.zarr  # noqa: F401 -- registers the GribberishCodec used by virtual datasets
 import icechunk
@@ -11,7 +10,7 @@ import pystac
 import xarray as xr
 import zarr
 
-from catalog import CATALOG_ITEMS, CatalogItem
+from catalog import CATALOG_ITEMS, CatalogItem, url_scheme
 from models import CollectionInput
 
 ROOT_HREF = os.environ.get("STAC_ROOT_HREF", "https://stac.dynamical.org")
@@ -23,12 +22,75 @@ CATALOG_TITLE = "dynamical.org STAC Catalog"
 # leaves it unset and gets the production catalog.
 INCLUDE_STAGING = os.environ.get("STAC_INCLUDE_STAGING") == "1"
 
+# Test items (CatalogItem.test=True) are synthetic fixtures read by
+# dynamical-catalog's integration tests: excluded from production *and* staging,
+# published only to stac-test. The test deploy sets STAC_INCLUDE_TEST=1 (plus
+# STAC_INCLUDE_STAGING=1, making stac-test a superset of stac-staging).
+INCLUDE_TEST = os.environ.get("STAC_INCLUDE_TEST") == "1"
+
 
 def _select_items(
-    items: list[CatalogItem], *, include_staging: bool
+    items: list[CatalogItem], *, include_staging: bool, include_test: bool
 ) -> list[CatalogItem]:
-    """Production excludes staging items; the staging catalog includes them."""
-    return [item for item in items if include_staging or not item.staging]
+    """Filter the catalog down to one tier.
+
+    Production excludes staging and test items; the staging catalog adds the
+    staging items; the test catalog adds both.
+    """
+    return [
+        item
+        for item in items
+        if (include_staging or not item.staging) and (include_test or not item.test)
+    ]
+
+
+def _container_credentials(
+    prefix: str,
+) -> (
+    icechunk.S3Credentials.Anonymous
+    | icechunk.GcsCredentials.Anonymous
+    | icechunk.AzureCredentials.Anonymous
+    | icechunk.Credentials.HttpAccess
+):
+    """Anonymous virtual chunk container credentials for ``prefix``'s backend."""
+    scheme = url_scheme(prefix)
+    if scheme == "s3":
+        return icechunk.s3_anonymous_credentials()
+    if scheme == "az":
+        return icechunk.azure_anonymous_credentials()
+    if scheme == "https":
+        return icechunk.Credentials.HttpAccess()
+    return icechunk.gcs_credentials(anonymous=True)
+
+
+def _storage(item: CatalogItem) -> icechunk.Storage:
+    """Anonymous read-only storage for the item's repository, by href scheme."""
+    if item.icechunk_scheme == "https":
+        # `icechunk_https_href` is the href with any trailing slash stripped,
+        # which `http_storage` requires.
+        return icechunk.http_storage(base_url=item.icechunk_https_href)
+    if item.icechunk_scheme == "gs":
+        return icechunk.gcs_storage(
+            bucket=item.icechunk_bucket,
+            prefix=item.icechunk_prefix,
+            anonymous=True,
+        )
+    if item.icechunk_scheme == "az":
+        # Azure's container is the href's netloc; the storage account that owns
+        # it is carried separately in `icechunk_account`.
+        assert item.icechunk_account is not None  # _account_matches_scheme
+        return icechunk.azure_storage(
+            account=item.icechunk_account,
+            container=item.icechunk_container,
+            prefix=item.icechunk_prefix,
+            anonymous=True,
+        )
+    return icechunk.s3_storage(
+        bucket=item.icechunk_bucket,
+        prefix=item.icechunk_prefix,
+        region=item.icechunk_region,
+        anonymous=True,
+    )
 
 
 def _open_icechunk(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
@@ -39,31 +101,11 @@ def _open_icechunk(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]
     group name; ``from_dataset`` flattens their variables into the collection.
     Single-group stores yield an empty dict.
     """
-    scheme = urlparse(item.icechunk_href).scheme
-    if scheme == "s3":
-        assert item.icechunk_region is not None
-        storage = icechunk.s3_storage(
-            bucket=item.icechunk_bucket,
-            prefix=item.icechunk_prefix,
-            region=item.icechunk_region,
-            anonymous=True,
-        )
-    elif scheme == "https":
-        storage = icechunk.http_storage(base_url=item.icechunk_href.rstrip("/"))
-    else:
-        raise ValueError(f"Unsupported icechunk repository scheme: {scheme!r}")
-
-    def credentials(prefix: str) -> object:
-        if prefix.startswith("s3://"):
-            return icechunk.s3_anonymous_credentials()
-        if prefix.startswith("https://"):
-            return icechunk.Credentials.HttpAccess()
-        raise ValueError(f"Unsupported virtual chunk container prefix: {prefix!r}")
-
+    storage = _storage(item)
     authorize = (
         icechunk.containers_credentials(
             {
-                prefix: credentials(prefix)
+                prefix: _container_credentials(prefix)
                 for prefix in item.virtual_chunk_container_prefixes
             }
         )
@@ -101,6 +143,7 @@ def generate(
     output_dir: pathlib.Path,
     root_href: str = ROOT_HREF,
     include_staging: bool = INCLUDE_STAGING,
+    include_test: bool = INCLUDE_TEST,
 ) -> None:
     catalog = pystac.Catalog(
         id="dynamical-org",
@@ -108,7 +151,9 @@ def generate(
         description="Cloud-optimized weather and climate datasets from dynamical.org",
     )
 
-    items = _select_items(CATALOG_ITEMS, include_staging=include_staging)
+    items = _select_items(
+        CATALOG_ITEMS, include_staging=include_staging, include_test=include_test
+    )
 
     def _load(
         item: CatalogItem,

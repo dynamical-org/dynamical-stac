@@ -25,7 +25,7 @@ def _catalog_item(
     return CatalogItem(
         id=item_id,
         icechunk_href=icechunk_href,
-        icechunk_region=icechunk_region,
+        icechunk_region=icechunk_region,  # type: ignore[arg-type]
         virtual_chunk_container_prefixes=virtual_chunk_container_prefixes,
         model_id="noaa-gfs",
         description_summary="test summary",
@@ -106,6 +106,28 @@ def test_from_dataset_uses_cf_standard_names_for_geographic_xy_bbox() -> None:
     result = CollectionInput.from_dataset(_catalog_item(), ds)
 
     assert result.bbox == (100.0, -10.0, 120.0, 10.0)
+
+
+def test_from_dataset_prefers_literal_latitude_over_standard_name() -> None:
+    ds = _synthetic_dataset()
+    # A decoy coordinate claiming to be latitude must not displace the real one.
+    ds = ds.assign_coords(row=("latitude", np.arange(3) * 1000.0))
+    ds["row"].attrs["standard_name"] = "latitude"
+
+    result = CollectionInput.from_dataset(_catalog_item(), ds)
+
+    assert result.bbox == (100.0, -10.0, 120.0, 10.0)
+
+
+def test_from_dataset_rejects_ambiguous_standard_name_coords() -> None:
+    ds = _synthetic_dataset().rename({"latitude": "y", "longitude": "x"})
+    ds["y"].attrs["standard_name"] = "latitude"
+    ds["x"].attrs["standard_name"] = "longitude"
+    ds = ds.assign_coords(y2=("y", np.arange(3) * 1000.0))
+    ds["y2"].attrs["standard_name"] = "latitude"
+
+    with pytest.raises(ValueError, match="several coordinates with standard_name"):
+        CollectionInput.from_dataset(_catalog_item(), ds)
 
 
 def _synthetic_subgroup() -> xr.Dataset:
@@ -352,8 +374,292 @@ def test_https_repository_and_chunk_container_need_no_storage_options() -> None:
 
 
 def test_catalog_item_rejects_unsupported_virtual_chunk_container_prefix() -> None:
-    with pytest.raises(ValueError, match="supported anonymous scheme"):
-        _catalog_item(virtual_chunk_container_prefixes=("gs://nope/",))
+    with pytest.raises(
+        ValueError, match=r"must be an s3://, gs://, az:// or https:// URL"
+    ):
+        _catalog_item(virtual_chunk_container_prefixes=("ftp://nope/",))
+
+
+# --- gs:// backend --------------------------------------------------------
+
+_GCS_ID = "test-gcs-virtual"
+_GCS_BUCKET = "dynamical-icechunk-gcs-demo"
+_GCS_HREF = f"gs://{_GCS_BUCKET}/{_GCS_ID}/v0.1.0.icechunk/"
+_GCS_SOURCE_PREFIX = f"gs://{_GCS_BUCKET}/{_GCS_ID}/source/"
+
+
+def _gcs_catalog_item() -> CatalogItem:
+    """The `test-gcs-virtual` fixture item, shaped like `CATALOG_ITEMS`' entry."""
+    return CatalogItem(
+        id=_GCS_ID,
+        icechunk_href=_GCS_HREF,
+        virtual_chunk_container_prefixes=(_GCS_SOURCE_PREFIX,),
+        model_id="dynamical-test",
+        description_summary="test summary",
+        reformatter_url="https://github.com/dynamical-org/dynamical-catalog",
+        examples=(
+            DatasetExample(
+                title="Read the array",
+                code=(
+                    "import dynamical_catalog\n\n"
+                    f'ds = dynamical_catalog.open("{_GCS_ID}", chunks=None)\n'
+                    'ds["temperature_2m"].isel(time=0)'
+                ),
+            ),
+        ),
+        notebooks=(),
+        test=True,
+    )
+
+
+def _gcs_fixture_dataset() -> xr.Dataset:
+    """In-memory twin of the GCS fixture store's root group.
+
+    Mirrors the attrs, dims and chunk encoding the real repository carries so
+    these assertions hold without opening it over the network.
+    """
+    times = pd.date_range("2026-01-01", periods=2, freq="6h").to_numpy()
+    lats = np.array([37.0, 38.0, 39.0])
+    lons = np.array([-109.0, -108.0, -107.0, -106.0])
+    data = np.zeros((2, 3, 4), dtype="float32")
+    ds = xr.Dataset(
+        data_vars={
+            "temperature_2m": (
+                ("time", "latitude", "longitude"),
+                data,
+                {"units": "degC", "long_name": "2 metre temperature"},
+            ),
+        },
+        coords={
+            "time": times,
+            "latitude": (
+                "latitude",
+                lats,
+                {"standard_name": "latitude", "units": "degrees_north"},
+            ),
+            "longitude": (
+                "longitude",
+                lons,
+                {"standard_name": "longitude", "units": "degrees_east"},
+            ),
+        },
+        attrs={
+            "dataset_id": _GCS_ID,
+            "name": "Test GCS virtual",
+            "description": (
+                "Synthetic fixture on Google Cloud Storage with one virtual "
+                "chunk, for testing anonymous GCS reads."
+            ),
+            "license": "CC-BY-4.0",
+            "attribution": "dynamical.org",
+            "dataset_version": "0.1.0",
+            "spatial_domain": "3x4 grid over Colorado",
+            "spatial_resolution": "1 degree",
+            "time_domain": "2026-01-01T00 to 2026-01-01T06",
+            "time_resolution": "6 hours",
+        },
+    )
+    # Chunk encoding but no shards, matching the fixture store.
+    ds["temperature_2m"].encoding = {
+        "chunks": (2, 3, 4),
+        "dtype": np.dtype("float32"),
+    }
+    return ds
+
+
+def _gcs_collection_dict() -> dict[str, object]:
+    collection = CollectionInput.from_dataset(
+        _gcs_catalog_item(), _gcs_fixture_dataset()
+    )
+    return collection.to_pystac_collection().to_dict()
+
+
+def test_gcs_icechunk_asset_uses_anonymous_gcsfs_token() -> None:
+    asset = _gcs_collection_dict()["assets"]["icechunk"]  # type: ignore[index]
+    assert asset["href"] == _GCS_HREF
+    assert asset["xarray:storage_options"] == {"token": "anon"}
+
+
+def test_gcs_icechunk_asset_advertises_gcs_virtual_chunk_container() -> None:
+    asset = _gcs_collection_dict()["assets"]["icechunk"]  # type: ignore[index]
+    assert asset["icechunk:virtual_chunk_containers"] == [
+        {
+            "url_prefix": _GCS_SOURCE_PREFIX,
+            "credentials": {"type": "gcs", "anonymous": True},
+        }
+    ]
+
+
+def test_gcs_icechunk_https_asset_uses_storage_googleapis_host() -> None:
+    asset = _gcs_collection_dict()["assets"]["icechunk-https"]  # type: ignore[index]
+    assert asset["href"] == (
+        f"https://storage.googleapis.com/{_GCS_BUCKET}/{_GCS_ID}/v0.1.0.icechunk"
+    )
+    # http_storage takes no region/anon config, so no storage_options.
+    assert "xarray:storage_options" not in asset
+    assert asset["icechunk:virtual_chunk_containers"] == [
+        {
+            "url_prefix": _GCS_SOURCE_PREFIX,
+            "credentials": {"type": "gcs", "anonymous": True},
+        }
+    ]
+
+
+def test_gcs_pystac_example_authorizes_anonymous_gcs_credentials() -> None:
+    examples = _gcs_collection_dict()["examples"]
+    pystac_variant = examples[0]["variants"][1]  # type: ignore[index]
+    assert pystac_variant["label"] == "pystac + icechunk"
+    assert (
+        f'"{_GCS_SOURCE_PREFIX}": icechunk.gcs_credentials(anonymous=True)'
+        in pystac_variant["code"]
+    )
+
+
+def test_gcs_collection_renders_unsharded_chunking_summary() -> None:
+    collection = _gcs_collection_dict()
+    chunking = collection["dynamical-org:chunking"]
+    assert chunking["chunk"]["shape"] == [2, 3, 4]  # type: ignore[index]
+    assert "shard" not in chunking  # type: ignore[operator]
+    # The prose's {{ chunking_unsharded }} fragment renders a chunk-only table.
+    details = collection["description_details"]
+    assert "| dimension | chunk |" in details  # type: ignore[operator]
+    assert "shard" not in details  # type: ignore[operator]
+
+
+# --- az:// backend --------------------------------------------------------
+
+_AZ_ID = "test-azure-virtual"
+_AZ_ACCOUNT = "dynamicalicechunktest"
+_AZ_CONTAINER = "dynamical-icechunk-azure-demo"
+_AZ_HREF = f"az://{_AZ_CONTAINER}/{_AZ_ID}/v0.1.0.icechunk/"
+_AZ_SOURCE_PREFIX = f"az://{_AZ_CONTAINER}/{_AZ_ID}/source/"
+_AZ_CREDENTIALS = {"type": "azure", "anonymous": True}
+
+
+def _azure_catalog_item() -> CatalogItem:
+    """The `test-azure-virtual` fixture item, shaped like `CATALOG_ITEMS`' entry."""
+    return CatalogItem(
+        id=_AZ_ID,
+        icechunk_href=_AZ_HREF,
+        icechunk_account=_AZ_ACCOUNT,
+        virtual_chunk_container_prefixes=(_AZ_SOURCE_PREFIX,),
+        model_id="dynamical-test",
+        description_summary="test summary",
+        reformatter_url="https://github.com/dynamical-org/dynamical-catalog",
+        examples=(
+            DatasetExample(
+                title="Read the array",
+                code=(
+                    "import dynamical_catalog\n\n"
+                    f'ds = dynamical_catalog.open("{_AZ_ID}", chunks=None)\n'
+                    'ds["temperature_2m"].isel(time=0)'
+                ),
+            ),
+        ),
+        notebooks=(),
+        test=True,
+    )
+
+
+def _azure_fixture_dataset() -> xr.Dataset:
+    """In-memory twin of the Azure fixture store's root group.
+
+    Mirrors the attrs, dims and chunk encoding the real repository carries so
+    these assertions hold without opening it over the network.
+    """
+    times = pd.date_range("2026-01-01", periods=2, freq="6h").to_numpy()
+    lats = np.array([40.0, 41.0, 42.0])
+    lons = np.array([-105.0, -104.0, -103.0, -102.0])
+    data = np.zeros((2, 3, 4), dtype="float32")
+    ds = xr.Dataset(
+        data_vars={
+            "temperature_2m": (
+                ("time", "latitude", "longitude"),
+                data,
+                {"units": "degC", "long_name": "2 metre temperature"},
+            ),
+        },
+        coords={
+            "time": times,
+            "latitude": (
+                "latitude",
+                lats,
+                {"standard_name": "latitude", "units": "degrees_north"},
+            ),
+            "longitude": (
+                "longitude",
+                lons,
+                {"standard_name": "longitude", "units": "degrees_east"},
+            ),
+        },
+        attrs={
+            "dataset_id": _AZ_ID,
+            "name": "Test Azure virtual",
+            "description": (
+                "Synthetic fixture on Azure Blob Storage with one virtual "
+                "chunk, for testing anonymous Azure reads."
+            ),
+            "license": "CC-BY-4.0",
+            "attribution": "dynamical.org",
+            "dataset_version": "0.1.0",
+            "spatial_domain": "3x4 grid over Colorado",
+            "spatial_resolution": "1 degree",
+            "time_domain": "2026-01-01T00 to 2026-01-01T06",
+            "time_resolution": "6 hours",
+        },
+    )
+    # Chunk encoding but no shards, matching the fixture store.
+    ds["temperature_2m"].encoding = {
+        "chunks": (2, 3, 4),
+        "dtype": np.dtype("float32"),
+    }
+    return ds
+
+
+def _azure_collection_dict() -> dict[str, object]:
+    collection = CollectionInput.from_dataset(
+        _azure_catalog_item(), _azure_fixture_dataset()
+    )
+    return collection.to_pystac_collection().to_dict()
+
+
+def test_azure_icechunk_asset_uses_anonymous_adlfs_account() -> None:
+    asset = _azure_collection_dict()["assets"]["icechunk"]  # type: ignore[index]
+    assert asset["href"] == _AZ_HREF
+    assert asset["xarray:storage_options"] == {
+        "account_name": _AZ_ACCOUNT,
+        "anon": True,
+    }
+
+
+def test_azure_icechunk_asset_advertises_azure_virtual_chunk_container() -> None:
+    asset = _azure_collection_dict()["assets"]["icechunk"]  # type: ignore[index]
+    assert asset["icechunk:virtual_chunk_containers"] == [
+        {"url_prefix": _AZ_SOURCE_PREFIX, "credentials": _AZ_CREDENTIALS}
+    ]
+
+
+def test_azure_icechunk_https_asset_uses_blob_core_windows_host() -> None:
+    asset = _azure_collection_dict()["assets"]["icechunk-https"]  # type: ignore[index]
+    assert asset["href"] == (
+        f"https://{_AZ_ACCOUNT}.blob.core.windows.net/"
+        f"{_AZ_CONTAINER}/{_AZ_ID}/v0.1.0.icechunk"
+    )
+    # http_storage takes no region/anon config, so no storage_options.
+    assert "xarray:storage_options" not in asset
+    assert asset["icechunk:virtual_chunk_containers"] == [
+        {"url_prefix": _AZ_SOURCE_PREFIX, "credentials": _AZ_CREDENTIALS}
+    ]
+
+
+def test_azure_pystac_example_authorizes_anonymous_azure_credentials() -> None:
+    examples = _azure_collection_dict()["examples"]
+    pystac_variant = examples[0]["variants"][1]  # type: ignore[index]
+    assert pystac_variant["label"] == "pystac + icechunk"
+    assert (
+        f'"{_AZ_SOURCE_PREFIX}": icechunk.azure_anonymous_credentials()'
+        in pystac_variant["code"]
+    )
 
 
 def test_dim_entry_latitude_extent_uses_degree_north() -> None:

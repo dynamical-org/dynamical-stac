@@ -14,8 +14,33 @@ REFORMATTERS_ROOT = (
 )
 REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 
-# Prepended to every example snippet so users see the required package versions.
-_DYNAMICAL_CATALOG_IMPORT = "import dynamical_catalog  # dynamical-catalog>=0.8.0"
+# Prepended to every example snippet so users see the required package version.
+# `_example` takes a higher floor for datasets whose storage the 0.8.0 reader
+# can't open (gs://, az:// and https:// repositories need 1.0.0).
+_DEFAULT_MIN_DYNAMICAL_CATALOG = "0.8.0"
+
+
+def _dynamical_catalog_import(min_version: str) -> str:
+    return f"import dynamical_catalog  # dynamical-catalog>={min_version}"
+
+
+# Storage schemes a repository (or a virtual chunk container) may use: the
+# object stores `s3`, `gs` and `az`, plus `https` for a repository or container
+# served anonymously over plain HTTPS. All are readable anonymously by the
+# generator and by dynamical-catalog.
+StorageScheme = Literal["s3", "gs", "az", "https"]
+
+_STORAGE_SCHEMES: tuple[StorageScheme, ...] = ("s3", "gs", "az", "https")
+
+
+def url_scheme(href: str) -> StorageScheme:
+    """Scheme of a supported storage URL, i.e. ``s3``, ``gs``, ``az`` or ``https``."""
+    scheme = href.split("://", 1)[0]
+    for supported in _STORAGE_SCHEMES:
+        if scheme == supported:
+            return supported
+    expected = ", ".join(f"{s}://" for s in _STORAGE_SCHEMES)
+    raise ValueError(f"unsupported storage URL {href!r}: expected {expected}")
 
 
 def s3_to_https_url(s3_href: str, region: str) -> str:
@@ -31,6 +56,38 @@ def s3_to_https_url(s3_href: str, region: str) -> str:
     parsed = urlparse(s3_href)
     key = parsed.path.strip("/")
     return f"https://{parsed.netloc}.s3.{region}.amazonaws.com/{key}"
+
+
+def gs_to_https_url(gs_href: str) -> str:
+    """Convert a ``gs://bucket/key`` URL to its public HTTPS URL, e.g.
+
+        gs://dynamical-icechunk-gcs-demo/test-gcs-virtual/v0.1.0.icechunk/
+        -> https://storage.googleapis.com/dynamical-icechunk-gcs-demo/test-gcs-virtual/v0.1.0.icechunk
+
+    Any trailing slash is stripped for the same reason as
+    :func:`s3_to_https_url`: ``icechunk.http_storage`` rejects a ``base_url``
+    ending in ``/`` ("the repository doesn't exist").
+    """
+    parsed = urlparse(gs_href)
+    key = parsed.path.strip("/")
+    return f"https://storage.googleapis.com/{parsed.netloc}/{key}"
+
+
+def az_to_https_url(az_href: str, account: str) -> str:
+    """Convert an ``az://container/key`` URL to its public HTTPS URL, e.g.
+
+        az://dynamical-icechunk-azure-demo/test-azure-virtual/v0.1.0.icechunk/
+        -> https://dynamicalicechunktest.blob.core.windows.net/dynamical-icechunk-azure-demo/test-azure-virtual/v0.1.0.icechunk
+
+    The storage account is not part of the ``az://`` URL, so it is passed
+    separately (see ``CatalogItem.icechunk_account``). Any trailing slash is
+    stripped for the same reason as :func:`s3_to_https_url`:
+    ``icechunk.http_storage`` rejects a ``base_url`` ending in ``/`` ("the
+    repository doesn't exist").
+    """
+    parsed = urlparse(az_href)
+    key = parsed.path.strip("/")
+    return f"https://{account}.blob.core.windows.net/{parsed.netloc}/{key}"
 
 
 class DatasetLicense(StrEnum):
@@ -79,9 +136,17 @@ class DatasetNotebook(BaseModel):
     title: str = Field(min_length=1)
 
 
-def _example(title: str, body: str) -> DatasetExample:
-    """Build an example, prepending the standard dynamical_catalog import preamble."""
-    return DatasetExample(title=title, code=f"{_DYNAMICAL_CATALOG_IMPORT}\n\n{body}")
+def _example(
+    title: str, body: str, min_version: str = _DEFAULT_MIN_DYNAMICAL_CATALOG
+) -> DatasetExample:
+    """Build an example, prepending the standard dynamical_catalog import preamble.
+
+    ``min_version`` is the oldest dynamical-catalog release that can open the
+    dataset; it is rendered into the import comment users copy.
+    """
+    return DatasetExample(
+        title=title, code=f"{_dynamical_catalog_import(min_version)}\n\n{body}"
+    )
 
 
 # Shared prose fragments, substituted into markdown files via {{ name }} tokens.
@@ -137,9 +202,9 @@ FRAGMENTS: dict[str, str] = {
     ),
     # References {{ validation_url }} — supplied per-dataset at load time.
     "validation_report": (
-        "Review the [validation report]({{ validation_url }}) to understand "
-        "variable availability, missing data, known quirks, fill values, and "
-        "approximate spatial, temporal, and value distributions."
+        "Review the [validation report]({{ validation_url }}) for variable "
+        "availability, missing data, known quirks, fill values, value "
+        "distributions, and sample plots."
     ),
     # References {{ reformatter_url }} — supplied per-dataset at load time.
     "compression": (
@@ -293,6 +358,14 @@ MODELS: dict[str, Model] = {
             "United States at a resolution that captures fine-scale weather features."
         ),
     ),
+    "dynamical-test": Model(
+        id="dynamical-test",
+        name="dynamical.org test fixtures",
+        description=(
+            "These are tiny synthetic datasets used to exercise dynamical-catalog's read "
+            "paths against real generator output; they are not weather data."
+        ),
+    ),
 }
 
 
@@ -300,8 +373,20 @@ class CatalogItem(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     id: str = Field(min_length=1)
-    icechunk_href: str = Field(pattern=r"^(?:s3|https)://[^/]+/.+$")
+    # The netloc is the bucket for `s3://` and `gs://`, the blob *container* for
+    # `az://` (Azure's storage account lives in `icechunk_account`, not in the
+    # URL), and the host for `https://` (a repository served anonymously over
+    # plain HTTPS, e.g. from an R2 custom domain; advertised with its trailing
+    # slash stripped, as `icechunk.http_storage` requires).
+    icechunk_href: str = Field(pattern=r"^(s3|gs|az|https)://[^/]+/.+$")
+    # S3 only: the region is part of the store's HTTPS domain and of the reader's
+    # storage options. GCS, Azure and HTTPS have no region in either, so `gs://`,
+    # `az://` and `https://` items omit it. Enforced by `_region_matches_scheme`.
     icechunk_region: Literal["us-west-2"] | None = None  # add additional as needed
+    # Azure only: the storage account that owns the container. It is absent from
+    # the `az://` URL but needed for both the HTTPS domain and the reader's
+    # storage options. Enforced by `_account_matches_scheme`.
+    icechunk_account: str | None = None
     # Virtual datasets reference chunks in public source stores; readers must be
     # told which container prefixes to authorize anonymously to resolve them.
     virtual_chunk_container_prefixes: tuple[str, ...] = ()
@@ -317,10 +402,24 @@ class CatalogItem(BaseModel):
     # Unreleased dataset: excluded from the production catalog, published only to
     # stac-staging so it can be previewed before going live. See generate.py.
     staging: bool = False
+    # Fixture dataset: excluded from both production and staging, published only
+    # to stac-test where dynamical-catalog's integration tests read it. Mutually
+    # exclusive with `staging` (see `_tier_is_unambiguous`).
+    test: bool = False
+
+    @property
+    def icechunk_scheme(self) -> StorageScheme:
+        return url_scheme(self.icechunk_href)
 
     @property
     def icechunk_bucket(self) -> str:
+        """Netloc of the icechunk href: the bucket for S3/GCS, the container for Azure."""
         return urlparse(self.icechunk_href).netloc
+
+    @property
+    def icechunk_container(self) -> str:
+        """Azure alias for :attr:`icechunk_bucket` (Azure names the netloc a container)."""
+        return self.icechunk_bucket
 
     @property
     def icechunk_prefix(self) -> str:
@@ -328,27 +427,25 @@ class CatalogItem(BaseModel):
 
     @property
     def icechunk_https_href(self) -> str:
-        """Public HTTPS URL for the icechunk store (region in the domain).
+        """Public HTTPS URL for the icechunk store.
 
         Advertised as the ``icechunk-https`` asset so datasets can be opened
         with only ``pystac`` + ``icechunk`` (no ``dynamical-catalog``); see
-        ``icechunk.http_storage``.
+        ``icechunk.http_storage``. S3 stores put the region in the domain; GCS
+        stores are served from a single ``storage.googleapis.com`` host; Azure
+        stores put the storage account in the domain; an ``https://`` store is
+        already public HTTPS and is advertised unchanged apart from stripping
+        any trailing slash.
         """
-        if self.icechunk_href.startswith("https://"):
+        if self.icechunk_scheme == "https":
             return self.icechunk_href.rstrip("/")
-        assert self.icechunk_region is not None
+        if self.icechunk_scheme == "gs":
+            return gs_to_https_url(self.icechunk_href)
+        if self.icechunk_scheme == "az":
+            assert self.icechunk_account is not None  # _account_matches_scheme
+            return az_to_https_url(self.icechunk_href, self.icechunk_account)
+        assert self.icechunk_region is not None  # _region_matches_scheme
         return s3_to_https_url(self.icechunk_href, self.icechunk_region)
-
-    @model_validator(mode="after")
-    def _s3_icechunk_href_has_region(self) -> CatalogItem:
-        if self.icechunk_href.startswith("s3://") and self.icechunk_region is None:
-            raise ValueError("s3 icechunk_href requires icechunk_region")
-        if (
-            self.icechunk_href.startswith("https://")
-            and self.icechunk_region is not None
-        ):
-            raise ValueError("https icechunk_href must omit icechunk_region")
-        return self
 
     def description_details(self, chunking_table: str | None = None) -> str:
         """Long-form prose from ``prose/datasets/{id}.md``.
@@ -373,18 +470,67 @@ class CatalogItem(BaseModel):
         return text
 
     @model_validator(mode="after")
+    def _tier_is_unambiguous(self) -> CatalogItem:
+        """A dataset belongs to exactly one tier above production.
+
+        ``staging`` publishes to stac-staging (and, as a superset, stac-test);
+        ``test`` publishes only to stac-test. Setting both would make the
+        intended tier ambiguous.
+        """
+        if self.staging and self.test:
+            raise ValueError(
+                f"CatalogItem {self.id!r} sets both staging=True and test=True; "
+                f"pick one tier (test items are already excluded from staging)"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _region_matches_scheme(self) -> CatalogItem:
+        """``icechunk_region`` is required for S3 stores and absent for the rest."""
+        if self.icechunk_scheme == "s3" and self.icechunk_region is None:
+            raise ValueError(
+                f"CatalogItem {self.id!r} has an s3:// icechunk_href, so it must "
+                f"set icechunk_region"
+            )
+        if self.icechunk_scheme != "s3" and self.icechunk_region is not None:
+            raise ValueError(
+                f"CatalogItem {self.id!r} has a {self.icechunk_scheme}:// "
+                f"icechunk_href, which has no region; leave icechunk_region unset "
+                f"(got {self.icechunk_region!r})"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _account_matches_scheme(self) -> CatalogItem:
+        """``icechunk_account`` is required for Azure stores and absent for the rest."""
+        if self.icechunk_scheme == "az" and self.icechunk_account is None:
+            raise ValueError(
+                f"CatalogItem {self.id!r} has an az:// icechunk_href, so it must "
+                f"set icechunk_account (the Azure storage account owning the "
+                f"container)"
+            )
+        if self.icechunk_scheme != "az" and self.icechunk_account is not None:
+            raise ValueError(
+                f"CatalogItem {self.id!r} has a {self.icechunk_scheme}:// "
+                f"icechunk_href, which has no storage account; leave "
+                f"icechunk_account unset (got {self.icechunk_account!r})"
+            )
+        return self
+
+    @model_validator(mode="after")
     def _production_items_have_notebooks(self) -> CatalogItem:
         """Every dataset in the production catalog links a real notebook.
 
-        Staging items are exempt so an unreleased dataset can be previewed on
-        stac-staging before its notebook exists; flipping ``staging`` to False
-        then fails validation until a notebook is added.
+        Staging and test items are exempt: an unreleased dataset can be
+        previewed on stac-staging before its notebook exists, and a test fixture
+        has no notebook to write. Flipping ``staging`` to False then fails
+        validation until a notebook is added.
         """
-        if not self.staging and not self.notebooks:
+        if not (self.staging or self.test) and not self.notebooks:
             raise ValueError(
                 f"CatalogItem {self.id!r} is in the production catalog, so it "
                 f"must declare at least one notebook (notebooks may only be "
-                f"omitted while staging=True)"
+                f"omitted while staging=True or test=True)"
             )
         return self
 
@@ -409,12 +555,17 @@ class CatalogItem(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _virtual_chunk_container_prefixes_are_public(self) -> CatalogItem:
+    def _virtual_chunk_container_prefixes_are_supported(self) -> CatalogItem:
         for prefix in self.virtual_chunk_container_prefixes:
-            if not prefix.startswith(("s3://", "https://")):
+            if not prefix.startswith(("s3://", "gs://", "az://", "https://")):
                 raise ValueError(
-                    f"{self.id} virtual chunk container {prefix!r} must use a "
-                    f"supported anonymous scheme (s3:// or https://)"
+                    f"{self.id} virtual chunk container {prefix!r} must be an "
+                    f"s3://, gs://, az:// or https:// URL: dynamical-catalog only "
+                    f"authorizes anonymous S3, GCS, Azure and HTTPS virtual chunk "
+                    f"access (gs://, az:// and https:// need dynamical-catalog "
+                    f">= 1.0.0), so a source on any other backend "
+                    f"can be advertised but never read. Extend dynamical-catalog's "
+                    f"reader first to use one here."
                 )
         return self
 
@@ -908,6 +1059,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Hurricane Beryl ensemble pressure",
                 'ds = dynamical_catalog.open("google-weathernext2-forecast-historical-virtual", chunks=None)\n'
                 'ds["pressure_reduced_to_mean_sea_level"].sel(init_time="2024-07-04T00", lead_time="96h", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))',
+                min_version="1.0.0",  # https:// repository
             ),
         ),
         # notebooks#56 adds one combined historical + operational quickstart.
@@ -942,6 +1094,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds = dynamical_catalog.open("google-weathernext2-forecast-operational-virtual", chunks=None)\n'
                 'latest = ds.isel(init_time=-1).sel(lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
                 '(latest["wind_u_100m"] ** 2 + latest["wind_v_100m"] ** 2) ** 0.5',
+                min_version="1.0.0",  # https:// repository
             ),
         ),
         # notebooks#56 adds one combined historical + operational quickstart.
@@ -1040,7 +1193,68 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("eccc-hrdps-forecast"),),
         additional_terms=ECCC_TERMS,
     ),
+    CatalogItem(
+        id="test-gcs-virtual",
+        icechunk_href="gs://dynamical-icechunk-gcs-demo/test-gcs-virtual/v0.1.0.icechunk/",
+        virtual_chunk_container_prefixes=(
+            "gs://dynamical-icechunk-gcs-demo/test-gcs-virtual/source/",
+        ),
+        model_id="dynamical-test",
+        description_summary=(
+            "A synthetic 2x3x4 `temperature_2m` array on Google Cloud Storage "
+            "whose single chunk is a virtual reference into the same bucket. "
+            "Published only to the test catalog so dynamical-catalog can "
+            "exercise anonymous GCS repository and virtual chunk reads against "
+            "real generator output."
+        ),
+        # No reformatter builds this fixture; point at the consumer instead so
+        # the {{ compression }} fragment's link (if ever used) still resolves.
+        reformatter_url="https://github.com/dynamical-org/dynamical-catalog",
+        examples=(
+            _example(
+                "Read the array",
+                'ds = dynamical_catalog.open("test-gcs-virtual", chunks=None)\n'
+                'ds["temperature_2m"].isel(time=0)',
+                min_version="1.0.0",  # gs:// repository
+            ),
+        ),
+        notebooks=(),
+        test=True,
+    ),
+    CatalogItem(
+        id="test-azure-virtual",
+        icechunk_href="az://dynamical-icechunk-azure-demo/test-azure-virtual/v0.1.0.icechunk/",
+        icechunk_account="dynamicalicechunktest",
+        virtual_chunk_container_prefixes=(
+            "az://dynamical-icechunk-azure-demo/test-azure-virtual/source/",
+        ),
+        model_id="dynamical-test",
+        description_summary=(
+            "A synthetic 2x3x4 `temperature_2m` array on Azure Blob Storage "
+            "whose single chunk is a virtual reference into the same container. "
+            "Published only to the test catalog so dynamical-catalog can "
+            "exercise anonymous Azure repository and virtual chunk reads "
+            "against real generator output."
+        ),
+        # No reformatter builds this fixture; point at the consumer instead so
+        # the {{ compression }} fragment's link (if ever used) still resolves.
+        reformatter_url="https://github.com/dynamical-org/dynamical-catalog",
+        examples=(
+            _example(
+                "Read the array",
+                'ds = dynamical_catalog.open("test-azure-virtual", chunks=None)\n'
+                'ds["temperature_2m"].isel(time=0)',
+                min_version="1.0.0",  # az:// repository
+            ),
+        ),
+        notebooks=(),
+        test=True,
+    ),
 ]
 
 
-_COLLECTION_IDS = [item.id for item in CATALOG_ITEMS]
+# Collection ids in the production and staging catalogs. Test-tier fixtures are
+# left out: the integration tests here read through released dynamical-catalog
+# versions and against the staging-inclusive `served_catalog` fixture, neither
+# of which carries test items.
+_COLLECTION_IDS = [item.id for item in CATALOG_ITEMS if not item.test]

@@ -108,12 +108,13 @@ def test_about_links_cover_docs_and_validation_report() -> None:
 
 
 def test_every_dataset_details_links_to_its_validation_report() -> None:
-    for item in CATALOG_ITEMS:
+    # Test-tier fixtures are synthetic, so they have no validation report to link.
+    for item in (i for i in CATALOG_ITEMS if not i.test):
         section = (
             "### Validation report\n\n"
             f"Review the [validation report](https://dynamical.org/catalog/{item.id}/validation/) "
-            "to understand variable availability, missing data, known quirks, fill values, "
-            "and approximate spatial, temporal, and value distributions."
+            "for variable availability, missing data, known quirks, fill values, "
+            "value distributions, and sample plots."
         )
         details = item.description_details("chunking table")
 
@@ -187,7 +188,7 @@ def test_catalog_item_rejects_unsupported_icechunk_href() -> None:
 
 
 def test_catalog_item_requires_region_for_s3_icechunk_href() -> None:
-    with pytest.raises(pydantic.ValidationError, match="requires icechunk_region"):
+    with pytest.raises(pydantic.ValidationError, match="must set icechunk_region"):
         CatalogItem(
             id=_TEST_ID,
             icechunk_href=f"s3://bucket/{_TEST_ID}/v1.icechunk/",
@@ -197,7 +198,7 @@ def test_catalog_item_requires_region_for_s3_icechunk_href() -> None:
 
 
 def test_catalog_item_rejects_region_for_https_icechunk_href() -> None:
-    with pytest.raises(pydantic.ValidationError, match="must omit icechunk_region"):
+    with pytest.raises(pydantic.ValidationError, match="which has no region"):
         CatalogItem(
             id=_TEST_ID,
             icechunk_href=f"https://data.example.org/{_TEST_ID}/v1.icechunk/",
@@ -251,6 +252,126 @@ def test_catalog_item_allows_staging_item_without_notebooks() -> None:
         },
     )
     assert item.notebooks == ()
+
+
+def test_catalog_item_allows_test_item_without_notebooks() -> None:
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+        icechunk_region="us-west-2",
+        **{  # type: ignore[arg-type]
+            **_PROSE_KWARGS,
+            "notebooks": (),
+            "test": True,
+        },
+    )
+    assert item.notebooks == ()
+
+
+def test_catalog_item_rejects_staging_and_test_together() -> None:
+    with pytest.raises(
+        pydantic.ValidationError, match="sets both staging=True and test=True"
+    ):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **{  # type: ignore[arg-type]
+                **_PROSE_KWARGS,
+                "staging": True,
+                "test": True,
+            },
+        )
+
+
+def test_catalog_item_accepts_gs_href_without_region() -> None:
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"gs://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+        **_PROSE_KWARGS,  # type: ignore[arg-type]
+    )
+    assert item.icechunk_scheme == "gs"
+    assert item.icechunk_region is None
+    assert item.icechunk_https_href == (
+        f"https://storage.googleapis.com/dynamical-demo/{_TEST_ID}/v1.icechunk"
+    )
+
+
+def test_catalog_item_rejects_gs_href_with_region() -> None:
+    with pytest.raises(pydantic.ValidationError, match="which has no region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"gs://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_rejects_s3_href_without_region() -> None:
+    with pytest.raises(pydantic.ValidationError, match="must set icechunk_region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_accepts_az_href_with_account() -> None:
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"az://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+        icechunk_account="dynamicaldemo",
+        **_PROSE_KWARGS,  # type: ignore[arg-type]
+    )
+    assert item.icechunk_scheme == "az"
+    assert item.icechunk_region is None
+    # For az:// the href's netloc is the blob container, not a bucket.
+    assert item.icechunk_container == "dynamical-demo"
+    assert item.icechunk_https_href == (
+        f"https://dynamicaldemo.blob.core.windows.net/dynamical-demo/{_TEST_ID}/v1.icechunk"
+    )
+
+
+def test_catalog_item_rejects_az_href_without_account() -> None:
+    with pytest.raises(pydantic.ValidationError, match="must set icechunk_account"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"az://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_rejects_az_href_with_region() -> None:
+    with pytest.raises(pydantic.ValidationError, match="which has no region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"az://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+            icechunk_account="dynamicaldemo",
+            icechunk_region="us-west-2",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize(
+    ("icechunk_href", "extra"),
+    [
+        (
+            f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            {"icechunk_region": "us-west-2"},
+        ),
+        (f"gs://dynamical-demo/{_TEST_ID}/v1.icechunk/", {}),
+    ],
+)
+def test_catalog_item_rejects_account_on_non_azure_href(
+    icechunk_href: str, extra: dict[str, str]
+) -> None:
+    with pytest.raises(pydantic.ValidationError, match="which has no storage account"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=icechunk_href,
+            icechunk_account="dynamicaldemo",
+            **{**_PROSE_KWARGS, **extra},  # type: ignore[arg-type]
+        )
 
 
 def test_catalog_item_allows_non_quickstart_notebook_with_any_slug() -> None:
@@ -378,3 +499,22 @@ def test_collection_input_renders_additional_terms_as_extra_license_link() -> No
 def test_additional_terms_rejects_empty_title() -> None:
     with pytest.raises(pydantic.ValidationError):
         AdditionalTerms(href="https://example.org/terms", title="")  # type: ignore[arg-type]
+
+
+def test_example_import_comment_carries_per_dataset_reader_floor() -> None:
+    """gs://, az:// and https:// datasets need dynamical-catalog 1.0.0; S3 keeps 0.8.0."""
+    by_id = {item.id: item for item in CATALOG_ITEMS}
+    for item_id in (
+        "google-weathernext2-forecast-historical-virtual",
+        "google-weathernext2-forecast-operational-virtual",
+        "test-gcs-virtual",
+        "test-azure-virtual",
+    ):
+        for example in by_id[item_id].examples:
+            assert example.code.startswith(
+                "import dynamical_catalog  # dynamical-catalog>=1.0.0\n"
+            ), example.code
+    for example in by_id["noaa-gfs-analysis"].examples:
+        assert example.code.startswith(
+            "import dynamical_catalog  # dynamical-catalog>=0.8.0\n"
+        ), example.code
