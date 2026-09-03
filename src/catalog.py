@@ -530,7 +530,7 @@ class CatalogItem(BaseModel):
                     f"{self.id} virtual chunk container {prefix!r} must be an "
                     f"s3://, gs:// or az:// URL: dynamical-catalog only "
                     f"authorizes anonymous S3, GCS and Azure virtual chunk "
-                    f"access (gs:// and az:// need dynamical-catalog >= 0.9.0), "
+                    f"access (gs:// and az:// need dynamical-catalog >= 1.0.0), "
                     f"so a source on any other backend can be advertised but "
                     f"never read. icechunk supports more backends (HTTP); extend "
                     f"dynamical-catalog's reader first to use one here."

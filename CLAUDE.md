@@ -93,4 +93,4 @@ otherwise. The generator dispatches on the scheme in `generate._storage` /
 `xarray:storage_options` of `{"anon": true, "client_kwargs": {...}}` for S3,
 `{"token": "anon"}` for GCS and `{"account_name": ..., "anon": true}` for
 Azure, with container `credentials.type` of `s3`, `gcs` or `azure`. Reading a
-`gs://` or `az://` dataset needs dynamical-catalog >= 0.9.0.
+`gs://` or `az://` dataset needs dynamical-catalog >= 1.0.0.
