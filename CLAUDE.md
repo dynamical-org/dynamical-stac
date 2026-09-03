@@ -81,11 +81,16 @@ commit the result, the committed tree is production-only.
 Like staging items, a test item may omit `notebooks`. Unlike them it also has
 no validation report, so its prose omits that section.
 
-Repositories and virtual chunk containers may be `s3://` or `gs://`.
+Repositories and virtual chunk containers may be `s3://`, `gs://` or `az://`.
+For `az://` the URL's netloc is the blob *container*, not a bucket.
 `icechunk_region` is required for `s3://` (it goes in the store's HTTPS domain
-and in the reader's storage options) and must be omitted for `gs://`, which has
-no region. The generator dispatches on the scheme in `generate._storage` /
+and in the reader's storage options) and must be omitted for `gs://` and
+`az://`, which have no region. `icechunk_account` is the mirror image: required
+for `az://` (Azure's storage account is absent from the URL but needed for both
+the HTTPS domain and the reader's storage options) and must be omitted
+otherwise. The generator dispatches on the scheme in `generate._storage` /
 `generate._container_credentials`, and the rendered collection carries
-`xarray:storage_options` of `{"anon": true, "client_kwargs": {...}}` for S3 vs
-`{"token": "anon"}` for GCS, with container `credentials.type` of `s3` vs
-`gcs`. Reading a `gs://` dataset needs dynamical-catalog >= 0.9.0.
+`xarray:storage_options` of `{"anon": true, "client_kwargs": {...}}` for S3,
+`{"token": "anon"}` for GCS and `{"account_name": ..., "anon": true}` for
+Azure, with container `credentials.type` of `s3`, `gcs` or `azure`. Reading a
+`gs://` or `az://` dataset needs dynamical-catalog >= 0.9.0.

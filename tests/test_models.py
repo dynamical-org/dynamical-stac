@@ -285,6 +285,64 @@ def test_catalog_item_rejects_s3_href_without_region() -> None:
         )
 
 
+def test_catalog_item_accepts_az_href_with_account() -> None:
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"az://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+        icechunk_account="dynamicaldemo",
+        **_PROSE_KWARGS,  # type: ignore[arg-type]
+    )
+    assert item.icechunk_scheme == "az"
+    assert item.icechunk_region is None
+    # For az:// the href's netloc is the blob container, not a bucket.
+    assert item.icechunk_container == "dynamical-demo"
+    assert item.icechunk_https_href == (
+        f"https://dynamicaldemo.blob.core.windows.net/dynamical-demo/{_TEST_ID}/v1.icechunk"
+    )
+
+
+def test_catalog_item_rejects_az_href_without_account() -> None:
+    with pytest.raises(pydantic.ValidationError, match="must set icechunk_account"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"az://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_rejects_az_href_with_region() -> None:
+    with pytest.raises(pydantic.ValidationError, match="which has no region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"az://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+            icechunk_account="dynamicaldemo",
+            icechunk_region="us-west-2",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize(
+    ("icechunk_href", "extra"),
+    [
+        (
+            f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            {"icechunk_region": "us-west-2"},
+        ),
+        (f"gs://dynamical-demo/{_TEST_ID}/v1.icechunk/", {}),
+    ],
+)
+def test_catalog_item_rejects_account_on_non_azure_href(
+    icechunk_href: str, extra: dict[str, str]
+) -> None:
+    with pytest.raises(pydantic.ValidationError, match="which has no storage account"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=icechunk_href,
+            icechunk_account="dynamicaldemo",
+            **{**_PROSE_KWARGS, **extra},  # type: ignore[arg-type]
+        )
+
+
 def test_catalog_item_allows_non_quickstart_notebook_with_any_slug() -> None:
     extra = DatasetNotebook(slug="some+other-slug", title="Cross-model comparison")
     item = CatalogItem(

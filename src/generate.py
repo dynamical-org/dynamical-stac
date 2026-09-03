@@ -46,10 +46,17 @@ def _select_items(
 
 def _container_credentials(
     prefix: str,
-) -> icechunk.S3Credentials.Anonymous | icechunk.GcsCredentials.Anonymous:
+) -> (
+    icechunk.S3Credentials.Anonymous
+    | icechunk.GcsCredentials.Anonymous
+    | icechunk.AzureCredentials.Anonymous
+):
     """Anonymous virtual chunk container credentials for ``prefix``'s backend."""
-    if url_scheme(prefix) == "s3":
+    scheme = url_scheme(prefix)
+    if scheme == "s3":
         return icechunk.s3_anonymous_credentials()
+    if scheme == "az":
+        return icechunk.azure_anonymous_credentials()
     return icechunk.gcs_credentials(anonymous=True)
 
 
@@ -58,6 +65,16 @@ def _storage(item: CatalogItem) -> icechunk.Storage:
     if item.icechunk_scheme == "gs":
         return icechunk.gcs_storage(
             bucket=item.icechunk_bucket,
+            prefix=item.icechunk_prefix,
+            anonymous=True,
+        )
+    if item.icechunk_scheme == "az":
+        # Azure's container is the href's netloc; the storage account that owns
+        # it is carried separately in `icechunk_account`.
+        assert item.icechunk_account is not None  # _account_matches_scheme
+        return icechunk.azure_storage(
+            account=item.icechunk_account,
+            container=item.icechunk_container,
             prefix=item.icechunk_prefix,
             anonymous=True,
         )
