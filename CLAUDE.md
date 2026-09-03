@@ -58,3 +58,34 @@ with `./scripts/generate` won't show them — use
 
 dynamical.org Cloudflare PR previews build against `stac-staging`, so a staging
 dataset appears in website previews while staying hidden from the live site.
+
+## Test datasets
+
+There is a third catalog tier above staging: `stac-test.dynamical.org` (R2
+bucket `stac-test`). It is a superset of staging — production + staging + every
+`CatalogItem` with `test=True`. Test items are synthetic fixtures that exist so
+[dynamical-catalog](https://github.com/dynamical-org/dynamical-catalog)'s
+integration tests can read real generator output; they are not weather data.
+
+Set `test=True` (mutually exclusive with `staging=True`) to publish a dataset
+only to the test catalog. Test items never reach staging or production: they're
+excluded from the committed `stac/` tree, from `stac-staging`, and from
+`catalog._COLLECTION_IDS` (so this repo's own read/browse integration tests
+skip them). They're included only when `STAC_INCLUDE_TEST=1`, set by
+`upload-stac-test.yml` (which also sets `STAC_INCLUDE_STAGING=1`) — that
+workflow runs on every push to `main` and uploads to the `stac-test` bucket.
+Preview it locally with
+`STAC_INCLUDE_STAGING=1 STAC_INCLUDE_TEST=1 ./scripts/generate` — but don't
+commit the result, the committed tree is production-only.
+
+Like staging items, a test item may omit `notebooks`. Unlike them it also has
+no validation report, so its prose omits that section.
+
+Repositories and virtual chunk containers may be `s3://` or `gs://`.
+`icechunk_region` is required for `s3://` (it goes in the store's HTTPS domain
+and in the reader's storage options) and must be omitted for `gs://`, which has
+no region. The generator dispatches on the scheme in `generate._storage` /
+`generate._container_credentials`, and the rendered collection carries
+`xarray:storage_options` of `{"anon": true, "client_kwargs": {...}}` for S3 vs
+`{"token": "anon"}` for GCS, with container `credentials.type` of `s3` vs
+`gcs`. Reading a `gs://` dataset needs dynamical-catalog >= 0.9.0.

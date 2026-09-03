@@ -108,7 +108,8 @@ def test_about_links_cover_docs_and_validation_report() -> None:
 
 
 def test_every_dataset_details_links_to_its_validation_report() -> None:
-    for item in CATALOG_ITEMS:
+    # Test-tier fixtures are synthetic, so they have no validation report to link.
+    for item in (i for i in CATALOG_ITEMS if not i.test):
         section = (
             "### Validation report\n\n"
             f"Review the [validation report](https://dynamical.org/catalog/{item.id}/validation/) "
@@ -220,6 +221,68 @@ def test_catalog_item_allows_staging_item_without_notebooks() -> None:
         },
     )
     assert item.notebooks == ()
+
+
+def test_catalog_item_allows_test_item_without_notebooks() -> None:
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+        icechunk_region="us-west-2",
+        **{  # type: ignore[arg-type]
+            **_PROSE_KWARGS,
+            "notebooks": (),
+            "test": True,
+        },
+    )
+    assert item.notebooks == ()
+
+
+def test_catalog_item_rejects_staging_and_test_together() -> None:
+    with pytest.raises(
+        pydantic.ValidationError, match="sets both staging=True and test=True"
+    ):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **{  # type: ignore[arg-type]
+                **_PROSE_KWARGS,
+                "staging": True,
+                "test": True,
+            },
+        )
+
+
+def test_catalog_item_accepts_gs_href_without_region() -> None:
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"gs://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+        **_PROSE_KWARGS,  # type: ignore[arg-type]
+    )
+    assert item.icechunk_scheme == "gs"
+    assert item.icechunk_region is None
+    assert item.icechunk_https_href == (
+        f"https://storage.googleapis.com/dynamical-demo/{_TEST_ID}/v1.icechunk"
+    )
+
+
+def test_catalog_item_rejects_gs_href_with_region() -> None:
+    with pytest.raises(pydantic.ValidationError, match="which has no region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"gs://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_rejects_s3_href_without_region() -> None:
+    with pytest.raises(pydantic.ValidationError, match="must set icechunk_region"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            **_PROSE_KWARGS,  # type: ignore[arg-type]
+        )
 
 
 def test_catalog_item_allows_non_quickstart_notebook_with_any_slug() -> None:
