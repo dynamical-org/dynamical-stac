@@ -24,7 +24,7 @@ dev = [
 ]
 integration = [
     "pystac-client>=0.8.0",
-    "dynamical-catalog>=0.8.0",
+    "dynamical-catalog>=1.0.0",
 ]
 
 [tool.pytest.ini_options]

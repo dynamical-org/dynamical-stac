@@ -28,7 +28,7 @@ from __future__ import annotations
 import modal
 
 image = modal.Image.debian_slim(python_version="3.12").pip_install(
-    "dynamical-catalog>=0.7.0",
+    "dynamical-catalog>=1.0.0",
     "sentry-sdk>=2.20",
 )
 
