@@ -1076,13 +1076,16 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="google-weathernext2",
         description_summary=(
             "This dataset is the 2025-present archive of Google WeatherNext 2 "
-            "forecasts, optimized for spatial (map) access patterns and "
-            "updated behind a strict 48-hour publication boundary. Forecasts "
+            "forecasts, optimized for spatial (map) access patterns. Forecasts "
             "are identified by an initialization time (`init_time`) and one "
             "of 64 `ensemble_member` values, then step forward from 6 to 360 "
             "hours (15 days) along the `lead_time` dimension at a 6 hourly "
             "interval. Surface variables are at the dataset root; variables "
-            "carried on pressure levels are in the `pressure_level` group."
+            "carried on pressure levels are in the `pressure_level` group.\n\n"
+            "Each forecast step is published once its valid time is at least "
+            "one hour in the past, so recent initializations are partially "
+            "filled: lead times whose valid time has not yet passed read as "
+            "NaN until the next update."
         ),
         reformatter_url=(
             f"{REFORMATTERS_ROOT}/google/weathernext2/"
@@ -1092,8 +1095,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _example(
                 "Day-10 ensemble wind scenarios",
                 'ds = dynamical_catalog.open("google-weathernext2-forecast-operational-virtual", chunks=None)\n'
-                'latest = ds.isel(init_time=-1).sel(lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
-                '(latest["wind_u_100m"] ** 2 + latest["wind_v_100m"] ** 2) ** 0.5',
+                '# The newest initialization whose day-10 step has already verified.\n'
+                'init_time = ds.init_time[-1] - ds.lead_time.sel(lead_time="240h")\n'
+                'day10 = ds.sel(init_time=init_time, lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
+                '(day10["wind_u_100m"] ** 2 + day10["wind_v_100m"] ** 2) ** 0.5',
                 min_version="1.0.0",  # https:// repository
             ),
         ),
