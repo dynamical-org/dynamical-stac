@@ -66,18 +66,23 @@ _MAX_RUNTIME_MINUTES = _TIMEOUT_SECONDS // 60 + 2
 _FLUSH_TIMEOUT_SECONDS = 15
 
 
+_STDOUT_HANDLER = "read_canary.stdout"
+
+
 def _logger() -> logging.Logger:
     """The canary's stdout logger, wired once per container.
 
     Modal captures stdout; python's root logger only emits WARNING and up, so
     the INFO lines need their own handler. Warm containers re-enter
-    `read_canary`, hence the guard. Propagation stays on so sentry-sdk's
+    `read_canary`, hence the guard, keyed on our own handler so that another
+    handler on this logger cannot suppress it. Propagation stays on so sentry-sdk's
     `enable_logs=True` integration forwards a second copy as Sentry logs.
     """
     log = logging.getLogger("read_canary")
     log.setLevel(logging.INFO)
-    if not log.handlers:
+    if not any(handler.name == _STDOUT_HANDLER for handler in log.handlers):
         handler = logging.StreamHandler(sys.stdout)
+        handler.name = _STDOUT_HANDLER
         formatter = logging.Formatter(
             "%(asctime)s %(levelname)s %(message)s", datefmt="%Y-%m-%dT%H:%M:%SZ"
         )
@@ -136,21 +141,28 @@ def read_canary() -> None:
     from concurrent.futures import ThreadPoolExecutor, as_completed  # noqa: PLC0415
     from typing import Literal  # noqa: PLC0415
 
-    import sentry_sdk  # noqa: PLC0415
-    import sentry_sdk.crons  # noqa: PLC0415
-    from dynamical_catalog._stac import load_catalog  # noqa: PLC0415
-
-    # The start line goes out before anything that can fail, so a run that
-    # hangs or is killed still leaves a trace in Modal's logs of having begun.
+    # The start line goes out before the third-party imports and anything else
+    # that can fail or hang, so a run that dies early still leaves a trace in
+    # Modal's logs of having begun. Versions come from installed metadata, not
+    # from importing the packages.
     log = _logger()
     started = time.monotonic()
     log.info("read canary started; %s", _runtime_versions())
 
+    import sentry_sdk  # noqa: PLC0415
+    import sentry_sdk.crons  # noqa: PLC0415
+    from dynamical_catalog._stac import load_catalog  # noqa: PLC0415
+    from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: PLC0415
+
     # No-op when SENTRY_DSN is unset (e.g. the secret isn't attached yet).
+    # `event_level=None`: the failure line below is logged at ERROR, and the
+    # default integration would turn that into a second error event beside the
+    # explicit capture_exception. Breadcrumbs and Sentry logs stay on.
     sentry_sdk.init(
         dsn=os.environ.get("SENTRY_DSN"),
         environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
         enable_logs=True,
+        integrations=[LoggingIntegration(event_level=None)],
     )
     monitor_config = {
         # Must match the `modal.Period` schedule above.
@@ -164,7 +176,7 @@ def read_canary() -> None:
     check_in_id = sentry_sdk.crons.capture_checkin(
         monitor_slug="read-canary", status="in_progress", monitor_config=monitor_config
     )
-    log.info("in_progress check-in %s sent", check_in_id)
+    log.info("in_progress check-in %s submitted", check_in_id)
 
     def _finish(status: Literal["ok", "error"]) -> None:
         sentry_sdk.crons.capture_checkin(
@@ -181,7 +193,7 @@ def read_canary() -> None:
         # Evidence first: the log line must not depend on the check-in or the
         # flush getting through.
         log.error(
-            "read canary failed after %.1fs; sending error check-in %s: %s",
+            "read canary failed after %.1fs; submitting error check-in %s: %s",
             time.monotonic() - started,
             check_in_id,
             error,
@@ -227,7 +239,7 @@ def read_canary() -> None:
     slowest_id, slowest = max(durations.items(), key=lambda item: item[1])
     log.info(
         "read canary ok: %d/%d collections read in %.1fs (slowest %s %.1fs); "
-        "sending ok check-in %s",
+        "submitting ok check-in %s",
         len(durations),
         len(collection_ids),
         time.monotonic() - started,
