@@ -276,7 +276,8 @@ def test_success_checks_in_ok_and_flushes_with_budget(
         "(slowest collection-3 1.5s); queueing ok check-in check-in-id" in messages[2]
     )
     assert re.fullmatch(
-        r"ok check-in check-in-id flushed in \d+\.\ds \(budget 15s\)", messages[3]
+        r"ok check-in check-in-id: flush returned after \d+\.\ds \(budget 15s\)",
+        messages[3],
     )
     assert len(messages) == 4
     # Ordering is the point: the start line before Sentry is touched, and the

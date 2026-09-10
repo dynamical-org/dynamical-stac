@@ -10,10 +10,10 @@ closes it `ok` or `error`; a hung or killed run is caught when it exceeds
 
 Every run also logs a start line and a one-line summary to stdout, so
 `modal app logs dynamical-read-canary` is evidence of whether and how the
-canary ran that does not depend on Sentry. On 2026-09-10 a Sentry cron
-ingestion incident dropped two check-ins, the status page showed "Data
-product reads" down for 25 minutes, and nothing outside Sentry could show
-whether those two runs had happened at all.
+canary ran that does not depend on Sentry. On 2026-09-10, during a Sentry US
+ingestion incident, two consecutive check-ins never showed up and the status
+page showed "Data product reads" down for 25 minutes; nothing outside Sentry
+could show whether those two runs had executed, let alone what they read.
 
 This is the data-plane half of the 99.5% uptime SLA: proof that reads actually
 resolve, not merely that catalog.json is served.
@@ -58,10 +58,11 @@ MIN_COLLECTIONS = 6
 _TIMEOUT_SECONDS = 600
 _MAX_RUNTIME_MINUTES = _TIMEOUT_SECONDS // 60 + 2
 
-# sentry-sdk's default flush budget is `shutdown_timeout`, 2 seconds. When
-# Sentry's ingest edge is slow (as during its 2026-09-10 US ingestion incident)
-# the terminal check-in is still queued when flush gives up, Modal reclaims the
-# container, and the run reads as hung or missed even though every read passed.
+# sentry-sdk's default flush budget is `shutdown_timeout`, 2 seconds. If
+# Sentry's ingest edge is slow to accept an envelope, the terminal check-in can
+# still be queued when flush gives up and Modal reclaims the container, and the
+# run then reads as hung or missed even though every read passed. The SDK does
+# not retry a rejected envelope, so this covers a slow edge, not a failing one.
 # 15 s matches reformatters' cron monitoring and is well inside the schedule.
 _FLUSH_TIMEOUT_SECONDS = 15
 
@@ -214,13 +215,15 @@ def read_canary() -> None:
             monitor_config=monitor_config,
         )
         # Modal may reclaim the container the moment this function returns; an
-        # unflushed terminal check-in is lost and reads as a hung run. A flush
-        # that used the whole budget means the queue did not drain and the
-        # check-in probably never left, so its duration is logged.
+        # unflushed terminal check-in is lost and reads as a hung run. The
+        # elapsed time is logged as evidence: a flush that returned early left
+        # nothing queued, one that ran the whole budget did not drain (which
+        # envelope was still pending, and whether it was later delivered, it
+        # cannot say).
         flush_started = time.monotonic()
         sentry_sdk.flush(timeout=_FLUSH_TIMEOUT_SECONDS)
         log.info(
-            "%s check-in %s flushed in %.1fs (budget %ds)",
+            "%s check-in %s: flush returned after %.1fs (budget %ds)",
             status,
             check_in_id,
             time.monotonic() - flush_started,
