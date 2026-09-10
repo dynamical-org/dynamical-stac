@@ -75,11 +75,14 @@ def _logger() -> logging.Logger:
     Modal captures stdout; python's root logger only emits WARNING and up, so
     the INFO lines need their own handler. Warm containers re-enter
     `read_canary`, hence the guard, keyed on our own handler so that another
-    handler on this logger cannot suppress it. Propagation stays on so sentry-sdk's
-    `enable_logs=True` integration forwards a second copy as Sentry logs.
+    handler on this logger cannot suppress it. Propagation is off so a root
+    handler (a library calling basicConfig, say) cannot print every line twice;
+    sentry-sdk's logging integration hooks the logger itself, not the root, so
+    with `enable_logs=True` it still forwards a copy as Sentry logs.
     """
     log = logging.getLogger("read_canary")
     log.setLevel(logging.INFO)
+    log.propagate = False
     if not any(handler.name == _STDOUT_HANDLER for handler in log.handlers):
         handler = logging.StreamHandler(sys.stdout)
         handler.name = _STDOUT_HANDLER
@@ -130,6 +133,32 @@ def _check_collection(collection_id: str) -> float:
     return time.monotonic() - started
 
 
+def _read_all(collection_ids: list[str]) -> dict[str, float]:
+    """Read one value from every collection; return each read's wall time.
+
+    Every collection is attempted even after one fails, so a failure reports
+    the full set of broken stores rather than the first one.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed  # noqa: PLC0415
+
+    errors: list[str] = []
+    durations: dict[str, float] = {}
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = {pool.submit(_check_collection, cid): cid for cid in collection_ids}
+        for future in as_completed(futures):
+            collection_id = futures[future]
+            try:
+                durations[collection_id] = future.result()
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"{collection_id}: {e!r}")
+    if errors:
+        raise RuntimeError(
+            f"read canary failed for {len(errors)}/{len(collection_ids)} "
+            "collections:\n" + "\n".join(errors)
+        )
+    return durations
+
+
 @app.function(
     image=image,
     schedule=modal.Period(minutes=10),
@@ -138,7 +167,6 @@ def _check_collection(collection_id: str) -> float:
 )
 def read_canary() -> None:
     import os  # noqa: PLC0415
-    from concurrent.futures import ThreadPoolExecutor, as_completed  # noqa: PLC0415
     from typing import Literal  # noqa: PLC0415
 
     # The start line goes out before the third-party imports and anything else
@@ -149,9 +177,9 @@ def read_canary() -> None:
     started = time.monotonic()
     log.info("read canary started; %s", _runtime_versions())
 
+    import dynamical_catalog  # noqa: PLC0415
     import sentry_sdk  # noqa: PLC0415
     import sentry_sdk.crons  # noqa: PLC0415
-    from dynamical_catalog._stac import load_catalog  # noqa: PLC0415
     from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: PLC0415
 
     # No-op when SENTRY_DSN is unset (e.g. the secret isn't attached yet).
@@ -176,7 +204,7 @@ def read_canary() -> None:
     check_in_id = sentry_sdk.crons.capture_checkin(
         monitor_slug="read-canary", status="in_progress", monitor_config=monitor_config
     )
-    log.info("in_progress check-in %s submitted", check_in_id)
+    log.info("in_progress check-in %s queued", check_in_id)
 
     def _finish(status: Literal["ok", "error"]) -> None:
         sentry_sdk.crons.capture_checkin(
@@ -186,62 +214,50 @@ def read_canary() -> None:
             monitor_config=monitor_config,
         )
         # Modal may reclaim the container the moment this function returns; an
-        # unflushed terminal check-in is lost and reads as a hung run.
+        # unflushed terminal check-in is lost and reads as a hung run. A flush
+        # that used the whole budget means the queue did not drain and the
+        # check-in probably never left, so its duration is logged.
+        flush_started = time.monotonic()
         sentry_sdk.flush(timeout=_FLUSH_TIMEOUT_SECONDS)
+        log.info(
+            "%s check-in %s flushed in %.1fs (budget %ds)",
+            status,
+            check_in_id,
+            time.monotonic() - flush_started,
+            _FLUSH_TIMEOUT_SECONDS,
+        )
 
-    def _fail(error: Exception) -> None:
+    try:
+        # A warm container keeps dynamical_catalog's module-level catalog cache;
+        # each run must fetch catalog.json afresh or it checks a stale listing.
+        dynamical_catalog.clear_cache()
+        collection_ids = sorted(dynamical_catalog.load_catalog())
+        if len(collection_ids) < MIN_COLLECTIONS:
+            raise RuntimeError(
+                f"catalog returned {len(collection_ids)} collections, "
+                f"expected >= {MIN_COLLECTIONS}"
+            )
+        durations = _read_all(collection_ids)
+        slowest_id, slowest = max(durations.items(), key=lambda item: item[1])
+    except Exception as error:
+        # Anything that goes wrong after the in_progress check-in closes it as
+        # `error` rather than leaving Sentry to declare a hang at max_runtime.
         # Evidence first: the log line must not depend on the check-in or the
         # flush getting through.
         log.error(
-            "read canary failed after %.1fs; submitting error check-in %s: %s",
+            "read canary failed after %.1fs; queueing error check-in %s: %s",
             time.monotonic() - started,
             check_in_id,
             error,
         )
         sentry_sdk.capture_exception(error)
         _finish("error")
-
-    try:
-        collection_ids = sorted(load_catalog())
-    except Exception as e:
-        # A catalog that cannot be loaded is a failed run, not a hung one: close
-        # the check-in as `error` instead of leaving it to time out.
-        _fail(e)
         raise
 
-    if len(collection_ids) < MIN_COLLECTIONS:
-        error = RuntimeError(
-            f"catalog returned {len(collection_ids)} collections, "
-            f"expected >= {MIN_COLLECTIONS}"
-        )
-        _fail(error)
-        raise error
-
-    errors: list[str] = []
-    durations: dict[str, float] = {}
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        futures = {pool.submit(_check_collection, cid): cid for cid in collection_ids}
-        for future in as_completed(futures):
-            collection_id = futures[future]
-            try:
-                durations[collection_id] = future.result()
-            except Exception as e:  # noqa: BLE001
-                errors.append(f"{collection_id}: {e!r}")
-
-    if errors:
-        error = RuntimeError(
-            f"read canary failed for {len(errors)}/{len(collection_ids)} "
-            "collections:\n" + "\n".join(errors)
-        )
-        _fail(error)
-        raise error
-
-    slowest_id, slowest = max(durations.items(), key=lambda item: item[1])
     log.info(
-        "read canary ok: %d/%d collections read in %.1fs (slowest %s %.1fs); "
-        "submitting ok check-in %s",
+        "read canary ok: %d collections read in %.1fs (slowest %s %.1fs); "
+        "queueing ok check-in %s",
         len(durations),
-        len(collection_ids),
         time.monotonic() - started,
         slowest_id,
         slowest,

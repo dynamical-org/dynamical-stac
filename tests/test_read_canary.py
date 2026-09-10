@@ -12,14 +12,18 @@ from __future__ import annotations
 import importlib.metadata
 import importlib.util
 import logging
+import math
 import pathlib
 import re
 import sys
+import time
 import types
 from collections.abc import Callable, Iterator
 from typing import Any
 
+import numpy as np
 import pytest
+import xarray as xr
 
 _SCRIPT = pathlib.Path(__file__).parent.parent / "scripts" / "read_canary.py"
 
@@ -46,18 +50,18 @@ class _Recorder:
     def messages(self) -> list[str]:
         return [kw["message"] for name, kw in self.calls if name == "log"]
 
+    def index_of(self, call: str, **match: object) -> int:
+        return next(
+            i
+            for i, (name, kw) in enumerate(self.calls)
+            if name == call and all(kw.get(k) == v for k, v in match.items())
+        )
+
     def index_of_log(self, prefix: str) -> int:
         return next(
             i
             for i, (name, kw) in enumerate(self.calls)
             if name == "log" and kw["message"].startswith(prefix)
-        )
-
-    def index_of_checkin(self, status: str) -> int:
-        return next(
-            i
-            for i, (name, kw) in enumerate(self.calls)
-            if name == "capture_checkin" and kw["status"] == status
         )
 
 
@@ -98,6 +102,7 @@ def _stub_modal() -> types.ModuleType:
 
 
 def _stub_sentry(recorder: _Recorder) -> dict[str, types.ModuleType]:
+    """sentry_sdk with the real signatures of the functions the canary calls."""
     sentry_sdk = types.ModuleType("sentry_sdk")
     crons = types.ModuleType("sentry_sdk.crons")
     integrations = types.ModuleType("sentry_sdk.integrations")
@@ -109,11 +114,28 @@ def _stub_sentry(recorder: _Recorder) -> dict[str, types.ModuleType]:
     def capture_exception(error: BaseException) -> None:
         recorder.calls.append(("capture_exception", {"error": error}))
 
-    def flush(**kwargs: object) -> None:
-        recorder.calls.append(("flush", kwargs))
+    def flush(timeout: float | None = None, callback: object = None) -> None:
+        recorder.calls.append(("flush", {"timeout": timeout, "callback": callback}))
 
-    def capture_checkin(**kwargs: object) -> str:
-        recorder.calls.append(("capture_checkin", kwargs))
+    def capture_checkin(
+        monitor_slug: str | None = None,
+        check_in_id: str | None = None,
+        status: str | None = None,
+        duration: float | None = None,
+        monitor_config: dict[str, Any] | None = None,
+    ) -> str:
+        recorder.calls.append(
+            (
+                "capture_checkin",
+                {
+                    "monitor_slug": monitor_slug,
+                    "check_in_id": check_in_id,
+                    "status": status,
+                    "duration": duration,
+                    "monitor_config": monitor_config,
+                },
+            )
+        )
         return "check-in-id"
 
     sentry_sdk.init = init  # type: ignore[attr-defined]
@@ -132,12 +154,19 @@ def _stub_sentry(recorder: _Recorder) -> dict[str, types.ModuleType]:
     }
 
 
-def _stub_catalog(collection_ids: list[str]) -> dict[str, types.ModuleType]:
+def _stub_catalog(recorder: _Recorder, collection_ids: list[str]) -> types.ModuleType:
     dynamical_catalog = types.ModuleType("dynamical_catalog")
-    stac = types.ModuleType("dynamical_catalog._stac")
-    stac.load_catalog = lambda: dict.fromkeys(collection_ids)  # type: ignore[attr-defined]
-    dynamical_catalog._stac = stac  # type: ignore[attr-defined]
-    return {"dynamical_catalog": dynamical_catalog, "dynamical_catalog._stac": stac}
+
+    def clear_cache() -> None:
+        recorder.calls.append(("clear_cache", {}))
+
+    def load_catalog() -> dict[str, None]:
+        recorder.calls.append(("load_catalog", {}))
+        return dict.fromkeys(collection_ids)
+
+    dynamical_catalog.clear_cache = clear_cache  # type: ignore[attr-defined]
+    dynamical_catalog.load_catalog = load_catalog  # type: ignore[attr-defined]
+    return dynamical_catalog
 
 
 @pytest.fixture
@@ -154,7 +183,11 @@ def canary_logger() -> Iterator[logging.Logger]:
     would outlive the test that created it.
     """
     log = logging.getLogger(_LOGGER)
-    saved_handlers, saved_level = list(log.handlers), log.level
+    saved_handlers, saved_level, saved_propagate = (
+        list(log.handlers),
+        log.level,
+        log.propagate,
+    )
     for handler in saved_handlers:
         log.removeHandler(handler)
     yield log
@@ -164,6 +197,7 @@ def canary_logger() -> Iterator[logging.Logger]:
     for handler in saved_handlers:
         log.addHandler(handler)
     log.setLevel(saved_level)
+    log.propagate = saved_propagate
 
 
 @pytest.fixture
@@ -186,10 +220,11 @@ def load_canary(
     def _load(collection_ids: list[str]) -> types.ModuleType:
         monkeypatch.setattr(importlib.metadata, "version", _version)
         monkeypatch.setitem(sys.modules, "modal", _stub_modal())
-        for name, module in (
-            _stub_sentry(recorder) | _stub_catalog(collection_ids)
-        ).items():
+        for name, module in _stub_sentry(recorder).items():
             monkeypatch.setitem(sys.modules, name, module)
+        monkeypatch.setitem(
+            sys.modules, "dynamical_catalog", _stub_catalog(recorder, collection_ids)
+        )
         monkeypatch.delenv("SENTRY_DSN", raising=False)
 
         spec = importlib.util.spec_from_file_location("read_canary_under_test", _SCRIPT)
@@ -222,45 +257,55 @@ def test_success_checks_in_ok_and_flushes_with_budget(
     assert recorder.checkins() == ["in_progress", "ok"]
     # The terminal check-in must get a real flush budget: the sdk default is 2 s,
     # which a slow Sentry edge exhausts before the envelope leaves the queue.
-    assert recorder.flushes() == [{"timeout": canary._FLUSH_TIMEOUT_SECONDS}]
+    assert recorder.flushes() == [
+        {"timeout": canary._FLUSH_TIMEOUT_SECONDS, "callback": None}
+    ]
     assert canary._FLUSH_TIMEOUT_SECONDS == 15
     assert recorder.exceptions() == []
+    # A warm container keeps dynamical_catalog's cache; every run refetches.
+    assert recorder.index_of("clear_cache") < recorder.index_of("load_catalog")
 
     messages = recorder.messages()
     assert messages[0] == (
         "read canary started; dynamical-catalog dynamical-catalog-v, "
         "icechunk icechunk-v, zarr unknown, sentry-sdk sentry-sdk-v"
     )
-    assert messages[1] == "in_progress check-in check-in-id submitted"
-    assert messages[-1].startswith("read canary ok: 8/8 collections read in ")
+    assert messages[1] == "in_progress check-in check-in-id queued"
+    assert messages[2].startswith("read canary ok: 8 collections read in ")
     assert (
-        "(slowest collection-3 1.5s); submitting ok check-in check-in-id"
-        in messages[-1]
+        "(slowest collection-3 1.5s); queueing ok check-in check-in-id" in messages[2]
     )
-    # The summary is evidence for Modal's logs and must be emitted before the
-    # terminal check-in, so a lost or hung flush cannot erase it.
-    assert recorder.index_of_log("read canary ok:") < recorder.index_of_checkin("ok")
+    assert re.fullmatch(
+        r"ok check-in check-in-id flushed in \d+\.\ds \(budget 15s\)", messages[3]
+    )
+    assert len(messages) == 4
+    # Ordering is the point: the start line before Sentry is touched, and the
+    # summary (evidence for Modal's logs) before the terminal check-in, so a
+    # lost or hung flush cannot erase it.
+    assert recorder.index_of_log("read canary started") < recorder.index_of("init")
+    assert recorder.index_of_log("read canary ok:") < recorder.index_of(
+        "capture_checkin", status="ok"
+    )
 
 
-def test_start_line_precedes_sentry_init_and_catalog_import(
+def test_start_line_precedes_sentry_init_and_reader_import(
     load_canary: Callable[[list[str]], types.ModuleType],
     recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     canary = load_canary(_CATALOG)
 
     def broken_init(**_: object) -> None:
         raise RuntimeError("sentry init exploded")
 
-    monkeypatch_init = sys.modules["sentry_sdk"]
-    monkeypatch_init.init = broken_init  # type: ignore[attr-defined]
+    monkeypatch.setattr(sys.modules["sentry_sdk"], "init", broken_init)
     with pytest.raises(RuntimeError, match="sentry init exploded"):
         canary.read_canary()
-    assert recorder.messages() == [recorder.messages()[0]]
-    assert recorder.messages()[0].startswith("read canary started;")
+    assert [m[:20] for m in recorder.messages()] == ["read canary started;"]
 
     # Same guarantee when the reader package itself cannot be imported.
     recorder.calls.clear()
-    del sys.modules["dynamical_catalog._stac"].load_catalog  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "dynamical_catalog", None)
     with pytest.raises(ImportError):
         canary.read_canary()
     assert [m[:20] for m in recorder.messages()] == ["read canary started;"]
@@ -300,10 +345,15 @@ def test_log_lines_reach_stdout_without_root_logging_config(
 
     out = capsys.readouterr().out
     assert out.count("read canary started;") == 2
-    assert out.count("read canary ok: 8/8 collections") == 2
+    assert out.count("read canary ok: 8 collections") == 2
     assert re.match(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ INFO read canary started;", out)
-    stream_handlers = [h for h in canary_logger.handlers if h not in recording_handlers]
-    assert [h.name for h in stream_handlers] == [canary._STDOUT_HANDLER]
+    (stream_handler,) = [
+        h for h in canary_logger.handlers if h not in recording_handlers
+    ]
+    assert stream_handler.name == canary._STDOUT_HANDLER
+    assert stream_handler.formatter is not None
+    assert stream_handler.formatter.converter is time.gmtime  # the Z is earned
+    assert canary_logger.propagate is False  # no double printing via root handlers
 
 
 def test_terminal_checkin_reuses_in_progress_id_and_config(
@@ -341,20 +391,21 @@ def test_read_failure_captures_error_checkin_and_raises(
 
     monkeypatch.setattr(canary, "_check_collection", fake_check)
 
-    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections"):
+    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections") as excinfo:
         canary.read_canary()
 
     assert sorted(checked) == _CATALOG  # one failure does not stop the sweep
     assert recorder.checkins() == ["in_progress", "error"]
-    assert recorder.flushes() == [{"timeout": 15}]
+    assert [f["timeout"] for f in recorder.flushes()] == [15]
     (captured,) = recorder.exceptions()
+    assert captured is excinfo.value  # captured as raised, so it carries a traceback
     assert "collection-5: ValueError('collection-5.var is inf')" in str(captured)
-    failure = recorder.messages()[-1]
+    failure = recorder.messages()[2]
     assert failure.startswith("read canary failed after ")
-    assert "; submitting error check-in check-in-id: " in failure
+    assert "; queueing error check-in check-in-id: " in failure
     assert "collection-5" in failure
-    assert recorder.index_of_log("read canary failed") < recorder.index_of_checkin(
-        "error"
+    assert recorder.index_of_log("read canary failed") < recorder.index_of(
+        "capture_checkin", status="error"
     )
 
 
@@ -369,7 +420,7 @@ def test_catalog_load_failure_closes_checkin_as_error(
         raise ConnectionError("catalog.json unreachable")
 
     monkeypatch.setattr(
-        sys.modules["dynamical_catalog._stac"], "load_catalog", broken_load_catalog
+        sys.modules["dynamical_catalog"], "load_catalog", broken_load_catalog
     )
     monkeypatch.setattr(
         canary, "_check_collection", lambda _cid: pytest.fail("must not read")
@@ -381,7 +432,7 @@ def test_catalog_load_failure_closes_checkin_as_error(
     # Previously this raised straight through the in_progress check-in and
     # Sentry only noticed once max_runtime elapsed.
     assert recorder.checkins() == ["in_progress", "error"]
-    assert recorder.flushes() == [{"timeout": 15}]
+    assert [f["timeout"] for f in recorder.flushes()] == [15]
     (captured,) = recorder.exceptions()
     assert isinstance(captured, ConnectionError)
 
@@ -404,7 +455,7 @@ def test_short_catalog_fails_before_reading(
 
     assert checked == []
     assert recorder.checkins() == ["in_progress", "error"]
-    assert recorder.flushes() == [{"timeout": 15}]
+    assert [f["timeout"] for f in recorder.flushes()] == [15]
     assert len(recorder.exceptions()) == 1
 
 
@@ -425,3 +476,43 @@ def test_catalog_at_exactly_the_floor_is_read(
 
     assert sorted(checked) == floor_catalog
     assert recorder.checkins() == ["in_progress", "ok"]
+
+
+def _dataset(value: float) -> xr.Dataset:
+    return xr.Dataset({"temperature": (("time", "x"), np.array([[value, 3.0]]))})
+
+
+@pytest.mark.parametrize("value", [1.5, math.nan])
+def test_check_collection_reads_corner_value_and_times_it(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+    value: float,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(
+        sys.modules["dynamical_catalog"],
+        "open",
+        lambda _cid: _dataset(value),
+        raising=False,
+    )
+
+    elapsed = canary._check_collection("collection-0")
+
+    assert isinstance(elapsed, float)
+    assert 0 <= elapsed < 5
+
+
+def test_check_collection_rejects_inf(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(
+        sys.modules["dynamical_catalog"],
+        "open",
+        lambda _cid: _dataset(math.inf),
+        raising=False,
+    )
+
+    with pytest.raises(ValueError, match=r"collection-0\.temperature is inf"):
+        canary._check_collection("collection-0")
