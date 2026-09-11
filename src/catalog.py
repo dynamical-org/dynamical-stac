@@ -992,7 +992,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
     ),
     CatalogItem(
         id="ecmwf-ifs-ens-forecast-46-day-1-5-degree",
-        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-1-5-degree/v0.1.0.icechunk/",
+        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-1-5-degree/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="ecmwf-ifs-ens",
         description_summary=(
