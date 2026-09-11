@@ -15,16 +15,16 @@ ECMWF does not provide user support for the free & open datasets. Users should r
 
 ### Data availability
 
-**This dataset is under construction and is published to the staging catalog only.**
+**This dataset is published to the staging catalog only while it is under review.**
 
-The `init_time` axis declares 1153 daily initializations from 2023-06-28, but only the most
-recent 30 — **2026-07-25T00 through 2026-08-23T00 UTC** — hold data. Every earlier
-initialization reads as NaN, and operational updates are currently paused, so the archive does
-not yet extend to the present. The collection's temporal extent and its `time_domain` summary
-describe the declared axis rather than this window; treat the dates above as authoritative.
+The `init_time` axis begins at 2026-01-01 and every initialization holds data. Operational
+updates run daily and append each new initialization once ECDS publishes it, about two days after
+its 00 UTC reference time.
 
-Backfilling the declared history requires re-creating the store, so both the covered window and
-the axis itself will change before this dataset is promoted to production.
+The source model changed between the 2026-05-12 and 2026-05-13 initializations (IFS Cycle 50r1).
+From 2026-05-13 the snow fields are populated over sea ice, where they were previously missing,
+and soil moisture is discontinuous with the initializations before it. See the validation report
+for details before comparing values across that date.
 
 ### Variables
 
@@ -34,11 +34,11 @@ single-level variables are at the dataset root. Temperature, specific humidity, 
 components, vertical velocity and geopotential height are carried on 10 pressure levels
 (1000, 925, 850, 700, 500, 300, 200, 100, 50 and 10 hPa) in the `pressure_level` group.
 
-**The 0 hour lead time carries no surface data.** A 24 hour statistic needs a preceding day, so 27
-of the 29 root variables are entirely NaN at `lead_time=0`; only `pressure_reduced_to_mean_sea_level`
-and `pressure_surface`, which are instantaneous, have values there. Every variable in the
-`pressure_level` group is instantaneous and is present at the 0 hour lead time. Selecting
-`lead_time=slice("24h", None)` is the safe default for surface fields.
+**The 0 hour lead time carries little surface data.** A 24 hour statistic needs a preceding day, so
+31 of the 35 root variables are entirely NaN at `lead_time=0`; only `pressure_reduced_to_mean_sea_level`,
+`pressure_surface`, `wind_u_10m` and `wind_v_10m`, which are instantaneous, have values there. Every
+variable in the `pressure_level` group is instantaneous and is present at the 0 hour lead time.
+Selecting `lead_time=slice("24h", None)` is the safe default for surface fields.
 
 Several variables are masked to the domain they describe, and read as NaN outside it:
 `sea_surface_temperature` and `sea_ice_area_fraction` over land; the soil moisture, soil temperature
@@ -46,15 +46,11 @@ and runoff fields over ocean; and `snow_albedo_surface` and `snow_density_surfac
 no snow. In the `pressure_level` group, `specific_humidity` is not provided above 200 hPa and is
 NaN on the 100, 50 and 10 hPa levels.
 
-Two absences are worth knowing about before you plan around this dataset.
-`precipitation_convective_surface` is the only precipitation rate carried — there is no total
-precipitation — and wind is available only on pressure levels, as `wind_u` and `wind_v`, with no
-10 metre winds. At the surface, `eastward_turbulent_surface_stress` and
-`northward_turbulent_surface_stress` are what describe the momentum flux here.
-
-Neither absence is a limit of the sub-seasonal forecast itself. ECMWF publishes total
-precipitation and the 10 metre winds for it, but on a 6 hourly step rather than the 24 hourly step
-of this dataset, and the grib archive this dataset is built from does not currently retrieve them.
+Not every root variable is a daily mean. `maximum_temperature_2m` and `minimum_temperature_2m` are
+the extremes over the 24 hours ending at each lead time. `wind_u_10m` and `wind_v_10m` are
+instantaneous values at the 00 UTC valid time of each lead, not daily means, so do not compare them
+against the averaged fields as if they were. `precipitation_surface` is the total precipitation rate;
+`precipitation_convective_surface` is its convective component.
 
 ### Ensemble members
 
