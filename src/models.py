@@ -25,17 +25,22 @@ from catalog import (
 NOTEBOOKS_REPO_BASE = "https://github.com/dynamical-org/notebooks/blob/main"
 
 
-def _github_notebook_url(slug: str) -> str:
+def _github_notebook_url(notebook: DatasetNotebook) -> str:
     # Percent-encode the slug. Colab's URL parser decodes a literal ``+`` in the
     # path as a space (query-string rule applied to the path), so e.g.
     # ``noaa-gfs+ecmwf-aifs-hdd.ipynb`` gets fetched as
     # ``noaa-gfs ecmwf-aifs-hdd.ipynb`` and 404s. ``%2B`` sidesteps it on both
     # github.com and colab.
-    return f"{NOTEBOOKS_REPO_BASE}/{quote(slug, safe='')}.ipynb"
+    base = (
+        "https://github.com/dynamical-org/dynamical-stac/blob/main/notebooks"
+        if notebook.in_repo
+        else NOTEBOOKS_REPO_BASE
+    )
+    return f"{base}/{quote(notebook.slug, safe='')}.ipynb"
 
 
-def _colab_notebook_url(slug: str) -> str:
-    return _github_notebook_url(slug).replace(
+def _colab_notebook_url(notebook: DatasetNotebook) -> str:
+    return _github_notebook_url(notebook).replace(
         "https://github.com/", "https://colab.research.google.com/github/"
     )
 
@@ -111,7 +116,9 @@ def _container_credentials_field(prefix: str) -> dict[str, object]:
     return {"type": _CONTAINER_CREDENTIALS_TYPE[scheme], "anonymous": True}
 
 
-def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> str:
+def _pystac_preamble(
+    collection_id: str, virtual_prefixes: tuple[str, ...], catalog_url: str
+) -> str:
     """Imports + STAC lookup + icechunk session for the pystac open variant.
 
     Virtual datasets additionally authorize anonymous reads of their source
@@ -124,7 +131,7 @@ def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> s
         "import pystac",
         "import xarray as xr",
         "",
-        f'catalog = pystac.Catalog.from_file("{STAC_CATALOG_URL}")',
+        f'catalog = pystac.Catalog.from_file("{catalog_url}")',
         f'collection = catalog.get_child("{collection_id}")',
         'asset = collection.assets["icechunk-https"]',
         "",
@@ -150,7 +157,10 @@ def _pystac_preamble(collection_id: str, virtual_prefixes: tuple[str, ...]) -> s
 
 
 def _pystac_variant_code(
-    catalog_code: str, collection_id: str, virtual_prefixes: tuple[str, ...]
+    catalog_code: str,
+    collection_id: str,
+    virtual_prefixes: tuple[str, ...],
+    catalog_url: str = STAC_CATALOG_URL,
 ) -> str:
     """Derive the pystac + icechunk-HTTPS snippet from the dynamical-catalog one.
 
@@ -185,7 +195,7 @@ def _pystac_variant_code(
     # directly under our own preamble.
     while body and not body[0].strip():
         body.pop(0)
-    preamble = _pystac_preamble(collection_id, virtual_prefixes)
+    preamble = _pystac_preamble(collection_id, virtual_prefixes, catalog_url)
     return f"{preamble}\n\n" + "\n".join(body)
 
 
@@ -616,6 +626,7 @@ class CollectionInput(BaseModel):
     description_summary: str = Field(min_length=1)
     description_details: str = Field(min_length=1)
     description_model: str = Field(min_length=1)
+    catalog_url: str = STAC_CATALOG_URL
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
     # May be empty: staging-only datasets can be published before their
     # notebook exists, and test fixtures never get one, in which case the
@@ -730,6 +741,13 @@ class CollectionInput(BaseModel):
             description_summary=item.description_summary,
             description_details=item.description_details(chunking_table),
             description_model=model.description,
+            catalog_url=(
+                "https://stac-test.dynamical.org/catalog.json"
+                if item.test
+                else "https://stac-staging.dynamical.org/catalog.json"
+                if item.staging
+                else STAC_CATALOG_URL
+            ),
             examples=item.examples,
             notebooks=item.notebooks,
         )
@@ -783,7 +801,10 @@ class CollectionInput(BaseModel):
                     {
                         "label": _PYSTAC_VARIANT_LABEL,
                         "code": _pystac_variant_code(
-                            ex.code, self.id, self.virtual_chunk_container_prefixes
+                            ex.code,
+                            self.id,
+                            self.virtual_chunk_container_prefixes,
+                            self.catalog_url,
                         ),
                         "language": ex.language,
                     },
@@ -905,7 +926,7 @@ class CollectionInput(BaseModel):
             collection.add_link(
                 pystac.Link(
                     rel="example",
-                    target=_github_notebook_url(notebook.slug),
+                    target=_github_notebook_url(notebook),
                     media_type="application/x-ipynb+json",
                     title=f"{notebook.title} (GitHub)",
                 )
@@ -913,7 +934,7 @@ class CollectionInput(BaseModel):
             collection.add_link(
                 pystac.Link(
                     rel="example",
-                    target=_colab_notebook_url(notebook.slug),
+                    target=_colab_notebook_url(notebook),
                     media_type="text/html",
                     title=f"{notebook.title} (Colab)",
                 )

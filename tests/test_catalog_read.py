@@ -6,21 +6,40 @@ declare none at all, and those simply drop out of the parametrization.
 
 from __future__ import annotations
 
+import json
 import math
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
 
 from catalog import _COLLECTION_IDS, CATALOG_ITEMS
 
-# Every notebook declared by any item — staging items included. Items with no
+# Every external notebook declared by any item — staging items included. Items with no
 # notebooks (only possible while staging, see
 # `CatalogItem._production_items_have_notebooks`) contribute nothing here, so
-# this covers exactly the notebook URLs the catalog actually publishes.
+# this covers the external notebook URLs the catalog actually publishes.
 _NOTEBOOK_SLUGS = sorted(
-    {notebook.slug for item in CATALOG_ITEMS for notebook in item.notebooks}
+    {
+        notebook.slug
+        for item in CATALOG_ITEMS
+        for notebook in item.notebooks
+        if not notebook.in_repo
+    }
 )
+
+
+@pytest.mark.parametrize(
+    "notebook_slug",
+    sorted({n.slug for item in CATALOG_ITEMS for n in item.notebooks if n.in_repo}),
+)
+def test_in_repo_notebook_exists(notebook_slug: str) -> None:
+    path = Path(__file__).resolve().parents[1] / "notebooks" / f"{notebook_slug}.ipynb"
+    notebook = json.loads(path.read_text())
+    assert notebook["nbformat"] == 4
+    assert notebook["cells"]
+    assert notebook["metadata"]["kernelspec"]["language"] == "python"
 
 
 def _point_value(ds: object, name: str) -> object:

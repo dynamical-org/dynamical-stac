@@ -36,6 +36,14 @@ Adding a new dataset typically requires all of:
   items must declare at least one notebook (enforced by
   `CatalogItem._production_items_have_notebooks`); only staging items may
   leave `notebooks` empty.
+- Alternatively, set `DatasetNotebook.in_repo=True` and add
+  `notebooks/{slug}.ipynb` here. GitHub and Colab links then point to this
+  repository's `main` branch; tests validate the checked-in notebook instead
+  of requiring its URL to exist before merge. Use a Python 3 kernel and keep
+  quickstarts to opening the dataset and querying it. Staging notebooks set
+  `DYNAMICAL_STAC_CATALOG_URL=https://stac-staging.dynamical.org/catalog.json`
+  before opening a dataset. Install `dynamical-catalog` and `matplotlib` to run
+  the plotting examples locally.
 - Regenerated `stac/` output (see above).
 
 ## Staging datasets
@@ -50,7 +58,7 @@ to `False` and merge to release the dataset to production.
 A staging dataset still needs its prose file, but its notebook is optional: a
 staging item may omit `notebooks` entirely (its collection then carries no
 `example` links) until the notebook is written. Any notebook it *does* declare
-is still HEADed for a 200 by `test_notebook_url_exists`, and flipping
+is checked locally or HEADed for a 200 by `test_notebook_url_exists`, and flipping
 `staging=False` fails validation until at least one notebook is present.
 Because staging items aren't in the committed `stac/`, regenerating locally
 with `./scripts/generate` won't show them — use

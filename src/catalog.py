@@ -123,7 +123,7 @@ _QUICKSTART_TITLE = "Quickstart"
 
 
 class DatasetNotebook(BaseModel):
-    """A Jupyter notebook hosted under dynamical-org/notebooks.
+    """A Jupyter notebook hosted on GitHub.
 
     ``slug`` is the notebook filename (without the ``.ipynb`` suffix), used to
     build the GitHub and Colab URLs. ``title`` is the human label shown next
@@ -134,6 +134,7 @@ class DatasetNotebook(BaseModel):
 
     slug: str = Field(min_length=1, pattern=r"^[A-Za-z0-9._+\-]+$")
     title: str = Field(min_length=1)
+    in_repo: bool = False
 
 
 def _example(
@@ -346,6 +347,16 @@ MODELS: dict[str, Model] = {
             "monthly gauge analyses to produce a global, gridded, half-hourly precipitation "
             "record. IMERG intercalibrates, merges, and interpolates these inputs onto a 0.1 degree grid "
             "spanning the TRMM and GPM satellite eras."
+        ),
+    ),
+    "ucsb-chc-chirps": Model(
+        id="ucsb-chc-chirps",
+        name="UCSB CHC CHIRPS",
+        description=(
+            "The Climate Hazards Center Infrared Precipitation with Stations "
+            "(CHIRPS) version 3 combines satellite estimates and station observations "
+            "into a precipitation record over land from 60 degrees south to "
+            "60 degrees north, on a 0.05 degree grid."
         ),
     ),
     "eccc-hrdps": Model(
@@ -1169,6 +1180,64 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_quickstart_notebook("nasa-imerg-analysis-late"),),
+    ),
+    CatalogItem(
+        id="ucsb-chc-chirps-analysis-final",
+        icechunk_href="s3://dynamical-ucsb-chc-chirps/ucsb-chc-chirps-analysis-final/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="ucsb-chc-chirps",
+        description_summary=(
+            "Daily CHIRPS version 3 precipitation over land from 60 degrees south "
+            "to 60 degrees north, at 0.05 degree resolution, from 1981 onward. "
+            "This is the final product, using the reanalysis-based daily distribution (final/rnl)."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ucsb_chc/chirps/template_config.py",
+        examples=(
+            _example(
+                "Precipitation at a place and time",
+                "import os\n"
+                'os.environ["DYNAMICAL_STAC_CATALOG_URL"] = "https://stac-staging.dynamical.org/catalog.json"\n\n'
+                'ds = dynamical_catalog.open("ucsb-chc-chirps-analysis-final", chunks=None)\n'
+                'ds["precipitation_surface"].sel(time="2025-01-01", latitude=-3, longitude=-60, method="nearest")',
+                min_version="1.0.0",
+            ),
+        ),
+        notebooks=(
+            DatasetNotebook(
+                slug="ucsb-chc-chirps-analysis-final", title="Quickstart", in_repo=True
+            ),
+        ),
+        staging=True,
+    ),
+    CatalogItem(
+        id="ucsb-chc-chirps-analysis-preliminary",
+        icechunk_href="s3://dynamical-ucsb-chc-chirps/ucsb-chc-chirps-analysis-preliminary/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="ucsb-chc-chirps",
+        description_summary=(
+            "Daily CHIRPS version 3 precipitation over land from 60 degrees south "
+            "to 60 degrees north, at 0.05 degree resolution, from 2025 onward. "
+            "This is the preliminary product, using the satellite-based daily distribution (prelim/sat)."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ucsb_chc/chirps/template_config.py",
+        examples=(
+            _example(
+                "Precipitation at a place and time",
+                "import os\n"
+                'os.environ["DYNAMICAL_STAC_CATALOG_URL"] = "https://stac-staging.dynamical.org/catalog.json"\n\n'
+                'ds = dynamical_catalog.open("ucsb-chc-chirps-analysis-preliminary", chunks=None)\n'
+                'ds["precipitation_surface"].sel(time="2025-01-01", latitude=-3, longitude=-60, method="nearest")',
+                min_version="1.0.0",
+            ),
+        ),
+        notebooks=(
+            DatasetNotebook(
+                slug="ucsb-chc-chirps-analysis-preliminary",
+                title="Quickstart",
+                in_repo=True,
+            ),
+        ),
+        staging=True,
     ),
     CatalogItem(
         id="eccc-hrdps-forecast",
