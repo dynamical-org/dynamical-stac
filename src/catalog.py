@@ -915,9 +915,9 @@ CATALOG_ITEMS: list[CatalogItem] = [
     ),
     CatalogItem(
         id="ecmwf-aifs-single-forecast-virtual",
-        icechunk_href="s3://dynamical-ecmwf-aifs-single/ecmwf-aifs-single-forecast-virtual/v0.1.0.icechunk/",
+        icechunk_href="s3://dynamical-ecmwf-aifs-single/ecmwf-aifs-single-forecast-virtual/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
-        virtual_chunk_container_prefixes=("s3://ecmwf-forecasts/",),
+        virtual_chunk_container_prefixes=("gs://ecmwf-open-data/",),
         model_id="ecmwf-aifs-single",
         description_summary=(
             "This dataset is an archive of past and present ECMWF AIFS Single "
@@ -931,7 +931,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "publishes for AIFS Single. Surface and single-level variables are "
             "at the dataset root; variables carried on pressure levels are in "
             "the `pressure_level` group.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_single/forecast_virtual/template_config.py",
@@ -944,6 +944,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "# Variables with a vertical dimension live in the pressure_level group\n"
                 'ds_pressure = dynamical_catalog.open("ecmwf-aifs-single-forecast-virtual", group="pressure_level", chunks=None)\n'
                 'ds_pressure["geopotential_height"].sel(pressure_level=500)',
+                min_version="1.0.0",  # gs:// virtual chunk container
             ),
         ),
         notebooks=(_quickstart_notebook("ecmwf-aifs-single-forecast-virtual"),),
