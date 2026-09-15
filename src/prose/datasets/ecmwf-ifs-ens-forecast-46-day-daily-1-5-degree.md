@@ -15,8 +15,6 @@ ECMWF does not provide user support for the free & open datasets. Users should r
 
 ### Data availability
 
-**This dataset is published to the staging catalog only while it is under review.**
-
 The `init_time` axis begins at 2026-01-01 and every initialization holds data. Operational
 updates run daily and append each new initialization once ECDS publishes it, about two days after
 its 00 UTC reference time.

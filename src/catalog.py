@@ -1036,10 +1036,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_pressure["geopotential_height"].sel(init_time="2026-08-01T00", lead_time="10d", pressure_level=500).std("ensemble_member")',
             ),
         ),
-        # No notebook yet: dynamical-org/notebooks#52 adds the quickstart. Staging
-        # items may omit it; re-add before flipping staging=False, which requires it.
+        notebooks=(
+            _quickstart_notebook("ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree"),
+        ),
         additional_terms=ECMWF_TERMS,
-        staging=True,
     ),
     CatalogItem(
         id="google-weathernext2-forecast-historical-virtual",
