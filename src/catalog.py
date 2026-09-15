@@ -991,8 +991,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
-        id="ecmwf-ifs-ens-forecast-46-day-1-5-degree",
-        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-1-5-degree/v0.2.0.icechunk/",
+        id="ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree",
+        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="ecmwf-ifs-ens",
         description_summary=(
@@ -1018,12 +1018,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Maximum ensemble temperature",
-                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-1-5-degree", chunks=None)\n'
+                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree", chunks=None)\n'
                 'ds["average_temperature_2m"].sel(init_time="2026-08-01T00", latitude=0, longitude=0).max()',
             ),
             _example(
                 "Ensemble spread of the large scale flow",
-                'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-1-5-degree", group="pressure_level", chunks=None)\n'
+                'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree", group="pressure_level", chunks=None)\n'
                 'ds_pressure["geopotential_height"].sel(init_time="2026-08-01T00", lead_time="10d", pressure_level=500).std("ensemble_member")',
             ),
         ),
