@@ -348,6 +348,15 @@ MODELS: dict[str, Model] = {
             "spanning the TRMM and GPM satellite eras."
         ),
     ),
+    "ucsb-chc-chirps": Model(
+        id="ucsb-chc-chirps",
+        name="UCSB CHC CHIRPS",
+        description=(
+            "The Climate Hazards Center Infrared Precipitation with Stations "
+            "(CHIRPS) version 3 combines satellite estimates and station observations "
+            "into a precipitation record over land."
+        ),
+    ),
     "eccc-hrdps": Model(
         id="eccc-hrdps",
         name="ECCC HRDPS",
@@ -1169,6 +1178,54 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_quickstart_notebook("nasa-imerg-analysis-late"),),
+    ),
+    CatalogItem(
+        id="ucsb-chc-chirps-analysis-final",
+        icechunk_href="s3://dynamical-ucsb-chc-chirps/ucsb-chc-chirps-analysis-final/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="ucsb-chc-chirps",
+        description_summary=(
+            "Daily CHIRPS version 3 precipitation over land from 60 degrees south "
+            "to 60 degrees north, at 0.05 degree resolution, from 1981 onward. "
+            "This is the final product, using the reanalysis-based daily distribution (final/rnl)."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ucsb_chc/chirps/template_config.py",
+        examples=(
+            _example(
+                "Precipitation at a place and time",
+                "import os\n"
+                'os.environ["DYNAMICAL_STAC_CATALOG_URL"] = "https://stac-staging.dynamical.org/catalog.json"\n\n'
+                'ds = dynamical_catalog.open("ucsb-chc-chirps-analysis-final", chunks=None)\n'
+                'ds["precipitation_surface"].sel(time="2025-01-01", latitude=-3, longitude=-60, method="nearest")',
+                min_version="1.0.0",
+            ),
+        ),
+        notebooks=(_quickstart_notebook("ucsb-chc-chirps-analysis-final"),),
+        staging=True,
+    ),
+    CatalogItem(
+        id="ucsb-chc-chirps-analysis-preliminary",
+        icechunk_href="s3://dynamical-ucsb-chc-chirps/ucsb-chc-chirps-analysis-preliminary/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="ucsb-chc-chirps",
+        description_summary=(
+            "Daily CHIRPS version 3 precipitation over land from 60 degrees south "
+            "to 60 degrees north, at 0.05 degree resolution, from 2025 onward. "
+            "This is the preliminary product, using the satellite-based daily distribution (prelim/sat)."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ucsb_chc/chirps/template_config.py",
+        examples=(
+            _example(
+                "Precipitation at a place and time",
+                "import os\n"
+                'os.environ["DYNAMICAL_STAC_CATALOG_URL"] = "https://stac-staging.dynamical.org/catalog.json"\n\n'
+                'ds = dynamical_catalog.open("ucsb-chc-chirps-analysis-preliminary", chunks=None)\n'
+                'ds["precipitation_surface"].sel(time="2025-01-01", latitude=-3, longitude=-60, method="nearest")',
+                min_version="1.0.0",
+            ),
+        ),
+        notebooks=(_quickstart_notebook("ucsb-chc-chirps-analysis-preliminary"),),
+        staging=True,
     ),
     CatalogItem(
         id="eccc-hrdps-forecast",

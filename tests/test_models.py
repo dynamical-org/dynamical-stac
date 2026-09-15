@@ -518,3 +518,12 @@ def test_example_import_comment_carries_per_dataset_reader_floor() -> None:
         assert example.code.startswith(
             "import dynamical_catalog  # dynamical-catalog>=0.8.0\n"
         ), example.code
+
+
+def test_pystac_example_uses_collection_catalog_url() -> None:
+    url = "https://stac-staging.dynamical.org/catalog.json"
+    collection = _valid_input(catalog_url=url).to_pystac_collection()
+    variants = collection.extra_fields["examples"][0]["variants"]
+    code = next(v["code"] for v in variants if v["label"] == "pystac + icechunk")
+    assert f'catalog = pystac.Catalog.from_file("{url}")' in code
+    assert "https://stac.dynamical.org/catalog.json" not in code
