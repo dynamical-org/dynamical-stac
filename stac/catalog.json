@@ -90,6 +90,12 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 46 day, daily, 1.5 degree"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json",
       "type": "application/json",
       "title": "DWD ICON-EU forecast, 5 day"
