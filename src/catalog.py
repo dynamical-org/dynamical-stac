@@ -354,8 +354,7 @@ MODELS: dict[str, Model] = {
         description=(
             "The Climate Hazards Center Infrared Precipitation with Stations "
             "(CHIRPS) version 3 combines satellite estimates and station observations "
-            "into a precipitation record over land from 60 degrees south to "
-            "60 degrees north, on a 0.05 degree grid."
+            "into a precipitation record over land."
         ),
     ),
     "eccc-hrdps": Model(

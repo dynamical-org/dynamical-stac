@@ -1,16 +1,10 @@
 ### Product
 
-This archive contains the CHIRPS v3 **preliminary** daily product from January 1, 2025 onward. The source's `prelim/sat` variant uses NASA IMERG satellite estimates to distribute pentad precipitation totals across days. See the [CHIRPS v3 documentation](https://www.chc.ucsb.edu/data/chirps3) for the methodology.
-
-The companion [UCSB CHC CHIRPS analysis, final](/catalog/ucsb-chc-chirps-analysis-final/) provides the other product. Final and preliminary differ in both their station inputs and their daily distribution method.
-
-### Precipitation
-
-`precipitation_surface` is the average rate over the 24 hours starting at `time`, in kg m-2 s-1 (equivalent to mm/s). Multiply by 86,400 to obtain the daily total in mm. Ocean cells are NaN.
+Preliminary is released about two days after each five-day period ends. It uses rain-gauge reports available soon after observation, with fewer quality checks than final. NASA IMERG satellite rainfall is used to split five-day CHIRPS totals into daily amounts; final uses ERA5 rainfall instead.
 
 ### Source
 
-Source files are provided by the [UCSB Climate Hazards Center daily archive](https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/prelim/sat/).
+The [CHIRPS v3 documentation](https://www.chc.ucsb.edu/data/chirps3) describes the products and release schedule. Source files are provided by the [UCSB Climate Hazards Center daily archive](https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/prelim/sat/).
 
 ### Storage
 
