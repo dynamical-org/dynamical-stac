@@ -123,7 +123,7 @@ _QUICKSTART_TITLE = "Quickstart"
 
 
 class DatasetNotebook(BaseModel):
-    """A Jupyter notebook hosted on GitHub.
+    """A Jupyter notebook hosted under dynamical-org/notebooks.
 
     ``slug`` is the notebook filename (without the ``.ipynb`` suffix), used to
     build the GitHub and Colab URLs. ``title`` is the human label shown next
@@ -134,7 +134,6 @@ class DatasetNotebook(BaseModel):
 
     slug: str = Field(min_length=1, pattern=r"^[A-Za-z0-9._+\-]+$")
     title: str = Field(min_length=1)
-    in_repo: bool = False
 
 
 def _example(
@@ -1202,11 +1201,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",
             ),
         ),
-        notebooks=(
-            DatasetNotebook(
-                slug="ucsb-chc-chirps-analysis-final", title="Quickstart", in_repo=True
-            ),
-        ),
+        notebooks=(_quickstart_notebook("ucsb-chc-chirps-analysis-final"),),
         staging=True,
     ),
     CatalogItem(
@@ -1230,13 +1225,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",
             ),
         ),
-        notebooks=(
-            DatasetNotebook(
-                slug="ucsb-chc-chirps-analysis-preliminary",
-                title="Quickstart",
-                in_repo=True,
-            ),
-        ),
+        notebooks=(_quickstart_notebook("ucsb-chc-chirps-analysis-preliminary"),),
         staging=True,
     ),
     CatalogItem(

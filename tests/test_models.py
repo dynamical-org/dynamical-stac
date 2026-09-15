@@ -91,18 +91,6 @@ def test_notebook_links_pair_github_and_colab_per_notebook() -> None:
     ]
 
 
-def test_in_repo_notebook_links() -> None:
-    collection = _valid_input(
-        notebooks=(
-            DatasetNotebook(slug="alpha+beta", title="Quickstart", in_repo=True),
-        ),
-    ).to_pystac_collection()
-    assert [link.target for link in collection.links if link.rel == "example"] == [
-        "https://github.com/dynamical-org/dynamical-stac/blob/main/notebooks/alpha%2Bbeta.ipynb",
-        "https://colab.research.google.com/github/dynamical-org/dynamical-stac/blob/main/notebooks/alpha%2Bbeta.ipynb",
-    ]
-
-
 def test_about_url_and_icechunk_href() -> None:
     c = _valid_input(id="ds", icechunk_href="s3://b/p/")
     assert c.about_url == "https://dynamical.org/catalog/ds/"

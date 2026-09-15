@@ -25,22 +25,17 @@ from catalog import (
 NOTEBOOKS_REPO_BASE = "https://github.com/dynamical-org/notebooks/blob/main"
 
 
-def _github_notebook_url(notebook: DatasetNotebook) -> str:
+def _github_notebook_url(slug: str) -> str:
     # Percent-encode the slug. Colab's URL parser decodes a literal ``+`` in the
     # path as a space (query-string rule applied to the path), so e.g.
     # ``noaa-gfs+ecmwf-aifs-hdd.ipynb`` gets fetched as
     # ``noaa-gfs ecmwf-aifs-hdd.ipynb`` and 404s. ``%2B`` sidesteps it on both
     # github.com and colab.
-    base = (
-        "https://github.com/dynamical-org/dynamical-stac/blob/main/notebooks"
-        if notebook.in_repo
-        else NOTEBOOKS_REPO_BASE
-    )
-    return f"{base}/{quote(notebook.slug, safe='')}.ipynb"
+    return f"{NOTEBOOKS_REPO_BASE}/{quote(slug, safe='')}.ipynb"
 
 
-def _colab_notebook_url(notebook: DatasetNotebook) -> str:
-    return _github_notebook_url(notebook).replace(
+def _colab_notebook_url(slug: str) -> str:
+    return _github_notebook_url(slug).replace(
         "https://github.com/", "https://colab.research.google.com/github/"
     )
 
@@ -926,7 +921,7 @@ class CollectionInput(BaseModel):
             collection.add_link(
                 pystac.Link(
                     rel="example",
-                    target=_github_notebook_url(notebook),
+                    target=_github_notebook_url(notebook.slug),
                     media_type="application/x-ipynb+json",
                     title=f"{notebook.title} (GitHub)",
                 )
@@ -934,7 +929,7 @@ class CollectionInput(BaseModel):
             collection.add_link(
                 pystac.Link(
                     rel="example",
-                    target=_colab_notebook_url(notebook),
+                    target=_colab_notebook_url(notebook.slug),
                     media_type="text/html",
                     title=f"{notebook.title} (Colab)",
                 )
