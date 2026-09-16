@@ -1098,8 +1098,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "carried on pressure levels are in the `pressure_level` group.\n\n"
             "Each forecast step is published once its valid time is at least "
             "one hour in the past, so recent initializations are partially "
-            "filled: lead times whose valid time has not yet passed read as "
-            "NaN until the next update."
+            "filled: steps that were not yet eligible at the most recent "
+            "update read as NaN until a later update publishes them."
         ),
         reformatter_url=(
             f"{REFORMATTERS_ROOT}/google/weathernext2/"
@@ -1109,7 +1109,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _example(
                 "Day-10 ensemble wind scenarios",
                 'ds = dynamical_catalog.open("google-weathernext2-forecast-operational-virtual", chunks=None)\n'
-                '# The newest initialization whose day-10 step has already verified.\n'
+                "# Choose an initialization whose day-10 step is eligible.\n"
                 'init_time = ds.init_time[-1] - ds.lead_time.sel(lead_time="240h")\n'
                 'day10 = ds.sel(init_time=init_time, lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
                 '(day10["wind_u_100m"] ** 2 + day10["wind_v_100m"] ** 2) ** 0.5',
