@@ -604,6 +604,11 @@ _GFS_AIFS_HDD_NOTEBOOK = DatasetNotebook(
     title="Heating degree days: GFS vs AIFS",
 )
 
+_CHIRPS_PRELIMINARY_FINAL_NOTEBOOK = DatasetNotebook(
+    slug="ucsb-chc-chirps-analysis",
+    title="CHIRPS preliminary and final",
+)
+
 
 def _quickstart_notebook(slug: str) -> DatasetNotebook:
     """Build the default per-dataset ``{id}.ipynb`` notebook.
@@ -1200,7 +1205,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",
             ),
         ),
-        notebooks=(_quickstart_notebook("ucsb-chc-chirps-analysis-final"),),
+        notebooks=(_CHIRPS_PRELIMINARY_FINAL_NOTEBOOK,),
         staging=True,
     ),
     CatalogItem(
@@ -1224,7 +1229,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",
             ),
         ),
-        notebooks=(_quickstart_notebook("ucsb-chc-chirps-analysis-preliminary"),),
+        notebooks=(_CHIRPS_PRELIMINARY_FINAL_NOTEBOOK,),
         staging=True,
     ),
     CatalogItem(
