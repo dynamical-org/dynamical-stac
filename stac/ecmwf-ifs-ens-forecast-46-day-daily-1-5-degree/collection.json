@@ -76,27 +76,12 @@
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\", chunks=None)\nds[\"average_temperature_2m\"].sel(init_time=\"2026-08-01T00\", latitude=0, longitude=0).max()",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\", chunks=None)\nds[\"average_temperature_2m\"].sel(init_time=\"2026-08-01T00\", latitude=0, longitude=0).max()\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = dynamical_catalog.open(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\", group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-08-01T00\", lead_time=\"10d\", pressure_level=500).std(\"ensemble_member\")",
           "language": "python"
         },
         {
           "label": "pystac + icechunk",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"average_temperature_2m\"].sel(init_time=\"2026-08-01T00\", latitude=0, longitude=0).max()",
-          "language": "python"
-        }
-      ]
-    },
-    {
-      "title": "Ensemble spread of the large scale flow",
-      "variants": [
-        {
-          "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds_pressure = dynamical_catalog.open(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\", group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-08-01T00\", lead_time=\"10d\", pressure_level=500).std(\"ensemble_member\")",
-          "language": "python"
-        },
-        {
-          "label": "pystac + icechunk",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-08-01T00\", lead_time=\"10d\", pressure_level=500).std(\"ensemble_member\")",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"average_temperature_2m\"].sel(init_time=\"2026-08-01T00\", latitude=0, longitude=0).max()\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-08-01T00\", lead_time=\"10d\", pressure_level=500).std(\"ensemble_member\")",
           "language": "python"
         }
       ]
