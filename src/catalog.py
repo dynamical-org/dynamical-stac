@@ -1029,10 +1029,9 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _example(
                 "Maximum ensemble temperature",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree", chunks=None)\n'
-                'ds["average_temperature_2m"].sel(init_time="2026-08-01T00", latitude=0, longitude=0).max()',
-            ),
-            _example(
-                "Ensemble spread of the large scale flow",
+                'ds["average_temperature_2m"].sel(init_time="2026-08-01T00", latitude=0, longitude=0).max()\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
                 'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree", group="pressure_level", chunks=None)\n'
                 'ds_pressure["geopotential_height"].sel(init_time="2026-08-01T00", lead_time="10d", pressure_level=500).std("ensemble_member")',
             ),
