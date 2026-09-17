@@ -1047,6 +1047,41 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
+        id="ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree",
+        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="ecmwf-ifs-ens",
+        description_summary=(
+            "This dataset is an archive of ECMWF IFS ENS sub-seasonal-range "
+            "forecasts. Forecasts are identified by an initialization time "
+            "(`init_time`) denoting the start time of the model run, as well "
+            "as by the `ensemble_member`. Each forecast steps forward along "
+            "the `lead_time` dimension from 0 to 1104 hours (0 to 46 days) at "
+            "a 6 hourly step, and carries 101 ensemble members on a global "
+            "1.5 degree grid. This dataset contains the 00 UTC initialization "
+            "times only.\n\n"
+            "This is the 6 hourly companion to the daily 46 day dataset. It "
+            "carries five surface variables: the 10 metre wind components, "
+            "and the precipitation rate and maximum and minimum 2 metre "
+            "temperature over the previous 6 hours.\n\n"
+            "Note: ECMWF's licence holds sub-seasonal-range forecasts back for "
+            "48 hours, so this is not a real-time dataset — each "
+            "initialization becomes available about two days after its "
+            "`init_time`."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_46_day_6_hourly_1_5_degree/template_config.py",
+        examples=(
+            _example(
+                "Maximum ensemble temperature",
+                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree", chunks=None)\n'
+                'ds["maximum_temperature_2m"].sel(init_time="2026-08-01T00", latitude=0, longitude=0).max()',
+            ),
+        ),
+        # Staging items may omit notebooks; add the Quickstart before release.
+        staging=True,
+        additional_terms=ECMWF_TERMS,
+    ),
+    CatalogItem(
         id="google-weathernext2-forecast-historical-virtual",
         icechunk_href=(
             "https://google-weathernext2.r2.dynamical.org/"
