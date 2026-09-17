@@ -609,10 +609,10 @@ _CHIRPS_PRELIMINARY_FINAL_NOTEBOOK = DatasetNotebook(
     title="CHIRPS preliminary and final",
 )
 
-# The 46 day daily Quickstart also covers the 6 hourly dataset.
+# One notebook covers the 46 day daily and 6 hourly datasets.
 _ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
-    slug="ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree",
-    title="ECMWF IFS ENS 46 day daily and 6 hourly",
+    slug="ecmwf-ifs-ens-forecast-46-day-1-5-degree",
+    title="ECMWF IFS ENS 46 day, daily and 6 hourly",
 )
 
 
@@ -1050,9 +1050,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_pressure["geopotential_height"].sel(init_time="2026-08-01T00", lead_time="10d", pressure_level=500).std("ensemble_member")',
             ),
         ),
-        notebooks=(
-            _quickstart_notebook("ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree"),
-        ),
+        notebooks=(_ECMWF_IFS_ENS_46_DAY_NOTEBOOK,),
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
