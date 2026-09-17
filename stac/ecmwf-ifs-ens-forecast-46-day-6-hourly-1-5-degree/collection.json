@@ -1,0 +1,406 @@
+{
+  "type": "Collection",
+  "id": "ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree",
+  "stac_version": "1.1.0",
+  "description": "Sub-seasonal-range ensemble weather forecasts from the ECMWF Integrated Forecasting System (IFS).",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "license",
+      "href": "https://apps.ecmwf.int/datasets/licences/general/",
+      "type": "text/html",
+      "title": "ECMWF Terms of Use (additional terms)"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-46-day-1-5-degree.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "ECMWF IFS ENS 46 day, daily and 6 hourly (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-46-day-1-5-degree.ipynb",
+      "type": "text/html",
+      "title": "ECMWF IFS ENS 46 day, daily and 6 hourly (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.dynamical.org/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 46 day, 6 hourly, 1.5 degree"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "ECMWF IFS ENS sub-seasonal-range forecast data processed by dynamical.org from the ECMWF Data Store.",
+  "version": "0.1.0",
+  "model_id": "ecmwf-ifs-ens",
+  "model_name": "ECMWF IFS ENS",
+  "description_summary": "This dataset is an archive of ECMWF IFS ENS sub-seasonal-range forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, as well as by the `ensemble_member`. Each forecast steps forward along the `lead_time` dimension from 0 to 1104 hours (0 to 46 days) at a 6 hourly step, and carries 101 ensemble members on a global 1.5 degree grid. This dataset contains the 00 UTC initialization times only.\n\nThis is the 6 hourly companion to the daily 46 day dataset. It carries five surface variables: the 10 metre wind components, and the precipitation rate and maximum and minimum 2 metre temperature over the previous 6 hours.\n\nNote: ECMWF's licence holds sub-seasonal-range forecasts back for 48 hours, so this is not a real-time dataset \u2014 each initialization becomes available about two days after its `init_time`.",
+  "description_details": "### Source\n\nThis archive is built from the ECMWF sub-seasonal-range (S2S) forecast, retrieved from the\n[ECMWF Data Store (ECDS)](https://ecds.ecmwf.int/) into the\n[dynamical.org ECMWF IFS grib archive](https://source.coop/dynamical/ecmwf-ifs-grib)\non [Source Cooperative](https://source.coop/).\n\nECMWF does not provide user support for the free & open datasets. Users should refer to the public\n[User Forum](https://forum.ecmwf.int/) for any questions related to the source material.\n\n### Model updates\n\nIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks & shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk | shard |\n|---|---|---|\n| init_time | 1 (1 day) | 1 (1 day) |\n| lead_time | 93 (558 hours) | 186 (1110 hours) |\n| ensemble_member | 51 | 102 |\n| latitude | 32 (48\u00b0) | 128 (181.5\u00b0) |\n| longitude | 30 (45\u00b0) | 120 (180\u00b0) |\n| **uncompressed** | 17.4 MiB | 1.1 GiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/ifs_ens/forecast_46_day_6_hourly_1_5_degree/template_config.py).",
+  "description_model": "The Integrated Forecasting System (IFS) is a global forecast model developed by ECMWF. ENS is an ensemble configuration of IFS, containing 51 ensemble members. IFS consists of a numerical model of the Earth system, which includes an atmospheric model at its heart, coupled with models of other Earth system components such as the ocean. The data assimilation system combines the latest weather observations with a recent forecast to obtain the best possible estimate of the current state of the Earth system.",
+  "examples": [
+    {
+      "title": "Maximum ensemble temperature",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree\", chunks=None)\nds[\"maximum_temperature_2m\"].sel(init_time=\"2026-08-01T00\", latitude=0, longitude=0).max()",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"maximum_temperature_2m\"].sel(init_time=\"2026-08-01T00\", latitude=0, longitude=0).max()",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "ensemble_member": {
+      "type": "other",
+      "extent": [
+        0,
+        100
+      ],
+      "unit": "1",
+      "size": 101
+    },
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2026-01-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        -90.0,
+        90.0
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 121
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        3974400
+      ],
+      "unit": "seconds",
+      "size": 185
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -180.0,
+        178.5
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 240
+    }
+  },
+  "cube:variables": {
+    "maximum_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        51,
+        32,
+        30
+      ],
+      "shards": [
+        1,
+        186,
+        102,
+        128,
+        120
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Maximum temperature",
+      "standard_name": "air_temperature",
+      "short_name": "tmax",
+      "comment": "Maximum temperature at 2 metres over the previous 6 hours."
+    },
+    "minimum_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        51,
+        32,
+        30
+      ],
+      "shards": [
+        1,
+        186,
+        102,
+        128,
+        120
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Minimum temperature",
+      "standard_name": "air_temperature",
+      "short_name": "tmin",
+      "comment": "Minimum temperature at 2 metres over the previous 6 hours."
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        51,
+        32,
+        30
+      ],
+      "shards": [
+        1,
+        186,
+        102,
+        128,
+        120
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous 6 hours. Units equivalent to mm/s."
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        51,
+        32,
+        30
+      ],
+      "shards": [
+        1,
+        186,
+        102,
+        128,
+        120
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        51,
+        32,
+        30
+      ],
+      "shards": [
+        1,
+        186,
+        102,
+        128,
+        120
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        93,
+        51,
+        32,
+        30
+      ],
+      "lengths": {
+        "init_time": "1 day",
+        "lead_time": "558 hours",
+        "latitude": "48\u00b0",
+        "longitude": "45\u00b0"
+      },
+      "uncompressed_size_bytes": 18213120,
+      "uncompressed_size": "17.4 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        186,
+        102,
+        128,
+        120
+      ],
+      "lengths": {
+        "init_time": "1 day",
+        "lead_time": "1110 hours",
+        "latitude": "181.5\u00b0",
+        "longitude": "180\u00b0"
+      },
+      "uncompressed_size_bytes": 1165639680,
+      "uncompressed_size": "1.1 GiB"
+    }
+  },
+  "title": "ECMWF IFS ENS forecast, 46 day, 6 hourly, 1.5 degree",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -180.0,
+          -90.0,
+          178.5,
+          90.0
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-01-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Global"
+    ],
+    "spatial_resolution": [
+      "1.5 degrees (~165km)"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2026-01-01 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 24 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-1104 hours (0-46 days) ahead"
+    ],
+    "forecast_resolution": [
+      "6 hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-ecmwf-ifs-ens.s3.us-west-2.amazonaws.com/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

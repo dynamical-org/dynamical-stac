@@ -1085,7 +1085,6 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_ECMWF_IFS_ENS_46_DAY_NOTEBOOK,),
-        staging=True,
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
