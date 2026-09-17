@@ -1,6 +1,6 @@
 ### Source
 
-The source grib files this archive references are provided by [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data). Data is read directly from ECMWF's copy on Google Cloud (`gs://ecmwf-open-data`). Files from before March 2025 that are absent from that copy are read from ECMWF's copy in the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/) instead.
+The source grib files this archive references are provided by [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data). Data is read directly from ECMWF's copy on Google Cloud (`gs://ecmwf-open-data`). For forecasts initialized before 1 March 2025, files unavailable from that copy are read from ECMWF's copy in the [AWS Open Data Registry](https://registry.opendata.aws/ecmwf-forecasts/) instead.
 
 ECMWF does not provide user support for the free & open datasets. Users should refer to the public [User Forum](https://forum.ecmwf.int/) for any questions related to the source material.
 
