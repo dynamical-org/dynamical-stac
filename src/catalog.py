@@ -922,7 +922,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="ecmwf-aifs-single-forecast-virtual",
         icechunk_href="s3://dynamical-ecmwf-aifs-single/ecmwf-aifs-single-forecast-virtual/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
-        virtual_chunk_container_prefixes=("gs://ecmwf-open-data/",),
+        virtual_chunk_container_prefixes=(
+            "gs://ecmwf-open-data/",
+            "s3://ecmwf-forecasts/",
+        ),
         model_id="ecmwf-aifs-single",
         description_summary=(
             "This dataset is an archive of past and present ECMWF AIFS Single "
