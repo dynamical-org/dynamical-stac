@@ -36,15 +36,15 @@
     },
     {
       "rel": "example",
-      "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree.ipynb",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-46-day-1-5-degree.ipynb",
       "type": "application/x-ipynb+json",
-      "title": "Quickstart (GitHub)"
+      "title": "ECMWF IFS ENS 46 day, daily and 6 hourly (GitHub)"
     },
     {
       "rel": "example",
-      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree.ipynb",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-46-day-1-5-degree.ipynb",
       "type": "text/html",
-      "title": "Quickstart (Colab)"
+      "title": "ECMWF IFS ENS 46 day, daily and 6 hourly (Colab)"
     },
     {
       "rel": "self",
