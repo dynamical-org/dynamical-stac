@@ -81,7 +81,7 @@
         },
         {
           "label": "pystac + icechunk",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-aifs-single-forecast-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"gs://ecmwf-open-data/\": icechunk.gcs_credentials(anonymous=True)})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-03-01T00\", lead_time=\"24h\")\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(pressure_level=500)",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-aifs-single-forecast-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"gs://ecmwf-open-data/\": icechunk.gcs_credentials(anonymous=True), \"s3://ecmwf-forecasts/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-03-01T00\", lead_time=\"24h\")\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(pressure_level=500)",
           "language": "python"
         }
       ]
@@ -911,6 +911,13 @@
             "type": "gcs",
             "anonymous": true
           }
+        },
+        {
+          "url_prefix": "s3://ecmwf-forecasts/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
         }
       ],
       "roles": [
@@ -929,6 +936,13 @@
           "url_prefix": "gs://ecmwf-open-data/",
           "credentials": {
             "type": "gcs",
+            "anonymous": true
+          }
+        },
+        {
+          "url_prefix": "s3://ecmwf-forecasts/",
+          "credentials": {
+            "type": "s3",
             "anonymous": true
           }
         }
