@@ -609,6 +609,12 @@ _CHIRPS_PRELIMINARY_FINAL_NOTEBOOK = DatasetNotebook(
     title="CHIRPS preliminary and final",
 )
 
+# The 46 day daily Quickstart also covers the 6 hourly dataset.
+_ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
+    slug="ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree",
+    title="ECMWF IFS ENS 46 day daily and 6 hourly",
+)
+
 
 def _quickstart_notebook(slug: str) -> DatasetNotebook:
     """Build the default per-dataset ``{id}.ipynb`` notebook.
@@ -1080,7 +1086,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["maximum_temperature_2m"].sel(init_time="2026-08-01T00", latitude=0, longitude=0).max()',
             ),
         ),
-        # Staging items may omit notebooks; add the Quickstart before release.
+        notebooks=(_ECMWF_IFS_ENS_46_DAY_NOTEBOOK,),
         staging=True,
         additional_terms=ECMWF_TERMS,
     ),
