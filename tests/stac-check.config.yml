@@ -1,0 +1,20 @@
+# Merged over stac-check's packaged defaults by tests/test_stac_check.py. The
+# merge is per top-level key, so the whole `linting` block is repeated here;
+# test_stac_check_config_only_disables_bloated_links pins it to the defaults.
+linting:
+  searchable_identifiers: true
+  percent_encoded: true
+  item_id_file_name: true
+  catalog_id_file_name: true
+  check_summaries: true
+  null_datetime: true
+  check_unlocated: true
+  check_geometry: true
+  # The root catalog lists every collection as a direct child by design:
+  # dynamical-catalog walks the root's child links and does not descend into
+  # sub-catalogs, so the link count grows with the number of published datasets.
+  bloated_links: false
+  bloated_metadata: true
+  check_thumbnail: true
+  links_title: true
+  links_self: true

@@ -2,7 +2,7 @@
   "type": "Catalog",
   "id": "dynamical-org",
   "stac_version": "1.1.0",
-  "description": "Cloud-optimized weather and climate datasets from dynamical.org",
+  "description": "Cloud-optimized weather and climate datasets from dynamical.org. Reading this catalog with the dynamical-catalog Python package requires version 1.0.0 or newer; earlier releases cannot load it.",
   "links": [
     {
       "rel": "root",
@@ -75,6 +75,12 @@
       "href": "https://stac.dynamical.org/ecmwf-aifs-single-forecast/collection.json",
       "type": "application/json",
       "title": "ECMWF AIFS Single forecast"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-aifs-single-forecast-virtual/collection.json",
+      "type": "application/json",
+      "title": "ECMWF AIFS Single forecast, virtual"
     },
     {
       "rel": "child",

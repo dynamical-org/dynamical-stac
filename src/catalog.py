@@ -963,7 +963,6 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
         notebooks=(_quickstart_notebook("ecmwf-aifs-single-forecast-virtual"),),
         additional_terms=ECMWF_TERMS,
-        staging=True,
     ),
     CatalogItem(
         id="ecmwf-aifs-ens-forecast",
