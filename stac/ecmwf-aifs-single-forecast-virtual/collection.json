@@ -423,7 +423,7 @@
       "long_name": "Snow cover",
       "standard_name": "surface_snow_area_fraction",
       "short_name": "snowc",
-      "comment": "Fraction (0-1) of the grid box covered by snow. Applies over land only; NaN over water."
+      "comment": "Fraction (0-1) of the grid box covered by snow. Applies over land only; NaN over water, except at forecast hour 0, which has values over water: 0 over open ocean and up to 1 in polar seas."
     },
     "snowfall_water_equivalent_run_total_surface": {
       "dimensions": [
