@@ -753,8 +753,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "patterns. Forecasts are identified by an initialization time "
             "(`init_time`) denoting the start time of the model run as well as "
             "by the `ensemble_member`, and step forward 3 hourly along the "
-            "`lead_time` dimension out to 10 days. A new forecast is "
-            "initialized every 6 hours.\n\n"
+            "`lead_time` dimension out to 10 days.\n\n"
             "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
             "gribberish>=1.5`) is required."
         ),
