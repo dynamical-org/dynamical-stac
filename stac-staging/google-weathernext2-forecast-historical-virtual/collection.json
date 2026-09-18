@@ -1,0 +1,548 @@
+{
+  "type": "Collection",
+  "id": "google-weathernext2-forecast-historical-virtual",
+  "stac_version": "1.1.0",
+  "description": "Weather forecasts from the 64-member Google DeepMind WeatherNext 2 ensemble model.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/google-weathernext2-forecast-historical-virtual/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/google-weathernext2-forecast-historical-virtual/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-staging.dynamical.org/google-weathernext2-forecast-historical-virtual/collection.json",
+      "type": "application/json",
+      "title": "Google WeatherNext 2 historical forecast, virtual"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "Google requires this attribution: \u00a9 2025 DeepMind Technologies Limited's machine learning models used to create the experimental data made available at https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0 under CC BY 4.0 licence terms. This data is intended for experimental modelling only and is not intended, validated, or approved for real world use. Use of the third-party materials referred to in the Acknowledgements section may be governed by separate terms and conditions or license provisions. Your use of the third-party materials is subject to any such terms and you should check that you can comply with any applicable restrictions or terms and conditions before use.",
+  "version": "0.1.0",
+  "model_id": "google-weathernext2",
+  "model_name": "Google WeatherNext 2",
+  "description_summary": "This dataset is the fixed 2022-2024 archive of Google WeatherNext 2 forecasts, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) and one of 64 `ensemble_member` values, then step forward from 6 to 360 hours (15 days) along the `lead_time` dimension at a 6 hourly interval. Surface variables are at the dataset root; variables carried on pressure levels are in the `pressure_level` group.",
+  "description_details": "### Source\n\nThis archive is built from Google's [WeatherNext 2 experimental forecast dataset](https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0). WeatherNext 2 is a global, medium-range ensemble forecast produced by an operational version of Google DeepMind's Functional Network Generative weather model.\n\nThe terms on [Google's Earth Engine catalog page for this dataset](https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0#terms-of-use) distinguish Real-Time Experimental Data, which relates to a time less than one hour in the past or in the future and is governed by separate [GDM Real-Time Weather Forecasting Experimental Data Terms of Use](https://storage.googleapis.com/weathernext-public/terms-of-use.pdf), from Historic Experimental Data, which relates to a time one hour or more in the past and is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Every value in this fixed 2022\u20132024 archive relates to a time years in the past, so the whole product is Historic Experimental Data.\n\nGoogle prescribes the following citation for disclosures of findings arising from the Historic Experimental Data, and this collection also carries it verbatim in its `attribution` metadata: \"\u00a9 2025 DeepMind Technologies Limited's machine learning models used to create the experimental data made available at [https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0](https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0) under CC BY 4.0 licence terms. This data is intended for experimental modelling only and is not intended, validated, or approved for real world use.\" The data is experimental: it is not an official forecast, alert, warning or notice from a meteorological agency. CC BY 4.0 includes a disclaimer of warranties and limitation of liability.\n\n**Modifications.** dynamical.org has modified the source data as follows: it is restructured into an Icechunk virtual dataset with dynamical.org's variable and dimension names, and read-time filters convert temperatures from kelvin to degrees Celsius, geopotential to geopotential height (divided by standard gravity), and total precipitation from metres of water to kg m\u207b\u00b2. Values are otherwise the unchanged model output.\n\n**Third-party materials.** The third-party clause carried in this collection's `attribution` metadata refers to the Acknowledgements on Google's dataset page, which say that the experimental data was generated by models which communicate with and/or reference the following separate libraries and packages, and that use of these third-party materials may be governed by separate terms and conditions or license provisions:\n\n* Data and products of the European Centre for Medium-range Weather Forecasts (ECMWF), as modified by Google.\n* Modified Copernicus Climate Change Service information 2023. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.\n* ECMWF HRES datasets\n  * Copyright statement: Copyright \"\u00a9 2023 European Centre for Medium-Range Weather Forecasts (ECMWF)\".\n  * Source: [www.ecmwf.int](http://www.ecmwf.int)\n  * License Statement: ECMWF open data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0). [https://creativecommons.org/licenses/by/4.0/](https://creativecommons.org/licenses/by/4.0/)\n  * Disclaimer: ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use.\n\nThese notices are reproduced from the [Acknowledgements](https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0#description) section of Google's dataset page.\n\n### Data availability\n\nThis fixed historical product contains four daily initializations from 2022-01-01T00 through 2024-12-31T18 UTC. The 2025-to-present source has a different native chunk layout and is published separately as the [operational WeatherNext 2 archive](https://dynamical.org/catalog/google-weathernext2-forecast-operational-virtual/). The two products share the same variables, dimensions and coordinates, so they can be concatenated along `init_time` when a workflow needs the full record.\n\n### Variables\n\nThe dataset carries 8 surface variables at the root and 6 atmospheric variables in the `pressure_level` group. Every forecast contains 64 ensemble members, 60 lead times at 6 hourly intervals, and a global 0.25 degree grid. The spatial dimensions are named `y` and `x`; their coordinates are geographic latitude and 0\u2013360 degree longitude, not a projected grid.\n\n### Storage\n\nThe Icechunk repository is served over public HTTPS by dynamical.org. Its virtual chunks reference the unchanged, compressed source Zarr chunks through the public `wn.dynamical.org` HTTPS endpoint; the unit conversions described under Source are applied as read-time filters.\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (6 hours) |\n| ensemble_member | 4 |\n| lead_time | 1 (6 hours) |\n| y | 721 (180.25\u00b0) |\n| x | 1440 (360\u00b0) |\n| **uncompressed** | 15.8 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/google-weathernext2-forecast-historical-virtual/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.",
+  "description_model": "WeatherNext 2 is Google's global medium-range probabilistic weather forecasting model. It produces a 64-member ensemble on a 0.25 degree grid, initialized four times daily with forecasts extending to 15 days.",
+  "examples": [
+    {
+      "title": "Hurricane Beryl ensemble pressure",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=1.0.0\n\nds = dynamical_catalog.open(\"google-weathernext2-forecast-historical-virtual\", chunks=None)\nds[\"pressure_reduced_to_mean_sea_level\"].sel(init_time=\"2024-07-04T00\", lead_time=\"96h\", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"google-weathernext2-forecast-historical-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"https://wn.dynamical.org/chunks/\": icechunk.Credentials.HttpAccess()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"pressure_reduced_to_mean_sea_level\"].sel(init_time=\"2024-07-04T00\", lead_time=\"96h\", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "ensemble_member": {
+      "type": "other",
+      "extent": [
+        0,
+        63
+      ],
+      "unit": "1",
+      "size": 64
+    },
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2022-01-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        21600,
+        1296000
+      ],
+      "unit": "seconds",
+      "size": 60
+    },
+    "x": {
+      "type": "spatial",
+      "extent": [
+        0.0,
+        359.75
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 1440
+    },
+    "y": {
+      "type": "spatial",
+      "extent": [
+        -90.0,
+        90.0
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 721
+    },
+    "pressure_level": {
+      "type": "other",
+      "extent": [
+        50,
+        1000
+      ],
+      "unit": "hPa",
+      "size": 13
+    }
+  },
+  "cube:variables": {
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440
+      ],
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "sea_surface_temperature": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Sea surface temperature",
+      "standard_name": "sea_surface_temperature",
+      "short_name": "sst",
+      "comment": "NaN over land where sea surface temperature does not apply."
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "total_precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440
+      ],
+      "unit": "kg m-2",
+      "long_name": "Total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "tp",
+      "comment": "Accumulated over a six-hour forecast interval. Small negative values are raw model artifacts; set values < 0 to zero."
+    },
+    "wind_u_100m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440
+      ],
+      "unit": "m s-1",
+      "long_name": "100 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "100u"
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
+    },
+    "wind_v_100m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440
+      ],
+      "unit": "m s-1",
+      "long_name": "100 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "100v"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
+    },
+    "pressure_level/geopotential_height": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440,
+        13
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "pressure_level/specific_humidity": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440,
+        13
+      ],
+      "unit": "1",
+      "long_name": "Specific humidity",
+      "standard_name": "specific_humidity",
+      "short_name": "q"
+    },
+    "pressure_level/temperature": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440,
+        13
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
+    },
+    "pressure_level/vertical_velocity": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440,
+        13
+      ],
+      "unit": "Pa s-1",
+      "long_name": "Vertical velocity",
+      "standard_name": "lagrangian_tendency_of_air_pressure",
+      "short_name": "w"
+    },
+    "pressure_level/wind_u": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440,
+        13
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "eastward_wind",
+      "short_name": "u"
+    },
+    "pressure_level/wind_v": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        4,
+        1,
+        721,
+        1440,
+        13
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "northward_wind",
+      "short_name": "v"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        4,
+        1,
+        721,
+        1440
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "6 hours",
+        "y": "180.25\u00b0",
+        "x": "360\u00b0"
+      },
+      "uncompressed_size_bytes": 16611840,
+      "uncompressed_size": "15.8 MiB"
+    }
+  },
+  "title": "Google WeatherNext 2 historical forecast, virtual",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -180.0,
+          -90.0,
+          179.75,
+          90.0
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2022-01-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Global"
+    ],
+    "spatial_resolution": [
+      "0.25 degrees (~20km)"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2022-01-01 00:00:00 UTC to 2024-12-31 18:00:00"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 6-360 hours (0.25-15 days) ahead"
+    ],
+    "forecast_resolution": [
+      "6 hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "https://google-weathernext2.r2.dynamical.org/google-weathernext2-forecast-historical-virtual/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "https://wn.dynamical.org/chunks/",
+          "credentials": {
+            "type": "http"
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://google-weathernext2.r2.dynamical.org/google-weathernext2-forecast-historical-virtual/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "https://wn.dynamical.org/chunks/",
+          "credentials": {
+            "type": "http"
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

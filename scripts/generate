@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Regenerate the STAC catalog into ./stac/ and, optionally, upload to R2.
+# Regenerate every tier's STAC catalog (./stac/, ./stac-staging/, ./stac-test/)
+# and, optionally, upload the production tree to R2. Staging and test trees are
+# only uploaded by their workflows, from `main`.
 #
 # Usage:
-#   scripts/generate                      # generate into ./stac/
+#   scripts/generate                      # generate all three trees
 #   scripts/generate --upload             # generate, then upload ./stac/ to R2
 #   scripts/generate --upload --op-env    # same, with R2 creds from 1Password
 #

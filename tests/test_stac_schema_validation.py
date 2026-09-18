@@ -24,17 +24,19 @@ import pystac
 import pystac.errors
 import pytest
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-COMMITTED_STAC = REPO_ROOT / "stac"
+from generate import TIERS
 
-_STAC_FILES = sorted(COMMITTED_STAC.rglob("*.json"))
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+_STAC_FILES = sorted(
+    p for tier in TIERS for p in (REPO_ROOT / tier.directory).rglob("*.json")
+)
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize(
     "json_path",
     _STAC_FILES,
-    ids=[str(p.relative_to(COMMITTED_STAC)) for p in _STAC_FILES],
+    ids=[str(p.relative_to(REPO_ROOT)) for p in _STAC_FILES],
 )
 def test_committed_stac_validates_against_schemas(json_path: pathlib.Path) -> None:
     """Each STAC file passes pystac's JSON Schema validation, including

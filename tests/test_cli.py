@@ -7,16 +7,17 @@ import pytest
 import cli
 
 
-def test_main_generate_defaults_to_stac_dir(
+def test_main_generate_writes_every_tier_into_the_repo(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[pathlib.Path] = []
-    monkeypatch.setattr(cli, "generate", calls.append)
+    monkeypatch.setattr(cli, "generate_tiers", calls.append)
 
     rc = cli.main(["generate"])
 
     assert rc == 0
-    assert calls == [cli.DEFAULT_OUTPUT_DIR]
+    assert calls == [cli.REPO_ROOT]
+    assert (cli.REPO_ROOT / "stac" / "catalog.json").is_file()
 
 
 def test_main_generate_accepts_explicit_output(

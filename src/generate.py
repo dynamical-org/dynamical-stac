@@ -4,6 +4,8 @@ import concurrent.futures
 import json
 import os
 import pathlib
+import tempfile
+from typing import NamedTuple
 
 import gribberish.zarr  # noqa: F401 -- registers the GribberishCodec used by virtual datasets
 import icechunk
@@ -173,12 +175,34 @@ def _write_legacy_roots(output_dir: pathlib.Path, items: list[CatalogItem]) -> N
         )
 
 
+Loaded = dict[str, tuple[xr.Dataset, dict[str, xr.Dataset]]]
+
+
+def _load_datasets(items: list[CatalogItem]) -> Loaded:
+    """Open every item's store, keyed by item id."""
+
+    def _load(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
+        print(f"{item.id}: opening icechunk store")  # noqa: T201
+        ds, subgroups = _open_icechunk(item)
+        _verify_read(ds)
+        return ds, subgroups
+
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=max(1, len(items))
+    ) as executor:
+        return dict(
+            zip((item.id for item in items), executor.map(_load, items), strict=True)
+        )
+
+
 def generate(
     output_dir: pathlib.Path,
     root_href: str = ROOT_HREF,
     include_staging: bool = INCLUDE_STAGING,
     include_test: bool = INCLUDE_TEST,
+    loaded: Loaded | None = None,
 ) -> None:
+    """Write one tier's catalog. `loaded` reuses stores opened for another tier."""
     catalog = pystac.Catalog(
         id="dynamical-org",
         title=CATALOG_TITLE,
@@ -188,21 +212,13 @@ def generate(
     items = _select_items(
         CATALOG_ITEMS, include_staging=include_staging, include_test=include_test
     )
+    if loaded is None:
+        loaded = _load_datasets(items)
 
-    def _load(
-        item: CatalogItem,
-    ) -> tuple[CatalogItem, xr.Dataset, dict[str, xr.Dataset]]:
-        print(f"{item.id}: opening icechunk store")  # noqa: T201
-        ds, subgroups = _open_icechunk(item)
-        _verify_read(ds)
-        return item, ds, subgroups
-
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=max(1, len(items))
-    ) as executor:
-        for item, ds, subgroups in executor.map(_load, items):
-            collection_input = CollectionInput.from_dataset(item, ds, subgroups)
-            catalog.add_child(collection_input.to_pystac_collection())
+    for item in items:
+        ds, subgroups = loaded[item.id]
+        collection_input = CollectionInput.from_dataset(item, ds, subgroups)
+        catalog.add_child(collection_input.to_pystac_collection())
 
     catalog.normalize_hrefs(root_href)
     _set_self_link_titles(catalog)
@@ -212,3 +228,68 @@ def generate(
         dest_href=str(output_dir),
     )
     _write_legacy_roots(output_dir, items)
+
+
+class Tier(NamedTuple):
+    """One published catalog: its committed directory, which is also its R2
+    bucket name, and the host baked into every link."""
+
+    directory: str
+    root_href: str
+    include_staging: bool
+    include_test: bool
+
+
+# Every tier is committed, so a change to any of them is reviewed as a diff and
+# each upload workflow ships exactly the tree that was merged.
+TIERS = (
+    Tier("stac", "https://stac.dynamical.org", False, False),
+    Tier("stac-staging", "https://stac-staging.dynamical.org", True, False),
+    Tier("stac-test", "https://stac-test.dynamical.org", True, True),
+)
+
+
+def generate_tiers(parent_dir: pathlib.Path) -> None:
+    """Write every tier's tree under `parent_dir`, opening each store once.
+
+    Tiers are built beside their destination and swapped in only once all of
+    them validated, so a store that fails to open leaves the committed trees
+    untouched, and a collection that left a tier leaves its tree too. A failure
+    during the swap itself is rolled back (`_swap_in`); a killed process is not,
+    and `git checkout` is the recovery for that. The
+    caller's STAC_* environment is ignored: each tier is what `TIERS` says.
+    """
+    loaded = _load_datasets(CATALOG_ITEMS)
+    with tempfile.TemporaryDirectory(dir=parent_dir, prefix=".stac-build-") as build:
+        for tier in TIERS:
+            generate(
+                pathlib.Path(build) / tier.directory,
+                root_href=tier.root_href,
+                include_staging=tier.include_staging,
+                include_test=tier.include_test,
+                loaded=loaded,
+            )
+        _swap_in(pathlib.Path(build), parent_dir, [tier.directory for tier in TIERS])
+
+
+def _swap_in(build: pathlib.Path, parent_dir: pathlib.Path, names: list[str]) -> None:
+    """Replace each `parent_dir/name` with `build/name`, or put them all back.
+
+    Both sit on one filesystem, so every step is a rename. The old trees are kept
+    inside `build` until every new one is in place; if a rename fails, the new
+    trees already installed are moved out again and the old ones restored.
+    """
+    replaced: list[str] = []
+    try:
+        for name in names:
+            if (parent_dir / name).exists():
+                (parent_dir / name).rename(build / f"{name}.old")
+            replaced.append(name)
+            (build / name).rename(parent_dir / name)
+    except BaseException:
+        for name in replaced:
+            if (parent_dir / name).exists():
+                (parent_dir / name).rename(build / f"{name}.failed")
+            if (build / f"{name}.old").exists():
+                (build / f"{name}.old").rename(parent_dir / name)
+        raise

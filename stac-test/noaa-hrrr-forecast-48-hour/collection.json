@@ -1,0 +1,925 @@
+{
+  "type": "Collection",
+  "id": "noaa-hrrr-forecast-48-hour",
+  "stac_version": "1.1.0",
+  "description": "Weather forecasts from the High-Resolution Rapid Refresh (HRRR) model operated by NOAA NWS NCEP.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-hrrr-forecast-48-hour/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-hrrr-forecast-48-hour/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-hrrr-forecast-48-hour.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "Quickstart (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-hrrr-forecast-48-hour.ipynb",
+      "type": "text/html",
+      "title": "Quickstart (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-test.dynamical.org/noaa-hrrr-forecast-48-hour/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR forecast, 48 hour"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "NOAA NWS NCEP HRRR data processed by dynamical.org from NOAA Open Data Dissemination archives.",
+  "version": "0.1.0",
+  "model_id": "noaa-hrrr",
+  "model_name": "NOAA HRRR",
+  "description_summary": "This dataset is an archive of past and present HRRR forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run. Each forecast has an hourly forecast step along the `lead_time` dimension. This dataset contains only the 00, 06, 12, and 18 hour UTC initialization times which produce the full length, 48 hour forecast.\n\nThis dataset uses the native HRRR Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/).\n\n### Data availability\n\nForecasts initialized through 2020-12-02T06 UTC include data only for the first 36 hours; steps 37\u201348 are filled with NaNs. Starting with the 2020-12-02T12 UTC initialization, forecasts cover the full 48 hours.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks and shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk | shard |\n|---|---|---|\n| init_time | 1 (6 hours) | 1 (6 hours) |\n| lead_time | 49 (49 hours) | 49 (49 hours) |\n| y | 265 (795 km) | 1060 (3177 km) |\n| x | 300 (900 km) | 1800 (5397 km) |\n| **uncompressed** | 14.9 MiB | 356.6 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-hrrr-forecast-48-hour/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/).",
+  "description_model": "The High-Resolution Rapid Refresh (HRRR) is a NOAA real-time 3-km resolution, hourly updated, cloud-resolving, convection-allowing atmospheric model, initialized by 3km grids with 3km radar assimilation. Radar data is assimilated in the HRRR every 15 min over a 1-h period adding further detail to that provided by the hourly data assimilation from the 13km radar-enhanced Rapid Refresh.",
+  "examples": [
+    {
+      "title": "Maximum temperature",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-hrrr-forecast-48-hour\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", x=0, y=0, method=\"nearest\").max()",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-hrrr-forecast-48-hour\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", x=0, y=0, method=\"nearest\").max()",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2018-07-13T12:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        172800
+      ],
+      "unit": "seconds",
+      "size": 49
+    },
+    "x": {
+      "type": "spatial",
+      "extent": [
+        -2697520.142521929,
+        2696479.857478071
+      ],
+      "axis": "x",
+      "unit": "m",
+      "size": 1799
+    },
+    "y": {
+      "type": "spatial",
+      "extent": [
+        -1587306.152556665,
+        1586693.847443335
+      ],
+      "axis": "y",
+      "unit": "m",
+      "size": 1059
+    }
+  },
+  "cube:variables": {
+    "categorical_freezing_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "1",
+      "long_name": "Categorical freezing rain",
+      "short_name": "cfrzr",
+      "comment": "0=no; 1=yes"
+    },
+    "categorical_ice_pellets_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "1",
+      "long_name": "Categorical ice pellets",
+      "short_name": "cicep",
+      "comment": "0=no; 1=yes"
+    },
+    "categorical_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "1",
+      "long_name": "Categorical rain",
+      "short_name": "crain",
+      "comment": "0=no; 1=yes"
+    },
+    "categorical_snow_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "1",
+      "long_name": "Categorical snow",
+      "short_name": "csnow",
+      "comment": "0=no; 1=yes"
+    },
+    "composite_reflectivity": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "dBZ",
+      "long_name": "Maximum/Composite radar reflectivity",
+      "standard_name": "equivalent_reflectivity_factor",
+      "short_name": "refc"
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf"
+    },
+    "geopotential_height_cloud_ceiling": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh",
+      "comment": "NaN where no cloud ceiling was detected."
+    },
+    "percent_frozen_precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "percent",
+      "long_name": "Percent frozen precipitation",
+      "short_name": "cpofp",
+      "comment": "NaN where there is no precipitation."
+    },
+    "precipitable_water_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "kg m-2",
+      "long_name": "Precipitable water",
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "short_name": "pwat"
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "relative_humidity_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "percent",
+      "long_name": "2 metre relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "2r"
+    },
+    "snow_area_fraction_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "1",
+      "long_name": "Snow cover",
+      "standard_name": "surface_snow_area_fraction",
+      "short_name": "snowc"
+    },
+    "snow_thickness_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "m",
+      "long_name": "Snow depth",
+      "standard_name": "surface_snow_thickness",
+      "short_name": "sde"
+    },
+    "snow_water_equivalent_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "m",
+      "long_name": "Snow depth water equivalent",
+      "standard_name": "lwe_thickness_of_surface_snow_amount",
+      "short_name": "sd"
+    },
+    "snowfall_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "m s-1",
+      "long_name": "Total snowfall rate",
+      "short_name": "tsrate",
+      "comment": "Average snowfall rate since the previous forecast step."
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
+    },
+    "visible_beam_downward_solar_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "W m-2",
+      "long_name": "Visible Beam Downward Solar Flux",
+      "short_name": "vbdsf",
+      "comment": "Direct normal irradiance \u2014 the flux perpendicular to the solar beam, so it exceeds the horizontal downward shortwave flux when the sun is low. Values inflate without bound in a narrow band of grid cells at sunrise, reaching 10000. Mask values > 1361, the solar constant."
+    },
+    "wind_gust_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "m s-1",
+      "long_name": "Wind speed (gust)",
+      "standard_name": "wind_speed_of_gust",
+      "short_name": "gust"
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "x_wind",
+      "short_name": "10u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_80m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "m s-1",
+      "long_name": "80 metre U wind component",
+      "standard_name": "x_wind",
+      "short_name": "80u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "y_wind",
+      "short_name": "10v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_80m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "shards": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "unit": "m s-1",
+      "long_name": "80 metre V wind component",
+      "standard_name": "y_wind",
+      "short_name": "80v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        49,
+        265,
+        300
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "49 hours",
+        "y": "795 km",
+        "x": "900 km"
+      },
+      "uncompressed_size_bytes": 15582000,
+      "uncompressed_size": "14.9 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        49,
+        1060,
+        1800
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "49 hours",
+        "y": "3177 km",
+        "x": "5397 km"
+      },
+      "uncompressed_size_bytes": 373968000,
+      "uncompressed_size": "356.6 MiB"
+    }
+  },
+  "title": "NOAA HRRR forecast, 48 hour",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -134.09547424316406,
+          21.13812255859375,
+          -60.91719436645508,
+          52.61565399169922
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2018-07-13T12:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Continental United States"
+    ],
+    "spatial_resolution": [
+      "3 km"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2018-07-13 12:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-48 hours ahead"
+    ],
+    "forecast_resolution": [
+      "Hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-noaa-hrrr.s3.us-west-2.amazonaws.com/noaa-hrrr-forecast-48-hour/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

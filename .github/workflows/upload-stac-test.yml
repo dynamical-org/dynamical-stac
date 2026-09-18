@@ -1,18 +1,16 @@
 name: Upload test STAC catalog
 
-# Deploys the STAC catalog to stac-test.dynamical.org from `main`. The test
-# catalog is a superset of staging: it REGENERATES the catalog with both
-# STAC_INCLUDE_STAGING=1 and STAC_INCLUDE_TEST=1, so it carries every
-# production and staging dataset plus the CatalogItem.test=True fixture
-# datasets consumed by dynamical-catalog's integration tests, with the test
-# root href baked into every link, then uploads to the stac-test R2 bucket.
-# Staging (upload-stac-staging.yml) and production (upload-stac.yml) leave the
-# fixture datasets out.
+# Deploys the committed `stac-test/` tree to stac-test.dynamical.org from `main`,
+# without regenerating. The test catalog is a superset of staging: every
+# production and staging dataset plus the CatalogItem.test=True fixture datasets
+# consumed by dynamical-catalog's integration tests, with the test root href,
+# written by `scripts/generate`. Staging (upload-stac-staging.yml) and
+# production (upload-stac.yml) leave the fixture datasets out.
 
 on:
   push:
     branches: [main]
-    paths: ["src/**", "stac/**"]
+    paths: ["stac-test/**"]
   workflow_dispatch:
 
 permissions:
@@ -28,14 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
-      - name: Generate catalog (incl. staging + test) with test root href
-        run: uv run --locked python src/__main__.py generate
-        env:
-          STAC_ROOT_HREF: https://stac-test.dynamical.org
-          STAC_INCLUDE_STAGING: "1"
-          STAC_INCLUDE_TEST: "1"
       - name: Upload to test R2 bucket
-        run: uv run --locked python src/__main__.py upload stac
+        run: uv run --locked python src/__main__.py upload stac-test
         env:
           R2_BUCKET: stac-test
           R2_ENDPOINT_URL: ${{ secrets.R2_STAC_ENDPOINT_URL }}

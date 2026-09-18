@@ -1,24 +1,44 @@
 # dynamical-stac
 
-## Regenerating `stac/` after catalog changes
+## Regenerating the committed catalogs after catalog changes
+
+Every published tier is committed, so a change to any of them shows up as a
+diff in review and each upload workflow ships exactly the tree that was merged:
+
+| directory | host | contains |
+|---|---|---|
+| `stac/` | stac.dynamical.org | production items |
+| `stac-staging/` | stac-staging.dynamical.org | + `staging=True` items |
+| `stac-test/` | stac-test.dynamical.org | + `staging=True` and `test=True` items |
 
 Any edit to `src/catalog.py` or `src/prose/**` that changes the rendered STAC
 (new `CatalogItem`, description/prose edits, model metadata, etc.) requires
-regenerating the committed STAC output:
+regenerating them:
 
 ```
 ./scripts/generate
 ```
 
-then commit the resulting changes under `stac/`. `tests/test_stac_drift.py`
-(integration mark) fails in CI if `stac/` is stale.
+then commit the resulting changes under `stac/`, `stac-staging/` and
+`stac-test/`. `tests/test_stac_drift.py` (integration mark) fails in CI if any
+of them is stale, and names the tier.
 
-Regeneration opens each dataset's Icechunk store on S3, so it needs network
-access and takes ~20s.
+Regeneration opens every dataset's Icechunk store once (production, staging and
+the GCS/Azure test fixtures), so it needs network access and takes ~20s. The
+trees are built aside and swapped in together: if any store fails to open, none
+of them changes. It ignores `STAC_ROOT_HREF` / `STAC_INCLUDE_*`. To build one
+tier somewhere else, e.g. while a staging store is unreachable, use
+`uv run python src/__main__.py generate --output DIR`, which does honour them
+(production by default).
 
 **Always run `./scripts/generate` before every commit that touches anything
-under `src/`, then `git add stac/` before committing.** Skipping this step
-ships a stale catalog and breaks `test_stac_drift.py` in CI.
+under `src/`, then `git add stac/ stac-staging/ stac-test/` before
+committing.** Skipping this step ships a stale catalog and breaks
+`test_stac_drift.py` in CI.
+
+The trees describe the catalogs we publish, not everything in the buckets:
+uploads never delete, so a collection removed from a tier stays in R2,
+unlinked, until someone deletes it.
 
 ## Adding a new `CatalogItem`
 
@@ -41,23 +61,26 @@ Adding a new dataset typically requires all of:
 ## Staging datasets
 
 Set `staging=True` on a `CatalogItem` to publish it only to the staging catalog
-(`stac-staging.dynamical.org`), not production. Staging items are excluded from
-`generate()` by default and from the committed `stac/` tree; they're included
-only when `STAC_INCLUDE_STAGING=1` (set by `upload-stac-staging.yml`, which runs
-on every push to `main` and uploads to the `stac-staging` bucket). Flip the flag
-to `False` and merge to release the dataset to production.
+(`stac-staging.dynamical.org`), not production. Staging items are left out of
+the committed `stac/` tree and appear in `stac-staging/` and `stac-test/`.
+`upload-stac-staging.yml` uploads the committed `stac-staging/` tree to the
+`stac-staging` bucket whenever it changes on `main`; it does not regenerate, so
+a staging store's new metadata reaches the staging catalog only through a
+committed regeneration. Flip the flag to `False` and merge to release the
+dataset to production.
 
 A staging dataset still needs its prose file, but its notebook is optional: a
 staging item may omit `notebooks` entirely (its collection then carries no
 `example` links) until the notebook is written. Any notebook it *does* declare
 is still HEADed for a 200 by `test_notebook_url_exists`, and flipping
 `staging=False` fails validation until at least one notebook is present.
-Because staging items aren't in the committed `stac/`, regenerating locally
-with `./scripts/generate` won't show them — use
-`STAC_INCLUDE_STAGING=1 ./scripts/generate` to preview the staging catalog.
+`./scripts/generate` writes them into `stac-staging/`, where the diff shows
+exactly what the staging catalog will serve.
 
 dynamical.org Cloudflare PR previews build against `stac-staging`, so a staging
-dataset appears in website previews while staying hidden from the live site.
+dataset appears in website previews while staying hidden from the live site —
+once its PR here has merged and uploaded; a preview built before that needs
+rebuilding.
 
 ## Test datasets
 
@@ -69,14 +92,10 @@ integration tests can read real generator output; they are not weather data.
 
 Set `test=True` (mutually exclusive with `staging=True`) to publish a dataset
 only to the test catalog. Test items never reach staging or production: they're
-excluded from the committed `stac/` tree, from `stac-staging`, and from
-`catalog._COLLECTION_IDS` (so this repo's own read/browse integration tests
-skip them). They're included only when `STAC_INCLUDE_TEST=1`, set by
-`upload-stac-test.yml` (which also sets `STAC_INCLUDE_STAGING=1`) — that
-workflow runs on every push to `main` and uploads to the `stac-test` bucket.
-Preview it locally with
-`STAC_INCLUDE_STAGING=1 STAC_INCLUDE_TEST=1 ./scripts/generate` — but don't
-commit the result, the committed tree is production-only.
+left out of `stac/`, `stac-staging/` and `catalog._COLLECTION_IDS` (so this
+repo's own read/browse integration tests skip them) and appear only in the
+committed `stac-test/` tree, which `upload-stac-test.yml` uploads to the
+`stac-test` bucket whenever it changes on `main`.
 
 Like staging items, a test item may omit `notebooks`. Unlike them it also has
 no validation report, so its prose omits that section.

@@ -16,10 +16,9 @@ from catalog import (
     _check_legacy_client_ranges,
     root_filename_for_client,
 )
-from generate import legacy_root
+from generate import TIERS, Tier, legacy_root
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-COMMITTED_STAC = REPO_ROOT / "stac"
 
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 from compat_matrix import MIN_VERSION, reads_virtual_chunks  # noqa: E402
@@ -123,17 +122,20 @@ def test_non_s3_repository_must_be_excluded_from_s3_only_ranges() -> None:
     CatalogItem(**{**fields, "exclude_from": ("0.4.0-0.8.0",)})
 
 
+@pytest.mark.parametrize("tier", TIERS, ids=lambda t: t.directory)
 @pytest.mark.parametrize("legacy_range", LEGACY_CLIENT_RANGES, ids=lambda r: r.name)
-def test_committed_legacy_root_links_exactly_its_production_items(
-    legacy_range: object,
+def test_committed_legacy_root_links_exactly_its_tiers_items(
+    legacy_range: LegacyClientRange, tier: Tier
 ) -> None:
     expected = [
         item.id
         for item in CATALOG_ITEMS
-        if not (item.staging or item.test)
-        and legacy_range.name not in item.exclude_from  # type: ignore[attr-defined]
+        if (tier.include_staging or not item.staging)
+        and (tier.include_test or not item.test)
+        and legacy_range.name not in item.exclude_from
     ]
-    root = json.loads((COMMITTED_STAC / legacy_range.root_filename).read_text())  # type: ignore[attr-defined]
+    root_path = REPO_ROOT / tier.directory / legacy_range.root_filename
+    root = json.loads(root_path.read_text())
     child_ids = [
         pathlib.PurePosixPath(href).parent.name for href in _hrefs(root, "child")
     ]
