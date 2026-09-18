@@ -102,3 +102,21 @@ slash removed. Reading a `gs://`, `az://` or `https://` dataset needs
 dynamical-catalog >= 1.0.0 (the previous release, 0.8.0, reads S3 only); the
 example snippets of those items pass `min_version="1.0.0"` to `_example` so
 the rendered import comment says so.
+
+## Client compatibility matrix
+
+`scripts/compat_matrix.py` discovers every non-yanked stable
+`dynamical-catalog` release on PyPI at or above `MIN_VERSION`, currently
+0.5.0. CI tests each release against every production collection, including
+reading one value per collection. These checks block merges through the
+required `compat-required` job.
+
+The `main` client branch is a non-blocking canary against the staging-inclusive
+catalog. Pre-releases are excluded from the supported-release matrix.
+
+Raising `MIN_VERSION` changes the support policy. Make that change in a
+separate PR with the catalog owner's approval (Alden today) and a reason for
+dropping older clients. Never raise the floor in the catalog PR whose
+compatibility failure it would silence. A dataset requiring a newer client
+stays in staging until the floor is raised separately or the store is made
+readable by the oldest supported release.
