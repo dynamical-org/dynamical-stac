@@ -129,8 +129,9 @@ LEGACY_CLIENT_RANGES: tuple[LegacyClientRange, ...] = (
 
 
 def _check_legacy_client_ranges(ranges: tuple[LegacyClientRange, ...]) -> None:
-    """The edge applies the first matching rewrite, so a client must match at most
-    one range, or CI and the edge could disagree about the root it reads."""
+    """A client must match at most one range: when several edge rewrites match a
+    request the outcome depends on their order, and CI could disagree with it
+    about the root that client reads."""
     names = [legacy_range.name for legacy_range in ranges]
     if len(set(names)) != len(names):
         raise ValueError(f"duplicate legacy client range names: {names}")
