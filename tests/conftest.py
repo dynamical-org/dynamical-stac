@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
 
-from catalog import CATALOG_ITEMS
+from catalog import CATALOG_ITEMS, LEGACY_CLIENT_RANGES
 from generate import generate
 
 
@@ -52,9 +52,11 @@ def served_catalog(
     (which spans staging items too), and staging datasets are still published
     to stac-staging, so they must generate and read correctly here.
 
-    Also writes `catalog-production.json`, the same root with staging children
-    removed, for `test_released_catalog_read.py`: released readers are held to
-    the production contract only, while the `main` canary reads `catalog.json`.
+    Also writes a production view of every root (`catalog-production.json`,
+    and `catalog-{range}-production.json` per legacy client range): the
+    same root with staging children removed, for
+    `test_released_catalog_read.py`. Released readers are held to the production
+    contract only, while the `main` canary reads `catalog.json`.
 
     Yields (catalog_dir, root_url). Consumers must treat both as read-only.
     """
@@ -62,20 +64,27 @@ def served_catalog(
     with _serve(tmp_path) as port:
         root_url = f"http://127.0.0.1:{port}"
         generate(tmp_path, root_href=root_url, include_staging=True)
-        root_path = tmp_path / "catalog.json"
         production_ids = {
             item.id for item in CATALOG_ITEMS if not (item.staging or item.test)
         }
-        production_root = json.loads(root_path.read_text())
-        production_root["links"] = [
-            link
-            for link in production_root["links"]
-            if link.get("rel") != "child"
-            or pathlib.PurePosixPath(link["href"]).parent.name in production_ids
+        root_filenames = [
+            "catalog.json",
+            *(legacy_range.root_filename for legacy_range in LEGACY_CLIENT_RANGES),
         ]
-        (tmp_path / "catalog-production.json").write_text(
-            json.dumps(production_root, indent=2)
-        )
+        for root_filename in root_filenames:
+            production_root = json.loads((tmp_path / root_filename).read_text())
+            production_root["links"] = [
+                link
+                for link in production_root["links"]
+                if link.get("rel") != "child"
+                or pathlib.PurePosixPath(link["href"]).parent.name in production_ids
+            ]
+            production_filename = (
+                root_filename.removesuffix(".json") + "-production.json"
+            )
+            (tmp_path / production_filename).write_text(
+                json.dumps(production_root, indent=2)
+            )
         yield tmp_path, root_url
 
 

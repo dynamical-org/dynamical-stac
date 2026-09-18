@@ -107,9 +107,12 @@ the rendered import comment says so.
 
 `scripts/compat_matrix.py` discovers every non-yanked stable
 `dynamical-catalog` release on PyPI at or above `MIN_VERSION`, currently
-0.5.0. CI tests each release against every production collection, including
-reading one value per collection. These checks block merges through the
-required `compat-required` job.
+0.4.0. CI tests each release against every production collection in the root
+catalog the edge serves it (see "Legacy client roots" below), including
+reading one value per collection. The exception is 0.4.0, which predates
+virtual chunk container support: it must open every virtual dataset but isn't
+asked to read one. These checks block merges through the required
+`compat-required` job.
 
 The `main` client branch is a non-blocking canary against the staging-inclusive
 catalog. Pre-releases are excluded from the supported-release matrix.
@@ -118,5 +121,45 @@ Raising `MIN_VERSION` changes the support policy. Make that change in a
 separate PR with the catalog owner's approval (Alden today) and a reason for
 dropping older clients. Never raise the floor in the catalog PR whose
 compatibility failure it would silence. A dataset requiring a newer client
-stays in staging until the floor is raised separately or the store is made
-readable by the oldest supported release.
+either stays in staging, or is kept out of the older clients' root catalog
+with `exclude_from`.
+
+## Legacy client roots
+
+dynamical-catalog releases through 1.0.1 parse every collection in the root
+catalog before opening any dataset, so one collection a release can't read
+(a `gs://` virtual chunk container, say) breaks every dataset for it. To
+publish such a collection without breaking installed clients, those clients
+are served their own root.
+
+`LEGACY_CLIENT_RANGES` in `src/catalog.py` names each range of releases, e.g.
+`0.4.0-0.8.0`, with the User-Agent prefix that identifies them
+(`dynamical-catalog/0.`). `generate()` writes `catalog-{range}.json` beside
+`catalog.json` in every tier: the same root minus the items that list the
+range in `CatalogItem.exclude_from`. Collections are shared, not copied. At
+the edge, a Cloudflare URL rewrite serves that file in place of `/catalog.json`
+to requests whose User-Agent starts with the prefix; every other client gets
+`catalog.json`. CI picks each release's root with the same prefix test
+(`catalog.root_filename_for_client`), but it only models the rule: nothing here
+reads the deployed one, so a wrong host, path, prefix or target at the edge
+still passes this suite. Verify the live rule whenever it or a range changes.
+
+- Set `exclude_from=("0.4.0-0.8.0",)` on an item those releases can't parse.
+  For `s3_only` ranges validation requires it on any item whose repository or
+  virtual chunk containers aren't `s3://`.
+- Adding a range to an item those clients can already read takes the dataset
+  away from them. Treat it like raising `MIN_VERSION`: its own PR, with the
+  catalog owner's approval.
+- A legacy root protects nobody until its file is published **and** the edge
+  rule is live. Before promoting an excluded item, check that
+  `curl -A dynamical-catalog/0.8.0 https://stac.dynamical.org/catalog.json`
+  returns the legacy root. After such an item is in production the rule must
+  stay on. To back out, move the item back to staging, wait for the production
+  upload to succeed, and confirm the live `catalog.json` is readable by the
+  old clients again; only then may the rule be turned off.
+- The range name is a label, not parsed; it is in a published file name and
+  in the edge rule, so don't rename one.
+- Shared collection documents must stay parseable and openable by every range
+  that links them; the compat matrix is what checks that. It also reads one
+  value per collection, except that 0.4.0 can't read virtual datasets at all
+  (see above), whatever their storage.

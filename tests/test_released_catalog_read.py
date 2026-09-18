@@ -11,10 +11,13 @@ which silently broke 0.3.0 consumers.
 
 Each target is installed into an isolated env via `uv run --with` and the
 check runs in a subprocess so it can't share import state with the project
-venv. Released versions read the production-only root because staging may
-exercise a contract that has not shipped yet; canary refs read every staging
-collection so that new contract is proven before release. The full `open + read
-first variable` flow runs against the just-generated STAC.
+venv. Released versions read the production-only view of the root the edge
+serves them: the legacy root for a release in one of `LEGACY_CLIENT_RANGES`
+(routed by User-Agent prefix, the same predicate used here), `catalog.json` for
+the rest. Staging may exercise a contract that has not shipped yet; canary refs
+read every staging collection so that new contract is proven before release.
+Each root must link exactly the collections expected of it, and the full `open +
+read first variable` flow runs on every one against the just-generated STAC.
 
 The set of targets is built fresh on every run by
 `scripts/compat_matrix.py`, which queries PyPI for non-yanked stable
@@ -41,7 +44,7 @@ import textwrap
 
 import pytest
 
-from catalog import CATALOG_ITEMS
+from catalog import CATALOG_ITEMS, LEGACY_CLIENT_RANGES, root_filename_for_client
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 _SCRIPTS_DIR = REPO_ROOT / "scripts"
@@ -54,6 +57,7 @@ from compat_matrix import (  # noqa: E402
     PACKAGE,
     build_targets,
     fetch_releases,
+    reads_virtual_chunks,
     safe_id,
 )
 
@@ -89,12 +93,55 @@ def _install_spec(target: str) -> str:
     return f"{PACKAGE} @ git+{_DYNAMICAL_CATALOG_REPO}@{target}"
 
 
+def _is_release(target: str) -> bool:
+    return re.fullmatch(r"\d+\.\d+\.\d+", target) is not None
+
+
 def _catalog_filename(target: str) -> str:
-    return (
-        "catalog-production.json"
-        if re.fullmatch(r"\d+\.\d+\.\d+", target)
-        else "catalog.json"
-    )
+    if not _is_release(target):
+        return "catalog.json"
+    # `served_catalog` writes each root's production view beside it.
+    root_filename = root_filename_for_client(target)
+    return root_filename.removesuffix(".json") + "-production.json"
+
+
+def _expected_collection_ids(target: str) -> list[str]:
+    """The collections `target` is promised, derived from `CATALOG_ITEMS` alone
+    so a root that lost (or never dropped) a child can't pass by agreeing with
+    itself. Test-tier fixtures are never in the served catalog.
+    """
+    if not _is_release(target):
+        return [item.id for item in CATALOG_ITEMS if not item.test]
+    excluded_from = {
+        legacy_range.name
+        for legacy_range in LEGACY_CLIENT_RANGES
+        if legacy_range.serves(target)
+    }
+    return [
+        item.id
+        for item in CATALOG_ITEMS
+        if not (item.staging or item.test)
+        and not excluded_from & set(item.exclude_from)
+    ]
+
+
+def _open_only_ids(target: str) -> list[str]:
+    """Collections `target` can open but not read (see `reads_virtual_chunks`).
+
+    Reading index 0 proves a fetch only where that chunk was written; elsewhere
+    it returns the fill value, which is how 0.4.0 once passed a virtual read.
+    """
+    if reads_virtual_chunks(target):
+        return []
+    return [item.id for item in CATALOG_ITEMS if item.virtual_chunk_container_prefixes]
+
+
+def _child_ids(root_path: pathlib.Path) -> list[str]:
+    return [
+        pathlib.PurePosixPath(link["href"]).parent.name
+        for link in json.loads(root_path.read_text())["links"]
+        if link["rel"] == "child"
+    ]
 
 
 _HARNESS = textwrap.dedent(
@@ -104,8 +151,8 @@ _HARNESS = textwrap.dedent(
     import gribberish.zarr  # registers the GribberishCodec for virtual datasets
     from dynamical_catalog import _stac
 
-    catalog_url, collection_ids_json = sys.argv[1], sys.argv[2]
-    collection_ids = json.loads(collection_ids_json)
+    catalog_url, collection_ids = sys.argv[1], json.loads(sys.argv[2])
+    open_only_ids = set(json.loads(sys.argv[3]))
 
     _stac.STAC_CATALOG_URL = catalog_url
     _stac.clear_cache()
@@ -113,6 +160,8 @@ _HARNESS = textwrap.dedent(
     for cid in collection_ids:
         ds = dynamical_catalog.open(cid)
         first = next(iter(ds.data_vars))
+        if cid in open_only_ids:
+            continue
         da = ds[first]
         value = da.isel({d: 0 for d in da.dims}).load().item()
         assert isinstance(value, (int, float)), f"{cid}.{first} -> {value!r}"
@@ -136,14 +185,12 @@ def test_released_dynamical_catalog_opens_every_collection(
     if uv is None:
         pytest.skip("uv not available; cannot install released dynamical-catalog")
 
-    _, root_url = served_catalog
-    staging = not re.fullmatch(r"\d+\.\d+\.\d+", target)
-    # Test-tier fixtures are never in the served catalog (see `served_catalog`).
-    collection_ids = [
-        item.id
-        for item in CATALOG_ITEMS
-        if not item.test and (staging or not item.staging)
-    ]
+    catalog_dir, root_url = served_catalog
+    collection_ids = _expected_collection_ids(target)
+    assert collection_ids
+    assert sorted(_child_ids(catalog_dir / _catalog_filename(target))) == sorted(
+        collection_ids
+    )
     harness = tmp_path / "harness.py"
     harness.write_text(_HARNESS)
 
@@ -166,6 +213,7 @@ def test_released_dynamical_catalog_opens_every_collection(
             str(harness),
             f"{root_url}/{_catalog_filename(target)}",
             json.dumps(collection_ids),
+            json.dumps(_open_only_ids(target)),
         ],
         check=True,
     )

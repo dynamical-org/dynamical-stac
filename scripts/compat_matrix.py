@@ -35,12 +35,14 @@ import urllib.request
 PACKAGE = "dynamical-catalog"
 
 # Drop releases older than this. 0.5.0 is the first release we officially
-# announced as a supported access method. Every non-yanked stable release at
+# announced as a supported access method, but 0.4.0 still made a fifth of
+# catalog requests in September 2026 (dynamical-org/meta#222), so the floor
+# sits there. Every non-yanked stable release at
 # or above it is a support contract: a production catalog change that breaks
 # one fails CI. Bumping this floor is a support-policy change, so it goes in
 # its own PR with the catalog owner's approval, never in the PR whose
 # catalog change needs it. See "Client compatibility matrix" in CLAUDE.md.
-MIN_VERSION = "0.5.0"
+MIN_VERSION = "0.4.0"
 
 # Long-lived non-PyPI refs to also exercise. `main` catches breakage in
 # unreleased dynamical-catalog before it ships to users — but it's a canary,
@@ -52,6 +54,12 @@ CANARY_REFS = ["main"]
 # by default — every PyPI release at or above MIN_VERSION is treated as a
 # support contract.
 _RELEASE_ALLOW_FAILURE: frozenset[str] = frozenset()
+
+# dynamical-catalog gained virtual chunk container support in 0.5.0. An earlier
+# release opens a virtual dataset but can't fetch its chunks (icechunk refuses
+# the unauthorized container), so the compat test holds it to opening those,
+# not reading them.
+VIRTUAL_READS_SINCE = "0.5.0"
 
 _STABLE_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 _PYPI_TIMEOUT_SECONDS = 15
@@ -83,6 +91,13 @@ def fetch_releases(package: str = PACKAGE, min_version: str = MIN_VERSION) -> li
             continue
         out.append(version)
     return sorted(out, key=_version_tuple)
+
+
+def reads_virtual_chunks(target: str) -> bool:
+    """Whether `target` (a release, or a git ref) can read a virtual dataset's data."""
+    if not _STABLE_VERSION_RE.match(target):
+        return True  # canary refs track main
+    return _version_tuple(target) >= _version_tuple(VIRTUAL_READS_SINCE)
 
 
 def safe_id(target: str) -> str:

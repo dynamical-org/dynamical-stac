@@ -21,12 +21,14 @@ def _catalog_item(
     icechunk_href: str = f"s3://test-bucket/{_TEST_ID}/v0.icechunk/",
     icechunk_region: str | None = "us-west-2",
     virtual_chunk_container_prefixes: tuple[str, ...] = (),
+    exclude_from: tuple[str, ...] = (),
 ) -> CatalogItem:
     return CatalogItem(
         id=item_id,
         icechunk_href=icechunk_href,
         icechunk_region=icechunk_region,  # type: ignore[arg-type]
         virtual_chunk_container_prefixes=virtual_chunk_container_prefixes,
+        exclude_from=exclude_from,
         model_id="noaa-gfs",
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
@@ -349,6 +351,7 @@ def test_icechunk_https_asset_advertises_virtual_chunk_containers() -> None:
 def test_https_repository_and_chunk_container_need_no_storage_options() -> None:
     item = _catalog_item(
         icechunk_href=f"https://data.example.org/{_TEST_ID}/v0.icechunk/",
+        exclude_from=("0.4.0-0.8.0",),
         icechunk_region=None,
         virtual_chunk_container_prefixes=("https://chunks.example.org/data/",),
     )
@@ -393,6 +396,7 @@ def _gcs_catalog_item() -> CatalogItem:
     return CatalogItem(
         id=_GCS_ID,
         icechunk_href=_GCS_HREF,
+        exclude_from=("0.4.0-0.8.0",),
         virtual_chunk_container_prefixes=(_GCS_SOURCE_PREFIX,),
         model_id="dynamical-test",
         description_summary="test summary",
@@ -541,6 +545,7 @@ def _azure_catalog_item() -> CatalogItem:
     return CatalogItem(
         id=_AZ_ID,
         icechunk_href=_AZ_HREF,
+        exclude_from=("0.4.0-0.8.0",),
         icechunk_account=_AZ_ACCOUNT,
         virtual_chunk_container_prefixes=(_AZ_SOURCE_PREFIX,),
         model_id="dynamical-test",

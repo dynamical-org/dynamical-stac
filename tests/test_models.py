@@ -172,6 +172,7 @@ def test_catalog_item_uses_https_icechunk_href_directly() -> None:
         id=_TEST_ID,
         icechunk_href=href,
         icechunk_region=None,
+        exclude_from=("0.4.0-0.8.0",),
         **_PROSE_KWARGS,  # type: ignore[arg-type]
     )
     assert item.icechunk_https_href == href.rstrip("/")
@@ -202,6 +203,7 @@ def test_catalog_item_rejects_region_for_https_icechunk_href() -> None:
         CatalogItem(
             id=_TEST_ID,
             icechunk_href=f"https://data.example.org/{_TEST_ID}/v1.icechunk/",
+            exclude_from=("0.4.0-0.8.0",),
             icechunk_region="us-west-2",
             **_PROSE_KWARGS,  # type: ignore[arg-type]
         )
@@ -288,6 +290,7 @@ def test_catalog_item_accepts_gs_href_without_region() -> None:
     item = CatalogItem(
         id=_TEST_ID,
         icechunk_href=f"gs://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+        exclude_from=("0.4.0-0.8.0",),
         **_PROSE_KWARGS,  # type: ignore[arg-type]
     )
     assert item.icechunk_scheme == "gs"
@@ -302,6 +305,7 @@ def test_catalog_item_rejects_gs_href_with_region() -> None:
         CatalogItem(
             id=_TEST_ID,
             icechunk_href=f"gs://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+            exclude_from=("0.4.0-0.8.0",),
             icechunk_region="us-west-2",
             **_PROSE_KWARGS,  # type: ignore[arg-type]
         )
@@ -320,6 +324,7 @@ def test_catalog_item_accepts_az_href_with_account() -> None:
     item = CatalogItem(
         id=_TEST_ID,
         icechunk_href=f"az://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+        exclude_from=("0.4.0-0.8.0",),
         icechunk_account="dynamicaldemo",
         **_PROSE_KWARGS,  # type: ignore[arg-type]
     )
@@ -337,6 +342,7 @@ def test_catalog_item_rejects_az_href_without_account() -> None:
         CatalogItem(
             id=_TEST_ID,
             icechunk_href=f"az://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+            exclude_from=("0.4.0-0.8.0",),
             **_PROSE_KWARGS,  # type: ignore[arg-type]
         )
 
@@ -346,6 +352,7 @@ def test_catalog_item_rejects_az_href_with_region() -> None:
         CatalogItem(
             id=_TEST_ID,
             icechunk_href=f"az://dynamical-demo/{_TEST_ID}/v1.icechunk/",
+            exclude_from=("0.4.0-0.8.0",),
             icechunk_account="dynamicaldemo",
             icechunk_region="us-west-2",
             **_PROSE_KWARGS,  # type: ignore[arg-type]
