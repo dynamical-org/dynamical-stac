@@ -90,6 +90,52 @@ def az_to_https_url(az_href: str, account: str) -> str:
     return f"https://{account}.blob.core.windows.net/{parsed.netloc}/{key}"
 
 
+class LegacyClientRange(BaseModel):
+    """A span of released dynamical-catalog versions served their own root catalog.
+
+    Those releases parse every collection in the root before opening any
+    dataset, so one collection they can't read breaks them for all datasets. A
+    `CatalogItem` names the ranges it must be kept from in `exclude_from`;
+    `generate()` writes each range a `catalog-{name}.json` without those items,
+    and the edge serves that file in place of `catalog.json` to requests whose
+    User-Agent starts with `user_agent_prefix`. See "Legacy client roots" in
+    CLAUDE.md.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # A label, never parsed: it is the `exclude_from` value and the file name.
+    name: str = Field(pattern=r"^\d+\.\d+\.\d+-\d+\.\d+\.\d+$")
+    user_agent_prefix: str = Field(pattern=r"^dynamical-catalog/[0-9.]+$")
+    # These releases read only `s3://` repositories and `s3://` virtual chunk
+    # containers; `_s3_only_ranges_exclude_other_storage` holds items to that.
+    s3_only: bool
+
+    @property
+    def root_filename(self) -> str:
+        return f"catalog-{self.name}.json"
+
+    def serves(self, client_version: str) -> bool:
+        """Whether the edge routes this dynamical-catalog release to this root."""
+        user_agent = f"dynamical-catalog/{client_version}"
+        return user_agent.startswith(self.user_agent_prefix)
+
+
+LEGACY_CLIENT_RANGES: tuple[LegacyClientRange, ...] = (
+    LegacyClientRange(
+        name="0.4.0-0.8.0", user_agent_prefix="dynamical-catalog/0.", s3_only=True
+    ),
+)
+
+
+def root_filename_for_client(client_version: str) -> str:
+    """The root catalog file the edge serves a dynamical-catalog release."""
+    for legacy_range in LEGACY_CLIENT_RANGES:
+        if legacy_range.serves(client_version):
+            return legacy_range.root_filename
+    return "catalog.json"
+
+
 class DatasetLicense(StrEnum):
     CC_BY_4_0 = "CC-BY-4.0"
 
@@ -415,6 +461,11 @@ class CatalogItem(BaseModel):
     # to stac-test where dynamical-catalog's integration tests read it. Mutually
     # exclusive with `staging` (see `_tier_is_unambiguous`).
     test: bool = False
+    # Names of the `LEGACY_CLIENT_RANGES` whose root catalog omits this item
+    # because those releases can't parse its collection. Adding a range to a
+    # dataset those clients can already read takes it away from them, so treat
+    # that like raising the compat floor (see CLAUDE.md).
+    exclude_from: tuple[str, ...] = ()
 
     @property
     def icechunk_scheme(self) -> StorageScheme:
@@ -576,6 +627,35 @@ class CatalogItem(BaseModel):
                     f"can be advertised but never read. Extend dynamical-catalog's "
                     f"reader first to use one here."
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _exclude_from_names_known_ranges(self) -> CatalogItem:
+        known = {legacy_range.name for legacy_range in LEGACY_CLIENT_RANGES}
+        unknown = sorted(set(self.exclude_from) - known)
+        if unknown:
+            raise ValueError(
+                f"{self.id} exclude_from names unknown legacy client ranges "
+                f"{unknown}; known ranges: {sorted(known)}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _s3_only_ranges_exclude_other_storage(self) -> CatalogItem:
+        hrefs = (self.icechunk_href, *self.virtual_chunk_container_prefixes)
+        if all(url_scheme(href) == "s3" for href in hrefs):
+            return self
+        missing = sorted(
+            legacy_range.name
+            for legacy_range in LEGACY_CLIENT_RANGES
+            if legacy_range.s3_only and legacy_range.name not in self.exclude_from
+        )
+        if missing:
+            raise ValueError(
+                f"{self.id} uses storage other than s3://, which breaks every "
+                f"dataset for the clients in legacy ranges {missing}; add them to "
+                f"exclude_from"
+            )
         return self
 
     @model_validator(mode="after")
@@ -983,6 +1063,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gs://ecmwf-open-data/",
             "s3://ecmwf-forecasts/",
         ),
+        exclude_from=("0.4.0-0.8.0",),
         model_id="ecmwf-aifs-single",
         description_summary=(
             "This dataset is an archive of past and present ECMWF AIFS Single "
@@ -1150,6 +1231,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "google-weathernext2-forecast-historical-virtual/v0.1.0.icechunk/"
         ),
         virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        exclude_from=("0.4.0-0.8.0",),
         model_id="google-weathernext2",
         description_summary=(
             "This dataset is the fixed 2022-2024 archive of Google "
@@ -1184,6 +1266,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "google-weathernext2-forecast-operational-virtual/v0.1.0.icechunk/"
         ),
         virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        exclude_from=("0.4.0-0.8.0",),
         model_id="google-weathernext2",
         description_summary=(
             "This dataset is the 2025-present archive of Google WeatherNext 2 "
@@ -1363,6 +1446,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         virtual_chunk_container_prefixes=(
             "gs://dynamical-icechunk-gcs-demo/test-gcs-virtual/source/",
         ),
+        exclude_from=("0.4.0-0.8.0",),
         model_id="dynamical-test",
         description_summary=(
             "A synthetic 2x3x4 `temperature_2m` array on Google Cloud Storage "
@@ -1392,6 +1476,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         virtual_chunk_container_prefixes=(
             "az://dynamical-icechunk-azure-demo/test-azure-virtual/source/",
         ),
+        exclude_from=("0.4.0-0.8.0",),
         model_id="dynamical-test",
         description_summary=(
             "A synthetic 2x3x4 `temperature_2m` array on Azure Blob Storage "

@@ -54,6 +54,7 @@ def _gcs_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
     return CatalogItem(
         id=_GCS_ID,
         icechunk_href=f"gs://dynamical-icechunk-gcs-demo/{_GCS_ID}/v0.1.0.icechunk/",
+        exclude_from=("0.4.0-0.8.0",),
         virtual_chunk_container_prefixes=virtual_prefixes,
         model_id="dynamical-test",
         test=True,
@@ -65,6 +66,7 @@ def _azure_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
     return CatalogItem(
         id=_AZ_ID,
         icechunk_href=f"az://{_AZ_CONTAINER}/{_AZ_ID}/v0.1.0.icechunk/",
+        exclude_from=("0.4.0-0.8.0",),
         icechunk_account=_AZ_ACCOUNT,
         virtual_chunk_container_prefixes=virtual_prefixes,
         model_id="dynamical-test",
@@ -77,6 +79,7 @@ def _https_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
     return CatalogItem(
         id=_HTTPS_ID,
         icechunk_href=_HTTPS_HREF,
+        exclude_from=("0.4.0-0.8.0",),
         virtual_chunk_container_prefixes=virtual_prefixes,
         model_id="google-weathernext2",
         staging=True,

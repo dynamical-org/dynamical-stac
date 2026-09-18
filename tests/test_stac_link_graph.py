@@ -27,7 +27,7 @@ from collections import deque
 import pystac
 import pytest
 
-from catalog import _COLLECTION_IDS
+from catalog import _COLLECTION_IDS, LEGACY_CLIENT_RANGES
 from generate import ROOT_HREF
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -214,7 +214,15 @@ def test_link_graph_reaches_every_committed_file() -> None:
         committed. The reader 404s and either skips the entry or aborts.
     """
     on_disk = {p.resolve() for p in _all_committed_files()}
-    queue: deque[pathlib.Path] = deque([(COMMITTED_STAC / "catalog.json").resolve()])
+    # The edge serves a legacy root in place of `catalog.json`, so nothing
+    # links to one: each is an entry point of its own.
+    root_filenames = [
+        "catalog.json",
+        *(legacy_range.root_filename for legacy_range in LEGACY_CLIENT_RANGES),
+    ]
+    queue: deque[pathlib.Path] = deque(
+        (COMMITTED_STAC / root_filename).resolve() for root_filename in root_filenames
+    )
     seen: set[pathlib.Path] = set()
     missing: list[str] = []
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import concurrent.futures
+import json
 import os
 import pathlib
 
@@ -10,7 +11,7 @@ import pystac
 import xarray as xr
 import zarr
 
-from catalog import CATALOG_ITEMS, CatalogItem, url_scheme
+from catalog import CATALOG_ITEMS, LEGACY_CLIENT_RANGES, CatalogItem, url_scheme
 from models import CollectionInput
 
 ROOT_HREF = os.environ.get("STAC_ROOT_HREF", "https://stac.dynamical.org")
@@ -139,6 +140,39 @@ def _set_self_link_titles(catalog: pystac.Catalog) -> None:
                 link.title = obj.title
 
 
+def legacy_root(
+    root: dict[str, object], root_filename: str, excluded_ids: set[str]
+) -> dict[str, object]:
+    """`root` as served to a legacy client range: its own `self`, fewer children.
+
+    The `root` link still names `catalog.json`, and the collections are shared
+    rather than copied, so their `root` and `parent` links stay true.
+    """
+    links = []
+    for link in root["links"]:  # type: ignore[attr-defined]
+        if link["rel"] == "child":
+            if pathlib.PurePosixPath(link["href"]).parent.name not in excluded_ids:
+                links.append(link)
+        elif link["rel"] == "self":
+            href = link["href"].rsplit("/", 1)[0] + f"/{root_filename}"
+            links.append({**link, "href": href})
+        else:
+            links.append(link)
+    return {**root, "links": links}
+
+
+def _write_legacy_roots(output_dir: pathlib.Path, items: list[CatalogItem]) -> None:
+    root = json.loads((output_dir / "catalog.json").read_text())
+    for legacy_range in LEGACY_CLIENT_RANGES:
+        excluded_ids = {
+            item.id for item in items if legacy_range.name in item.exclude_from
+        }
+        legacy = legacy_root(root, legacy_range.root_filename, excluded_ids)
+        (output_dir / legacy_range.root_filename).write_text(
+            json.dumps(legacy, indent=2)
+        )
+
+
 def generate(
     output_dir: pathlib.Path,
     root_href: str = ROOT_HREF,
@@ -177,3 +211,4 @@ def generate(
         catalog_type=pystac.CatalogType.ABSOLUTE_PUBLISHED,
         dest_href=str(output_dir),
     )
+    _write_legacy_roots(output_dir, items)
