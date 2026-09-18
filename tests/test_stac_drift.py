@@ -18,15 +18,21 @@ ref's `src/` (default `origin/main`; `STAC_DRIFT_BASE_REF` overrides it,
 ref's own `stac/`. Files that mismatch there too drifted in the store. Files
 whose fresh output equals the base's committed file are just a branch that is
 behind the base (only possible locally: CI checks out the PR merged into
-`main`). Whatever remains was changed by this branch. On a push to `main`,
-HEAD is the base, so every mismatch is store drift, and the workflow opens an
-issue with that message instead of leaving `main` red without a reason.
+`main`). Whatever remains was changed by this branch. On a push to `main`
+or the daily schedule, HEAD is the base, so a mismatch reads as store drift
+(the usual cause; a stale tree merged past the checks reads the same), and
+the workflow opens an issue with that message instead of leaving `main` red
+without a reason.
 
 Known limits: the base's generator runs with this branch's environment, so a
 dependency bump that changes rendering labels every file as store drift, and
 one that breaks the base's generator drops back to the unclassified message.
 A file whose store drifted and that this branch also edited is listed under
-store drift only. Regenerating fixes all of these.
+store drift only, and a dataset that exists only on this branch cannot be
+classified as drift. `STAC_INCLUDE_STAGING` / `STAC_INCLUDE_TEST` apply to
+both generations, so with either set the committed production tree fails as
+store drift on every staging or test collection. Regenerating without them
+fixes all of these.
 """
 
 from __future__ import annotations
@@ -110,8 +116,11 @@ def _store_drift(ref: str, workdir: pathlib.Path) -> dict[str, list[str]]:
 
 
 def _same_as_base_commit(rel: str, generated: pathlib.Path, base: pathlib.Path) -> bool:
-    """True when this tree's fresh output equals the base's committed file."""
+    """True when this tree's fresh output agrees with the base's committed
+    tree about `rel`: the same content, or absent from both."""
     ours, theirs = generated / rel, base / "stac" / rel
+    if not ours.is_file() and not theirs.is_file():
+        return True
     return (
         ours.is_file()
         and theirs.is_file()
@@ -141,7 +150,12 @@ def test_committed_stac_matches_generated(tmp_path: pathlib.Path) -> None:
 
     try:
         drift = _store_drift(ref, tmp_path)
-    except (subprocess.CalledProcessError, OSError) as exc:
+    except (
+        subprocess.CalledProcessError,
+        OSError,
+        tarfile.TarError,
+        ValueError,
+    ) as exc:
         pytest.fail(
             f"stac/ does not match generate(), and regenerating from {ref} with "
             f"this branch's environment failed ({exc}), so the cause cannot be "

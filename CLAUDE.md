@@ -149,10 +149,14 @@ say which of two things happened:
 
 - **Store drift**: a dataset's Icechunk store changed after the last regen
   (a reformatters deploy renamed a variable or added an attribute). Nothing in
-  this repo is wrong; `main` needs a regen commit. On a push to `main` this is
-  the only possible cause, and `notify-on-drift` opens or updates the issue
-  "Catalog needs regen: a dataset store changed" so `main` is never red
-  without a stated reason. Fix: `./scripts/generate` on `main`, commit, merge.
+  this repo is wrong; `main` needs a regen commit. On a push to `main` and on
+  the daily scheduled run this is the usual cause (a stale tree merged past
+  the checks reads the same), and `notify-on-drift` opens or updates the
+  issue "Catalog needs regen: a dataset store changed" so `main` is never
+  red without a stated reason. The daily run is the only thing that notices a
+  store change between pushes; the `repository_dispatch` trigger from
+  reformatters has never fired. Fix: `./scripts/generate` on `main`, commit,
+  merge.
 - **Unregenerated change**: the branch edited `src/` without running
   `./scripts/generate`. Fix: regenerate on the branch.
 - **Behind base** (local runs only; CI tests the PR merged into `main`): the
@@ -162,8 +166,8 @@ All of them fail the job. Merging a stale `stac/` ships a stale catalog through
 `upload-stac.yml`, so a store-drift failure on a PR still means someone must
 regenerate, and the message names which files and why.
 
-The `Protect main` ruleset requires the `test` and `compat-required` checks;
-a job gates merges only once it is listed there, so keep the required checks
-in step with the jobs in `.github/workflows/test.yml` when one is added or
-renamed.
+A job gates merges only once the `Protect main` ruleset lists it as a
+required check, so `stac-drift` must be listed there alongside `test` and
+`compat-required`, and the list must be kept in step with the jobs in
+`.github/workflows/test.yml` when one is added or renamed.
 

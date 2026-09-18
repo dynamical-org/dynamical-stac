@@ -7,12 +7,17 @@ on:
   repository_dispatch:
     types: [reformatters-main-push]
   workflow_dispatch:
+  # Daily drift sweep: a reformatters deploy can change a store any time, and
+  # without a push here nothing else notices until the next PR trips on it.
+  schedule:
+    - cron: "17 6 * * *"  # runs only stac-drift and notify-on-drift
 
 permissions:
   contents: read
 
 jobs:
   test:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -33,9 +38,12 @@ jobs:
   # test says which: a dataset store changed after the last regen (STORE
   # DRIFT, main needs a regen commit, nobody broke anything) or this branch
   # changed src/ without running scripts/generate. Classifying needs the base
-  # ref's src/ and stac/, hence the fetch of main. On a push to main every
-  # mismatch is store drift by construction, and notify-on-drift files it as
-  # such instead of leaving main red with no stated reason.
+  # ref's src/ and stac/, hence the fetch of main. On a push to main or the
+  # daily schedule, HEAD is the base, so a mismatch reads as store drift (the
+  # usual cause; a stale tree merged past the checks looks the same), and
+  # notify-on-drift files it instead of leaving main red with no stated
+  # reason. This job gates merges only while it is listed in the `Protect
+  # main` ruleset's required checks.
   stac-drift:
     runs-on: ubuntu-latest
     steps:
@@ -47,8 +55,12 @@ jobs:
 
   notify-on-drift:
     needs: stac-drift
-    if: failure() && (github.event_name == 'push' || github.event_name == 'repository_dispatch')
+    if: failure() && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'repository_dispatch')
     runs-on: ubuntu-latest
+    # One filing at a time, so two failing runs close together cannot both
+    # miss the other's issue and open a duplicate.
+    concurrency:
+      group: notify-on-drift
     permissions:
       issues: write
     steps:
@@ -59,10 +71,11 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           TITLE: "Catalog needs regen: a dataset store changed"
         run: |
-          body="A dataset store changed after the last \`scripts/generate\`, so the committed \`stac/\` no longer matches it. Nothing in this repo broke; run \`./scripts/generate\` on main and commit the result.
+          body="The committed \`stac/\` no longer matches what \`generate()\` renders from main. The usual cause is a dataset store that changed after the last regen (a reformatters deploy); nothing in this repo needs fixing for that. Run \`./scripts/generate\` on main and commit the result. The run's \`stac-drift\` log lists the files.
 
           Run: ${RUN_URL}"
-          existing=$(gh issue list --state open --search "\"${TITLE}\" in:title" --json number --jq '.[0].number')
+          # REST listing, not the search index, which lags creation.
+          existing=$(gh issue list --state open --limit 200 --json number,title --jq --arg t "$TITLE" '[.[] | select(.title == $t)] | .[0].number')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"
           else
@@ -90,6 +103,7 @@ jobs:
   #                  canary refs like `main`, where a dynamical-catalog
   #                  breakage shouldn't block dynamical-stac PRs.
   discover:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.build.outputs.matrix }}
@@ -125,7 +139,7 @@ jobs:
   # leaves compat skipped rather than failed, is caught here too.
   compat-required:
     needs: compat
-    if: always()
+    if: always() && github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - env:
