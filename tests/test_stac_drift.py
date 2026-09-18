@@ -5,8 +5,8 @@ A mismatch has two possible causes, and they need different responses:
 * **Store drift.** A dataset's Icechunk store changed after the last
   `scripts/generate` (a reformatters deploy renamed a variable, added an
   attribute comment, extended an extent). Nothing in this repo is wrong; the
-  committed tree is stale and needs a regen commit. This is also the only way
-  `main` itself can go red, since every PR proves its own tree matches the
+  committed tree is stale and needs a regen commit. This is the usual way
+  `main` itself goes red, since every PR proves its own tree matches the
   stores at the time it ran.
 * **An unregenerated change.** This branch edited `src/` (a `CatalogItem`,
   prose, the generator) and did not run `scripts/generate`, so the rendered
@@ -28,8 +28,9 @@ Known limits: the base's generator runs with this branch's environment, so a
 dependency bump that changes rendering labels every file as store drift, and
 one that breaks the base's generator drops back to the unclassified message.
 A file whose store drifted and that this branch also edited is listed under
-store drift only, and a dataset that exists only on this branch cannot be
-classified as drift. `STAC_INCLUDE_STAGING` / `STAC_INCLUDE_TEST` apply to
+store drift only, a dataset that exists only on this branch cannot be
+classified as drift, and one this branch added and then removed from `src/`
+without regenerating reads as behind base. `STAC_INCLUDE_STAGING` / `STAC_INCLUDE_TEST` apply to
 both generations, so with either set the committed production tree fails as
 store drift on every staging or test collection. Regenerating without them
 fixes all of these.

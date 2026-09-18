@@ -74,8 +74,9 @@ jobs:
           body="The committed \`stac/\` no longer matches what \`generate()\` renders from main. The usual cause is a dataset store that changed after the last regen (a reformatters deploy); nothing in this repo needs fixing for that. Run \`./scripts/generate\` on main and commit the result. The run's \`stac-drift\` log lists the files.
 
           Run: ${RUN_URL}"
-          # REST listing, not the search index, which lags creation.
-          existing=$(gh issue list --state open --limit 200 --json number,title --jq --arg t "$TITLE" '[.[] | select(.title == $t)] | .[0].number')
+          # A plain listing, not the search index, which lags creation. gh's
+          # jq has no --arg; TITLE comes through $ENV.
+          existing=$(gh issue list --state open --limit 200 --json number,title --jq '[.[] | select(.title == $ENV.TITLE)] | .[0].number')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"
           else
