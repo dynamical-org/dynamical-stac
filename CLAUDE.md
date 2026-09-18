@@ -132,7 +132,8 @@ list to maintain here or in the workflow:
   and `main` already covers what is about to ship.
 
 Raising `MIN_VERSION` drops a release from the support contract. It is a
-policy decision, not a fix: make it in its own PR, with Alden's approval and
+policy decision, not a fix: make it in its own PR, with the catalog owner's
+approval (Alden today) and
 the reason (consumers gone from the wild, or a break that has been announced
 and accepted), never bundled into the catalog PR whose `compat` failure it
 would silence. If a catalog change needs a client feature that only newer
@@ -154,14 +155,15 @@ say which of two things happened:
   without a stated reason. Fix: `./scripts/generate` on `main`, commit, merge.
 - **Unregenerated change**: the branch edited `src/` without running
   `./scripts/generate`. Fix: regenerate on the branch.
+- **Behind base** (local runs only; CI tests the PR merged into `main`): the
+  fresh output already matches `main`'s committed file. Fix: merge `main`.
 
-Both fail the job. Merging a stale `stac/` ships a stale catalog through
+All of them fail the job. Merging a stale `stac/` ships a stale catalog through
 `upload-stac.yml`, so a store-drift failure on a PR still means someone must
 regenerate, and the message names which files and why.
 
-The `Protect main` ruleset requires the `test` and `compat-required` checks.
-It does not require `stac-drift` until it is added there, and repository
-admins can bypass it, which is how a PR with a red `test` check has been
-merged before. Keep the required checks in step with the jobs in
-`.github/workflows/test.yml` when a job is added or renamed.
+The `Protect main` ruleset requires the `test` and `compat-required` checks;
+a job gates merges only once it is listed there, so keep the required checks
+in step with the jobs in `.github/workflows/test.yml` when one is added or
+renamed.
 

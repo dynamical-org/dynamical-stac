@@ -15,10 +15,18 @@ A mismatch has two possible causes, and they need different responses:
 To tell them apart, a mismatch triggers a second generation from the base
 ref's `src/` (default `origin/main`; `STAC_DRIFT_BASE_REF` overrides it,
 `STAC_DRIFT_NO_BASE=1` skips the classification) compared against the base
-ref's own `stac/`. Files that mismatch there too drifted in the store;
-whatever remains was changed by this branch. On a push to `main`, HEAD is the
-base, so every mismatch is store drift, and the workflow opens an issue with
-that message instead of leaving `main` red without a reason.
+ref's own `stac/`. Files that mismatch there too drifted in the store. Files
+whose fresh output equals the base's committed file are just a branch that is
+behind the base (only possible locally: CI checks out the PR merged into
+`main`). Whatever remains was changed by this branch. On a push to `main`,
+HEAD is the base, so every mismatch is store drift, and the workflow opens an
+issue with that message instead of leaving `main` red without a reason.
+
+Known limits: the base's generator runs with this branch's environment, so a
+dependency bump that changes rendering labels every file as store drift, and
+one that breaks the base's generator drops back to the unclassified message.
+A file whose store drifted and that this branch also edited is listed under
+store drift only. Regenerating fixes all of these.
 """
 
 from __future__ import annotations
@@ -101,6 +109,16 @@ def _store_drift(ref: str, workdir: pathlib.Path) -> dict[str, list[str]]:
     return _compare(base / "stac", generated)
 
 
+def _same_as_base_commit(rel: str, generated: pathlib.Path, base: pathlib.Path) -> bool:
+    """True when this tree's fresh output equals the base's committed file."""
+    ours, theirs = generated / rel, base / "stac" / rel
+    return (
+        ours.is_file()
+        and theirs.is_file()
+        and json.loads(ours.read_text()) == json.loads(theirs.read_text())
+    )
+
+
 def _describe(label: str, diff: dict[str, list[str]]) -> str:
     parts = [f"{kind} {files}" for kind, files in diff.items() if files]
     return f"{label}: {'; '.join(parts)}" if parts else ""
@@ -121,22 +139,41 @@ def test_committed_stac_matches_generated(tmp_path: pathlib.Path) -> None:
             f"and commit."
         )
 
-    drift = _store_drift(ref, tmp_path)
+    try:
+        drift = _store_drift(ref, tmp_path)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        pytest.fail(
+            f"stac/ does not match generate(), and regenerating from {ref} with "
+            f"this branch's environment failed ({exc}), so the cause cannot be "
+            f"classified. {_describe('Differences', diff)}. Run `scripts/generate` "
+            f"and commit."
+        )
+
     drifted = {kind: set(files) for kind, files in drift.items()}
-    store = {
-        kind: [f for f in files if f in drifted[kind]] for kind, files in diff.items()
-    }
-    branch = {
-        kind: [f for f in files if f not in drifted[kind]]
-        for kind, files in diff.items()
-    }
+    store: dict[str, list[str]] = {kind: [] for kind in diff}
+    behind: dict[str, list[str]] = {kind: [] for kind in diff}
+    branch: dict[str, list[str]] = {kind: [] for kind in diff}
+    for kind, files in diff.items():
+        for f in files:
+            if f in drifted[kind]:
+                store[kind].append(f)
+            elif _same_as_base_commit(f, tmp_path / "generated", tmp_path / "base"):
+                behind[kind].append(f)
+            else:
+                branch[kind].append(f)
 
     lines = [
         _describe(
             f"STORE DRIFT (not caused by this branch: {ref}'s own src/ no longer "
             f"reproduces {ref}'s stac/, so a dataset store changed after the last "
-            f"regen and main needs a regen commit)",
+            f"regen and main needs a regen commit; a file here may also carry "
+            f"this branch's changes)",
             store,
+        ),
+        _describe(
+            f"BEHIND BASE (this tree's fresh output already matches {ref}'s "
+            f"committed stac/; merge {ref})",
+            behind,
         ),
         _describe(
             "UNREGENERATED CHANGE (this branch's src/ renders differently from "

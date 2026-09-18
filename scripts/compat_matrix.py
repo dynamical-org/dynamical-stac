@@ -38,8 +38,8 @@ PACKAGE = "dynamical-catalog"
 # announced as a supported access method. Every non-yanked stable release at
 # or above it is a support contract: a production catalog change that breaks
 # one fails CI. Bumping this floor is a support-policy change, so it goes in
-# its own PR with Alden's approval, never in the PR whose catalog change
-# needs it. See "Client compatibility matrix" in CLAUDE.md.
+# its own PR with the catalog owner's approval, never in the PR whose
+# catalog change needs it. See "Client compatibility matrix" in CLAUDE.md.
 MIN_VERSION = "0.5.0"
 
 # Long-lived non-PyPI refs to also exercise. `main` catches breakage in
