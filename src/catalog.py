@@ -728,8 +728,6 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "is created by concatenating the shortest available step of each "
             "historical forecast to provide a dataset with dimensions time, "
             "latitude, and longitude.\n\n"
-            "Values are served directly from the source GRIB files rather than "
-            "rewritten, so this dataset keeps the source's full precision.\n\n"
             "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
             "gribberish>=1.5`) is required."
         ),
