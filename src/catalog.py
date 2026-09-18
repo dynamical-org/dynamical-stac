@@ -717,6 +717,31 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-gefs-analysis"),),
     ),
     CatalogItem(
+        id="noaa-gefs-analysis-0-25-degree-virtual",
+        icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-analysis-0-25-degree-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-gefs-pds/",),
+        model_id="noaa-gefs",
+        description_summary=(
+            "This analysis dataset is an archive of the model's best estimate "
+            "of past weather, optimized for spatial (map) access patterns. It "
+            "is created by concatenating the shortest available step of each "
+            "historical forecast to provide a dataset with dimensions time, "
+            "latitude, and longitude.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.5`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/analysis_0_25_degree_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-gefs-analysis-0-25-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00")',
+            ),
+        ),
+        staging=True,
+    ),
+    CatalogItem(
         id="noaa-hrrr-forecast-18-hour-virtual",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-18-hour-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
