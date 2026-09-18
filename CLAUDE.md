@@ -102,3 +102,39 @@ slash removed. Reading a `gs://`, `az://` or `https://` dataset needs
 dynamical-catalog >= 1.0.0 (the previous release, 0.8.0, reads S3 only); the
 example snippets of those items pass `min_version="1.0.0"` to `_example` so
 the rendered import comment says so.
+
+## Client compatibility matrix
+
+`.github/workflows/test.yml` runs a `compat (<target>)` job per supported
+`dynamical-catalog` target, and the fixed-name `compat-required` check that
+branch protection requires aggregates them. Each job installs one target into
+an isolated env (`uv run --with dynamical-catalog==X`) and runs
+`tests/test_released_catalog_read.py`, which loads the catalog generated from
+the branch and opens every production collection, reading one value from
+each. Released targets read the production-only root; the `main` canary reads
+the staging-inclusive root so an unreleased client contract is proven before
+it ships.
+
+The target set is built on every run by `scripts/compat_matrix.py`, with no
+list to maintain here or in the workflow:
+
+- **Every non-yanked stable release on PyPI at or above `MIN_VERSION`**,
+  currently 0.5.0, the first release announced as a supported access method.
+  These block the PR. A catalog change that any of them cannot load or read
+  fails `compat-required`, which is the point: on 2026-09-17 the
+  `gs://` virtual chunk container of ecmwf-aifs-single-forecast-virtual made
+  `dynamical-catalog` 0.5.0 through 0.8.0 fail on *every* dataset, and the
+  `compat (0.8.0)` check failed on exactly that.
+- **`main` of dynamical-catalog** as a canary (`allow-failure: true`). It
+  catches an unreleased client change that breaks against the catalog, but a
+  client-side breakage must not block catalog PRs, so it cannot fail the
+  build. Pre-releases are not in the matrix: they are not a support contract,
+  and `main` already covers what is about to ship.
+
+Raising `MIN_VERSION` drops a release from the support contract. It is a
+policy decision, not a fix: make it in its own PR, with Alden's approval and
+the reason (consumers gone from the wild, or a break that has been announced
+and accepted), never bundled into the catalog PR whose `compat` failure it
+would silence. If a catalog change needs a client feature that only newer
+releases have, the dataset stays in staging (see above) until the floor has
+been raised separately or the store is made readable by the floor release.

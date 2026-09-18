@@ -17,7 +17,8 @@ Stdlib-only on purpose: the workflow can run it with a bare Python without
 
 Maintenance:
 * Bump `MIN_VERSION` to drop support for an old release without yanking
-  it on PyPI. Versions below the floor are silently excluded.
+  it on PyPI. Versions below the floor are silently excluded. A bump is
+  its own PR (see the comment on `MIN_VERSION`).
 * Add long-lived non-PyPI git refs to `CANARY_REFS` (allow-failure: true).
 * PyPI releases at or above `MIN_VERSION` are non-blocking by default —
   see `_RELEASE_ALLOW_FAILURE` if a specific release ever needs to be
@@ -33,13 +34,13 @@ import urllib.request
 
 PACKAGE = "dynamical-catalog"
 
-# Drop releases older than this. Bump when we stop guaranteeing backwards
-# compatibility for an older `dynamical-catalog` (e.g. when its consumers
-# are extinct in the wild). 1.0.0 is the current floor: it is the first
-# release that accepts a non-S3 virtual chunk container, and releases before
-# it fail `load_catalog()` outright, for every dataset, once any production
-# collection carries one (ecmwf-aifs-single-forecast-virtual, gs://).
-MIN_VERSION = "1.0.0"
+# Drop releases older than this. 0.5.0 is the first release we officially
+# announced as a supported access method. Every non-yanked stable release at
+# or above it is a support contract: a production catalog change that breaks
+# one fails CI. Bumping this floor is a support-policy change, so it goes in
+# its own PR with Alden's approval, never in the PR whose catalog change
+# needs it. See "Client compatibility matrix" in CLAUDE.md.
+MIN_VERSION = "0.5.0"
 
 # Long-lived non-PyPI refs to also exercise. `main` catches breakage in
 # unreleased dynamical-catalog before it ships to users — but it's a canary,
