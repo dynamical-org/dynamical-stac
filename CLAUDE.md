@@ -109,8 +109,10 @@ the rendered import comment says so.
 `dynamical-catalog` release on PyPI at or above `MIN_VERSION`, currently
 0.4.0. CI tests each release against every production collection in the root
 catalog the edge serves it (see "Legacy client roots" below), including
-reading one value per collection. These checks block merges through the
-required `compat-required` job.
+reading one value per collection. The exception is 0.4.0, which predates
+virtual chunk container support: it must open every virtual dataset but isn't
+asked to read one. These checks block merges through the required
+`compat-required` job.
 
 The `main` client branch is a non-blocking canary against the staging-inclusive
 catalog. Pre-releases are excluded from the supported-release matrix.

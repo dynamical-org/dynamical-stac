@@ -55,6 +55,7 @@ sys.path.insert(0, str(_SCRIPTS_DIR))
 from compat_matrix import (  # noqa: E402
     CANARY_REFS,
     PACKAGE,
+    _version_tuple,
     build_targets,
     fetch_releases,
     safe_id,
@@ -73,6 +74,12 @@ _GRIBBERISH_SPEC = "gribberish==1.5.0"
 # releases resolved by `uv run --with` might otherwise pull an earlier zarr and
 # fail to open the store, so floor it here as a real consumer would.
 _ZARR_SPEC = "zarr>=3.2.1"
+
+# dynamical-catalog gained virtual chunk container support in 0.5.0. An earlier
+# release opens a virtual dataset but can't fetch its chunks (icechunk refuses
+# the unauthorized container), so it is held to opening those, not reading them.
+# Reading index 0 can still pass by luck when that chunk was never written.
+_VIRTUAL_READS_SINCE = "0.5.0"
 
 # Resolve targets at module import (collection time) so each one becomes
 # its own pytest parametrize id. PyPI is hit once; the result is reused
@@ -124,6 +131,15 @@ def _expected_collection_ids(target: str) -> list[str]:
     ]
 
 
+def _open_only_ids(target: str) -> list[str]:
+    """Collections `target` can open but not read."""
+    if not _is_release(target) or _version_tuple(target) >= _version_tuple(
+        _VIRTUAL_READS_SINCE
+    ):
+        return []
+    return [item.id for item in CATALOG_ITEMS if item.virtual_chunk_container_prefixes]
+
+
 def _child_ids(root_path: pathlib.Path) -> list[str]:
     return [
         pathlib.PurePosixPath(link["href"]).parent.name
@@ -139,8 +155,8 @@ _HARNESS = textwrap.dedent(
     import gribberish.zarr  # registers the GribberishCodec for virtual datasets
     from dynamical_catalog import _stac
 
-    catalog_url, collection_ids_json = sys.argv[1], sys.argv[2]
-    collection_ids = json.loads(collection_ids_json)
+    catalog_url, collection_ids = sys.argv[1], json.loads(sys.argv[2])
+    open_only_ids = set(json.loads(sys.argv[3]))
 
     _stac.STAC_CATALOG_URL = catalog_url
     _stac.clear_cache()
@@ -148,6 +164,8 @@ _HARNESS = textwrap.dedent(
     for cid in collection_ids:
         ds = dynamical_catalog.open(cid)
         first = next(iter(ds.data_vars))
+        if cid in open_only_ids:
+            continue
         da = ds[first]
         value = da.isel({d: 0 for d in da.dims}).load().item()
         assert isinstance(value, (int, float)), f"{cid}.{first} -> {value!r}"
@@ -199,6 +217,7 @@ def test_released_dynamical_catalog_opens_every_collection(
             str(harness),
             f"{root_url}/{_catalog_filename(target)}",
             json.dumps(collection_ids),
+            json.dumps(_open_only_ids(target)),
         ],
         check=True,
     )
