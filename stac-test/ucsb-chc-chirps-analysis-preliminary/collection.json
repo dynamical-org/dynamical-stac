@@ -1,0 +1,246 @@
+{
+  "type": "Collection",
+  "id": "ucsb-chc-chirps-analysis-preliminary",
+  "stac_version": "1.1.0",
+  "description": "Daily precipitation from the Climate Hazards Center Infrared Precipitation with Stations (CHIRPS) version 3.0 preliminary product.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ucsb-chc-chirps-analysis-preliminary/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ucsb-chc-chirps-analysis-preliminary/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/ucsb-chc-chirps-analysis.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "CHIRPS preliminary and final (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ucsb-chc-chirps-analysis.ipynb",
+      "type": "text/html",
+      "title": "CHIRPS preliminary and final (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-test.dynamical.org/ucsb-chc-chirps-analysis-preliminary/collection.json",
+      "type": "application/json",
+      "title": "UCSB CHC CHIRPS analysis, preliminary"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "UCSB Climate Hazards Center CHIRPS version 3.0 data processed by dynamical.org from the Climate Hazards Center data archive. Funk, C., Peterson, P., Harrison, L. et al. The Climate Hazards Center Infrared Precipitation with Stations, Version 3. Sci Data 13, 718 (2026), data https://doi.org/10.15780/G2JQ0P.",
+  "version": "0.1.0",
+  "model_id": "ucsb-chc-chirps",
+  "model_name": "UCSB CHC CHIRPS",
+  "description_summary": "Daily CHIRPS version 3 precipitation over land from 60 degrees south to 60 degrees north, at 0.05 degree resolution, from 2025 onward. This is the preliminary product, using the satellite-based daily distribution (prelim/sat).",
+  "description_details": "### Product\n\nPreliminary is released about two days after each five-day period ends. It uses rain-gauge reports available soon after observation, with fewer quality checks than final. NASA IMERG satellite rainfall is used to split five-day CHIRPS totals into daily amounts; final uses ERA5 rainfall instead.\n\n### Source\n\nThe [CHIRPS v3 documentation](https://www.chc.ucsb.edu/data/chirps3) describes the products and release schedule. Source files are provided by the [UCSB Climate Hazards Center daily archive](https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/prelim/sat/).\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks and shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk | shard |\n|---|---|---|\n| time | 365 (365 days) | 365 (365 days) |\n| latitude | 60 (3\u00b0) | 1200 (60\u00b0) |\n| longitude | 60 (3\u00b0) | 1800 (~90\u00b0) |\n| **uncompressed** | 5.0 MiB | 2.9 GiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/ucsb-chc-chirps-analysis-preliminary/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ucsb_chc/chirps/template_config.py).",
+  "description_model": "The Climate Hazards Center Infrared Precipitation with Stations (CHIRPS) version 3 combines satellite estimates and station observations into a precipitation record over land.",
+  "examples": [
+    {
+      "title": "Precipitation at a place and time",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=1.0.0\n\nimport os\nos.environ[\"DYNAMICAL_STAC_CATALOG_URL\"] = \"https://stac-staging.dynamical.org/catalog.json\"\n\nds = dynamical_catalog.open(\"ucsb-chc-chirps-analysis-preliminary\", chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2025-01-01\", latitude=-3, longitude=-60, method=\"nearest\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ucsb-chc-chirps-analysis-preliminary\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nimport os\nos.environ[\"DYNAMICAL_STAC_CATALOG_URL\"] = \"https://stac-staging.dynamical.org/catalog.json\"\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2025-01-01\", latitude=-3, longitude=-60, method=\"nearest\")",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        -59.975,
+        59.975
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 2400
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -179.975,
+        179.975
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 7200
+    },
+    "time": {
+      "type": "temporal",
+      "extent": [
+        "2025-01-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    }
+  },
+  "cube:variables": {
+    "precipitation_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        365,
+        60,
+        60
+      ],
+      "shards": [
+        365,
+        1200,
+        1800
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the 24 hours starting at the time coordinate. Units equivalent to mm/s. NaN over oceans."
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        365,
+        60,
+        60
+      ],
+      "lengths": {
+        "time": "365 days",
+        "latitude": "3\u00b0",
+        "longitude": "3\u00b0"
+      },
+      "uncompressed_size_bytes": 5256000,
+      "uncompressed_size": "5.0 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        365,
+        1200,
+        1800
+      ],
+      "lengths": {
+        "time": "365 days",
+        "latitude": "60\u00b0",
+        "longitude": "~90\u00b0"
+      },
+      "uncompressed_size_bytes": 3153600000,
+      "uncompressed_size": "2.9 GiB"
+    }
+  },
+  "title": "UCSB CHC CHIRPS analysis, preliminary",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -179.975,
+          -59.975,
+          179.975,
+          59.975
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2025-01-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Global land, 60 degrees north to 60 degrees south"
+    ],
+    "spatial_resolution": [
+      "0.05 degrees (~5km)"
+    ],
+    "time_domain": [
+      "2025-01-01 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "1 day"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-ucsb-chc-chirps/ucsb-chc-chirps-analysis-preliminary/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-ucsb-chc-chirps.s3.us-west-2.amazonaws.com/ucsb-chc-chirps-analysis-preliminary/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

@@ -1,0 +1,1466 @@
+{
+  "type": "Collection",
+  "id": "ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree",
+  "stac_version": "1.1.0",
+  "description": "Sub-seasonal-range ensemble weather forecasts from the ECMWF Integrated Forecasting System (IFS).",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "license",
+      "href": "https://apps.ecmwf.int/datasets/licences/general/",
+      "type": "text/html",
+      "title": "ECMWF Terms of Use (additional terms)"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-46-day-1-5-degree.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "ECMWF IFS ENS 46 day, daily and 6 hourly (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-46-day-1-5-degree.ipynb",
+      "type": "text/html",
+      "title": "ECMWF IFS ENS 46 day, daily and 6 hourly (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-staging.dynamical.org/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 46 day, daily, 1.5 degree"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "ECMWF IFS ENS sub-seasonal-range forecast data processed by dynamical.org from the ECMWF Data Store.",
+  "version": "0.2.0",
+  "model_id": "ecmwf-ifs-ens",
+  "model_name": "ECMWF IFS ENS",
+  "description_summary": "This dataset is an archive of ECMWF IFS ENS sub-seasonal-range forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, as well as by the `ensemble_member`. Each forecast steps forward along the `lead_time` dimension from 0 to 1104 hours (0 to 46 days) at a 24 hourly step, and carries 101 ensemble members on a global 1.5 degree grid. This dataset contains the 00 UTC initialization times only.\n\nBecause the step is 24 hourly, most surface variables are daily means or rates rather than instantaneous values \u2014 hence the `average_` prefixes. Surface and single-level variables are at the dataset root; the six variables carried on pressure levels are in the `pressure_level` group.\n\nNote: ECMWF's licence holds sub-seasonal-range forecasts back for 48 hours, so this is not a real-time dataset \u2014 each initialization becomes available about two days after its `init_time`.",
+  "description_details": "### Source\n\nThis archive is built from the ECMWF sub-seasonal-range (S2S) forecast, retrieved from the\n[ECMWF Data Store (ECDS)](https://ecds.ecmwf.int/) into the\n[dynamical.org ECMWF IFS grib archive](https://source.coop/dynamical/ecmwf-ifs-grib)\non [Source Cooperative](https://source.coop/).\n\nECMWF does not provide user support for the free & open datasets. Users should refer to the public\n[User Forum](https://forum.ecmwf.int/) for any questions related to the source material.\n\n### Model updates\n\nIFS is updated regularly. Find details of recent and upcoming\n[changes to the forecasting system](https://confluence.ecmwf.int/display/FCST/Changes+to+the+forecasting+system)\non the ECMWF website.\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks and shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk | shard |\n|---|---|---|\n| init_time | 1 (1 day) | 1 (1 day) |\n| lead_time | 47 (47 days) | 47 (47 days) |\n| ensemble_member | 101 | 101 |\n| latitude | 25 (37.5\u00b0) | 125 (181.5\u00b0) |\n| longitude | 24 (36\u00b0) | 240 (360\u00b0) |\n| **uncompressed** | 10.9 MiB | 543.3 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/ecmwf/ifs_ens/forecast_46_day_1_5_degree/template_config.py).",
+  "description_model": "The Integrated Forecasting System (IFS) is a global forecast model developed by ECMWF. ENS is an ensemble configuration of IFS, containing 51 ensemble members. IFS consists of a numerical model of the Earth system, which includes an atmospheric model at its heart, coupled with models of other Earth system components such as the ocean. The data assimilation system combines the latest weather observations with a recent forecast to obtain the best possible estimate of the current state of the Earth system.",
+  "examples": [
+    {
+      "title": "Maximum ensemble temperature",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\", chunks=None)\nds[\"average_temperature_2m\"].sel(init_time=\"2026-08-01T00\", latitude=0, longitude=0).max()\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = dynamical_catalog.open(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\", group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-08-01T00\", lead_time=\"10d\", pressure_level=500).std(\"ensemble_member\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"average_temperature_2m\"].sel(init_time=\"2026-08-01T00\", latitude=0, longitude=0).max()\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-08-01T00\", lead_time=\"10d\", pressure_level=500).std(\"ensemble_member\")",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "ensemble_member": {
+      "type": "other",
+      "extent": [
+        0,
+        100
+      ],
+      "unit": "1",
+      "size": 101
+    },
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2026-01-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        -90.0,
+        90.0
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 121
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        3974400
+      ],
+      "unit": "seconds",
+      "size": 47
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -180.0,
+        178.5
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 240
+    },
+    "pressure_level": {
+      "type": "other",
+      "extent": [
+        10,
+        1000
+      ],
+      "unit": "hPa",
+      "size": 10
+    }
+  },
+  "cube:variables": {
+    "average_convective_available_potential_energy_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective available potential energy",
+      "standard_name": "atmosphere_convective_available_potential_energy",
+      "short_name": "cape",
+      "comment": "Mean convective available potential energy over the previous 24 hours. At each time ECMWF takes the largest CAPE among air parcels lifted from model levels below 350 hPa."
+    },
+    "average_dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Mean 2 metre dewpoint temperature in the last 24 hours",
+      "standard_name": "dew_point_temperature",
+      "short_name": "mn2d24",
+      "comment": "Mean 2 metre dewpoint temperature over the previous 24 hours."
+    },
+    "average_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Mean temperature at 2 metres in the last 24 hours",
+      "standard_name": "air_temperature",
+      "short_name": "mean2t24",
+      "comment": "Mean temperature at 2 metres over the previous 24 hours."
+    },
+    "downward_latent_heat_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "W m-2",
+      "long_name": "Time-mean surface latent heat flux",
+      "standard_name": "surface_downward_latent_heat_flux",
+      "short_name": "mslhfl",
+      "comment": "Average surface downward latent heat flux over the previous 24 hours."
+    },
+    "downward_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface downward long-wave radiation flux",
+      "standard_name": "surface_downwelling_longwave_flux_in_air",
+      "short_name": "sdlwrf",
+      "comment": "Average surface downward long-wave radiation flux over the previous 24 hours."
+    },
+    "downward_sensible_heat_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "W m-2",
+      "long_name": "Time-mean surface sensible heat flux",
+      "standard_name": "surface_downward_sensible_heat_flux",
+      "short_name": "msshfl",
+      "comment": "Average surface downward sensible heat flux over the previous 24 hours."
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf",
+      "comment": "Average surface downward short-wave radiation flux over the previous 24 hours."
+    },
+    "eastward_turbulent_surface_stress": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "Pa",
+      "long_name": "Time-mean eastward turbulent surface stress",
+      "standard_name": "surface_downward_eastward_stress",
+      "short_name": "avg_iews",
+      "comment": "Average eastward turbulent surface stress over the previous 24 hours."
+    },
+    "maximum_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Maximum temperature",
+      "standard_name": "air_temperature",
+      "short_name": "tmax",
+      "comment": "Maximum temperature at 2 metres over the previous 24 hours."
+    },
+    "minimum_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Minimum temperature",
+      "standard_name": "air_temperature",
+      "short_name": "tmin",
+      "comment": "Minimum temperature at 2 metres over the previous 24 hours."
+    },
+    "net_long_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface net long-wave radiation flux",
+      "standard_name": "surface_net_downward_longwave_flux",
+      "short_name": "snlwrf",
+      "comment": "Average surface net long-wave radiation flux over the previous 24 hours."
+    },
+    "net_long_wave_radiation_flux_top_of_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "W m-2",
+      "long_name": "Top net long-wave radiation flux",
+      "standard_name": "toa_net_downward_longwave_flux",
+      "short_name": "tnlwrf",
+      "comment": "Average top net long-wave radiation flux over the previous 24 hours."
+    },
+    "net_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface net short-wave radiation flux",
+      "standard_name": "surface_net_downward_shortwave_flux",
+      "short_name": "snswrf",
+      "comment": "Average surface net short-wave radiation flux over the previous 24 hours."
+    },
+    "northward_turbulent_surface_stress": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "Pa",
+      "long_name": "Time-mean northward turbulent surface stress",
+      "standard_name": "surface_downward_northward_stress",
+      "short_name": "avg_inss",
+      "comment": "Average northward turbulent surface stress over the previous 24 hours."
+    },
+    "precipitation_convective_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Convective precipitation rate",
+      "standard_name": "convective_precipitation_flux",
+      "short_name": "cpr",
+      "comment": "Average convective precipitation rate over the previous 24 hours. Units equivalent to mm/s. Can slightly exceed precipitation_surface, as can rates derived by differencing the ECMWF source accumulations."
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous 24 hours. Units equivalent to mm/s."
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "runoff_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Surface runoff rate",
+      "standard_name": "surface_runoff_flux",
+      "short_name": "surfror",
+      "comment": "Average surface runoff rate over the previous 24 hours. Units equivalent to mm/s. Land points only; sea points are missing."
+    },
+    "runoff_water_equivalent_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Runoff rate water equivalent (surface plus subsurface)",
+      "standard_name": "runoff_flux",
+      "short_name": "rorwe",
+      "comment": "Average runoff water equivalent rate (surface plus subsurface) over the previous 24 hours. Units equivalent to mm/s. Land points only; sea points are missing."
+    },
+    "sea_ice_area_fraction": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "1",
+      "long_name": "Sea ice area fraction",
+      "standard_name": "sea_ice_area_fraction",
+      "short_name": "ci",
+      "comment": "Mean sea ice area fraction over the previous 24 hours. Sea points only; land points are missing."
+    },
+    "sea_surface_temperature": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Sea surface temperature",
+      "standard_name": "sea_surface_temperature",
+      "short_name": "sst",
+      "comment": "Mean sea surface temperature over the previous 24 hours. Sea points only; land points are missing."
+    },
+    "skin_temperature_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Skin temperature",
+      "standard_name": "surface_temperature",
+      "short_name": "skt",
+      "comment": "Mean skin temperature over the previous 24 hours."
+    },
+    "snow_albedo_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "percent",
+      "long_name": "Snow albedo",
+      "short_name": "asn",
+      "comment": "Mean snow albedo over the previous 24 hours. Missing where the surface carries no snowpack, including snow-free land."
+    },
+    "snow_density_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "kg m-3",
+      "long_name": "Snow density",
+      "short_name": "rsn",
+      "comment": "Mean snow density over the previous 24 hours. Missing where the surface carries no snowpack, including snow-free land."
+    },
+    "snow_water_equivalent_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "m",
+      "long_name": "Snow depth water equivalent",
+      "standard_name": "lwe_thickness_of_surface_snow_amount",
+      "short_name": "sd",
+      "comment": "Mean snow depth water equivalent over the previous 24 hours."
+    },
+    "snowfall_water_equivalent_rate_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Total snowfall rate water equivalent",
+      "standard_name": "snowfall_flux",
+      "short_name": "tsrwe",
+      "comment": "Average snowfall water equivalent rate over the previous 24 hours. Units equivalent to mm/s."
+    },
+    "soil_moisture_0_100cm": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "kg m-3",
+      "long_name": "Soil moisture top 100 cm",
+      "short_name": "sm100",
+      "comment": "Mean soil moisture 0-100 cm over the previous 24 hours. Land points only; sea points are missing."
+    },
+    "soil_moisture_0_20cm": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "kg m-3",
+      "long_name": "Soil moisture top 20 cm",
+      "short_name": "sm20",
+      "comment": "Mean soil moisture 0-20 cm over the previous 24 hours. Land points only; sea points are missing."
+    },
+    "soil_temperature_0_100cm": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Soil temperature top 100 cm",
+      "standard_name": "soil_temperature",
+      "short_name": "st100",
+      "comment": "Mean soil temperature 0-100 cm over the previous 24 hours. Land points only; sea points are missing."
+    },
+    "soil_temperature_0_20cm": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Soil temperature top 20 cm",
+      "standard_name": "soil_temperature",
+      "short_name": "st20",
+      "comment": "Mean soil temperature 0-20 cm over the previous 24 hours. Land points only; sea points are missing."
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc",
+      "comment": "Mean total cloud cover over the previous 24 hours."
+    },
+    "total_column_water_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "kg m-2",
+      "long_name": "Total column water",
+      "standard_name": "atmosphere_mass_content_of_water",
+      "short_name": "tcw",
+      "comment": "Mean total column water over the previous 24 hours."
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
+    },
+    "pressure_level/geopotential_height": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "pressure_level",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        1,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        1,
+        125,
+        240
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "pressure_level/specific_humidity": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "pressure_level",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        1,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        1,
+        125,
+        240
+      ],
+      "unit": "1",
+      "long_name": "Specific humidity",
+      "standard_name": "specific_humidity",
+      "short_name": "q",
+      "comment": "The source provides no 10, 50 or 100 hPa levels for this variable; those levels are always NaN."
+    },
+    "pressure_level/temperature": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "pressure_level",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        1,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        1,
+        125,
+        240
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
+    },
+    "pressure_level/vertical_velocity": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "pressure_level",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        1,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        1,
+        125,
+        240
+      ],
+      "unit": "Pa s-1",
+      "long_name": "Vertical velocity",
+      "standard_name": "lagrangian_tendency_of_air_pressure",
+      "short_name": "w"
+    },
+    "pressure_level/wind_u": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "pressure_level",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        1,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        1,
+        125,
+        240
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "eastward_wind",
+      "short_name": "u"
+    },
+    "pressure_level/wind_v": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "pressure_level",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        47,
+        101,
+        1,
+        25,
+        24
+      ],
+      "shards": [
+        1,
+        47,
+        101,
+        1,
+        125,
+        240
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "northward_wind",
+      "short_name": "v"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        47,
+        101,
+        25,
+        24
+      ],
+      "lengths": {
+        "init_time": "1 day",
+        "lead_time": "47 days",
+        "latitude": "37.5\u00b0",
+        "longitude": "36\u00b0"
+      },
+      "uncompressed_size_bytes": 11392800,
+      "uncompressed_size": "10.9 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "ensemble_member",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        1,
+        47,
+        101,
+        125,
+        240
+      ],
+      "lengths": {
+        "init_time": "1 day",
+        "lead_time": "47 days",
+        "latitude": "181.5\u00b0",
+        "longitude": "360\u00b0"
+      },
+      "uncompressed_size_bytes": 569640000,
+      "uncompressed_size": "543.3 MiB"
+    }
+  },
+  "title": "ECMWF IFS ENS forecast, 46 day, daily, 1.5 degree",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -180.0,
+          -90.0,
+          178.5,
+          90.0
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-01-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Global"
+    ],
+    "spatial_resolution": [
+      "1.5 degrees (~165km)"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2026-01-01 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 24 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-1104 hours (0-46 days) ahead"
+    ],
+    "forecast_resolution": [
+      "Forecast step 24 hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/v0.2.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-ecmwf-ifs-ens.s3.us-west-2.amazonaws.com/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/v0.2.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

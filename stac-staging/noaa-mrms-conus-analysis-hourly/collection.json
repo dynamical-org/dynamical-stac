@@ -1,0 +1,359 @@
+{
+  "type": "Collection",
+  "id": "noaa-mrms-conus-analysis-hourly",
+  "stac_version": "1.1.0",
+  "description": "Hourly precipitation analysis from the Multi-Radar Multi-Sensor (MRMS) system operated by NOAA NWS NCEP.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-mrms-conus-analysis-hourly/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-mrms-conus-analysis-hourly/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-mrms-conus-analysis-hourly.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "Quickstart (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-mrms-conus-analysis-hourly.ipynb",
+      "type": "text/html",
+      "title": "Quickstart (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-staging.dynamical.org/noaa-mrms-conus-analysis-hourly/collection.json",
+      "type": "application/json",
+      "title": "NOAA MRMS CONUS analysis, hourly"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "NOAA NWS NCEP MRMS data processed by dynamical.org from NOAA NCEP, NOAA Open Data Dissemination and Iowa Mesonet archives.",
+  "version": "0.3.0",
+  "model_id": "noaa-mrms",
+  "model_name": "NOAA MRMS",
+  "description_summary": "This analysis dataset is an archive of MRMS radar and multi-sensor precipitation and weather analyses over the contiguous United States (CONUS).",
+  "description_details": "### Spatial coverage\n\nUse this dataset over the land areas of the contiguous United States. Radar-only and precipitation type variables contain `NaN` values beyond the range of US radar. `precipitation_pass_1_surface` and `precipitation_pass_2_surface` extend further into the ocean, but still contain `NaN` values in the southeast corner of the domain over the Atlantic.\n\n### Temporal coverage\n\n`precipitation_surface` combines multiple MRMS products to minimize missing values. Despite this, some hours (particularly early in the record) contain `NaN` values where data is unavailable.\n\n`precipitation_pass_2_surface` and `precipitation_pass_1_surface` are available starting 2020-10-15. For timestamps prior to this date, these variables are filled with `NaN`.\n\n### Source\n\nThe source files this archive is constructed from are provided by\n[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination)\nand accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-mrms-pds/).\nOperational data is additionally accessed from [NCEP](https://mrms.ncep.noaa.gov/).\n\n### Storage\n\nStorage for this dataset is generously provided by [Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative. Icechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks and shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk | shard |\n|---|---|---|\n| time | 648 (27 days) | 648 (27 days) |\n| latitude | 100 (1\u00b0) | 700 (7\u00b0) |\n| longitude | 100 (1\u00b0) | 1400 (14\u00b0) |\n| **uncompressed** | 24.7 MiB | 2.4 GiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-mrms-conus-analysis-hourly/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/).",
+  "description_model": "The NOAA Multi-Radar/Multi-Sensor System (MRMS) integrates data from multiple radars and radar networks, surface observations, numerical weather prediction (NWP) models, and climatology to generate seamless, high spatio-temporal resolution mosaics at low latency focused on hail, wind, tornado, quantitative precipitation estimations, convection, icing, and turbulence.",
+  "examples": [
+    {
+      "title": "Precipitation at a place and time",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-mrms-conus-analysis-hourly\", chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-mrms-conus-analysis-hourly\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\")",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        20.00500000000696,
+        54.995
+      ],
+      "axis": "y",
+      "unit": "degree_north",
+      "size": 3500
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -129.995,
+        -60.00500000006366
+      ],
+      "axis": "x",
+      "unit": "degree_east",
+      "size": 7000
+    },
+    "time": {
+      "type": "temporal",
+      "extent": [
+        "2014-11-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    }
+  },
+  "cube:variables": {
+    "categorical_precipitation_type_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        648,
+        100,
+        100
+      ],
+      "shards": [
+        648,
+        700,
+        1400
+      ],
+      "unit": "1",
+      "long_name": "Precipitation type",
+      "short_name": "ptype",
+      "comment": "Surface precipitation type flag. -3=no coverage, 0=no precipitation, 1=warm stratiform rain, 3=snow, 6=convective rain, 7=rain mixed with hail, 10=cold stratiform rain, 91=tropical/stratiform rain mix, 96=tropical/convective rain mix."
+    },
+    "flash_qpe_ffg_max_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        648,
+        100,
+        100
+      ],
+      "shards": [
+        648,
+        700,
+        1400
+      ],
+      "unit": "percent",
+      "long_name": "FLASH QPE-to-FFG percentage maximum",
+      "short_name": "FLASH_QPE_FFGMAX",
+      "comment": "Maximum percentage of Quantitative Precipitation Estimate (QPE) to Flash Flood Guidance (FFG) from the FLASH system. Percentage where values > 100 indicate QPE exceeds FFG. NaN outside the area the FLASH system covers. Available from October 2020 onward."
+    },
+    "precipitation_pass_1_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        648,
+        100,
+        100
+      ],
+      "shards": [
+        648,
+        700,
+        1400
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous hour, pass 1 (lower latency, fewer gauges). Derived from MultiSensor_QPE_01H_Pass1. Available from October 2020 onward. Units equivalent to mm/s."
+    },
+    "precipitation_pass_2_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        648,
+        100,
+        100
+      ],
+      "shards": [
+        648,
+        700,
+        1400
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous hour, pass 2 (higher latency, more gauges). Derived from MultiSensor_QPE_01H_Pass2. Available from October 2020 onward. Units equivalent to mm/s."
+    },
+    "precipitation_radar_only_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        648,
+        100,
+        100
+      ],
+      "shards": [
+        648,
+        700,
+        1400
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate from radar",
+      "standard_name": "precipitation_flux",
+      "short_name": "rdpr",
+      "comment": "Average radar-only precipitation rate over the previous hour (no gauge correction). Derived from RadarOnly_QPE_01H. Units equivalent to mm/s."
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        648,
+        100,
+        100
+      ],
+      "shards": [
+        648,
+        700,
+        1400
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate over the previous hour. Derived from MultiSensor_QPE_01H_Pass2 from October 2020, GaugeCorr_QPE_01H before. If primary product is unavailable, falls back to MultiSensor_QPE_01H_Pass1 and then RadarOnly_QPE_01H. Units equivalent to mm/s."
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        648,
+        100,
+        100
+      ],
+      "lengths": {
+        "time": "27 days",
+        "latitude": "1\u00b0",
+        "longitude": "1\u00b0"
+      },
+      "uncompressed_size_bytes": 25920000,
+      "uncompressed_size": "24.7 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        648,
+        700,
+        1400
+      ],
+      "lengths": {
+        "time": "27 days",
+        "latitude": "7\u00b0",
+        "longitude": "14\u00b0"
+      },
+      "uncompressed_size_bytes": 2540160000,
+      "uncompressed_size": "2.4 GiB"
+    }
+  },
+  "title": "NOAA MRMS CONUS analysis, hourly",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -129.995,
+          20.00500000000696,
+          -60.00500000006366,
+          54.995
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2014-11-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Continental United States"
+    ],
+    "spatial_resolution": [
+      "0.01 degrees (~1km)"
+    ],
+    "time_domain": [
+      "2014-11-01 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "1 hour"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-noaa-mrms/noaa-mrms-conus-analysis-hourly/v0.3.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-noaa-mrms.s3.us-west-2.amazonaws.com/noaa-mrms-conus-analysis-hourly/v0.3.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

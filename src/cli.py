@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import pathlib
 
-from generate import generate
+from generate import generate, generate_tiers
 from upload import upload
 
-DEFAULT_OUTPUT_DIR = pathlib.Path("stac")
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 def main(argv: list[str]) -> int:
     match argv:
         case ["generate"]:
-            generate(DEFAULT_OUTPUT_DIR)
+            generate_tiers(REPO_ROOT)
         case ["generate", "--output", out]:
             generate(pathlib.Path(out))
         case ["upload", stac_dir]:

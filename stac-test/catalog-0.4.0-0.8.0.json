@@ -1,0 +1,159 @@
+{
+  "type": "Catalog",
+  "id": "dynamical-org",
+  "stac_version": "1.1.0",
+  "description": "Cloud-optimized weather and climate datasets from dynamical.org",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-gfs-analysis/collection.json",
+      "type": "application/json",
+      "title": "NOAA GFS analysis"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-gfs-forecast/collection.json",
+      "type": "application/json",
+      "title": "NOAA GFS forecast"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-gefs-forecast-35-day/collection.json",
+      "type": "application/json",
+      "title": "NOAA GEFS forecast, 35 day"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-gefs-analysis/collection.json",
+      "type": "application/json",
+      "title": "NOAA GEFS analysis"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-gefs-analysis-0-25-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA GEFS analysis, 0.25 degree, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-gefs-forecast-10-day-0-25-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA GEFS forecast, 10 day, 0.25 degree, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-hrrr-forecast-18-hour-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR forecast, 18 hour, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-hrrr-forecast-48-hour/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR forecast, 48 hour"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-hrrr-forecast-48-hour-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR forecast, 48 hour, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-hrrr-analysis/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR analysis"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-hrrr-analysis-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA HRRR analysis, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/noaa-mrms-conus-analysis-hourly/collection.json",
+      "type": "application/json",
+      "title": "NOAA MRMS CONUS analysis, hourly"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/ecmwf-aifs-single-forecast/collection.json",
+      "type": "application/json",
+      "title": "ECMWF AIFS Single forecast"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/ecmwf-aifs-ens-forecast/collection.json",
+      "type": "application/json",
+      "title": "ECMWF AIFS ENS forecast"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/ecmwf-ifs-ens-forecast-15-day-0-25-degree/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 15 day, 0.25 degree"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 46 day, daily, 1.5 degree"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 46 day, 6 hourly, 1.5 degree"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json",
+      "type": "application/json",
+      "title": "DWD ICON-EU forecast, 5 day"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/nasa-imerg-analysis-early/collection.json",
+      "type": "application/json",
+      "title": "NASA IMERG analysis, early"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/nasa-imerg-analysis-late/collection.json",
+      "type": "application/json",
+      "title": "NASA IMERG analysis, late"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/ucsb-chc-chirps-analysis-final/collection.json",
+      "type": "application/json",
+      "title": "UCSB CHC CHIRPS analysis, final"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/ucsb-chc-chirps-analysis-preliminary/collection.json",
+      "type": "application/json",
+      "title": "UCSB CHC CHIRPS analysis, preliminary"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-test.dynamical.org/eccc-hrdps-forecast/collection.json",
+      "type": "application/json",
+      "title": "ECCC HRDPS forecast"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-test.dynamical.org/catalog-0.4.0-0.8.0.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "title": "dynamical.org STAC Catalog"
+}

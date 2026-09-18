@@ -28,14 +28,20 @@ import pystac
 import pytest
 
 from catalog import _COLLECTION_IDS, LEGACY_CLIENT_RANGES
-from generate import ROOT_HREF
+from generate import TIERS
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-COMMITTED_STAC = REPO_ROOT / "stac"
 
-# The committed tree uses ABSOLUTE_PUBLISHED hrefs, so every href under the
-# public base URL maps 1:1 onto a path inside `stac/`.
-_PUBLIC_BASE = ROOT_HREF.rstrip("/") + "/"
+# Each committed tree uses ABSOLUTE_PUBLISHED hrefs, so every href under its
+# tier's public base URL maps 1:1 onto a path inside that tree.
+_PUBLIC_BASES = {
+    REPO_ROOT / tier.directory: tier.root_href.rstrip("/") + "/" for tier in TIERS
+}
+
+
+def _tree_of(json_path: pathlib.Path) -> pathlib.Path:
+    return next(tree for tree in _PUBLIC_BASES if json_path.is_relative_to(tree))
+
 
 # Link rels whose targets must live inside our published tree. Other rels
 # (`license`, `about`, `example`, etc.) point at external sites; we don't
@@ -44,20 +50,16 @@ _PUBLIC_BASE = ROOT_HREF.rstrip("/") + "/"
 _INTERNAL_LINK_RELS = frozenset({"root", "self", "parent", "child", "item"})
 
 
-def _public_url_to_local_path(href: str) -> pathlib.Path | None:
+def _public_url_to_local_path(href: str, tree: pathlib.Path) -> pathlib.Path | None:
     """Map a publication URL back to its committed file.
 
     Returns None if `href` does not point inside our published tree (e.g.
     license/about/example links to external domains).
     """
-    if not href.startswith(_PUBLIC_BASE):
+    public_base = _PUBLIC_BASES[tree]
+    if not href.startswith(public_base):
         return None
-    relative = href[len(_PUBLIC_BASE) :]
-    return COMMITTED_STAC / relative
-
-
-def _all_committed_files() -> set[pathlib.Path]:
-    return set(COMMITTED_STAC.rglob("*.json"))
+    return tree / href[len(public_base) :]
 
 
 # --- Round-trip pystac parse + traversal ----------------------------------
@@ -100,14 +102,14 @@ def test_pystac_round_trip_walks_every_collection(
 
 # --- Link-by-link integrity ------------------------------------------------
 
-_STAC_FILES = sorted(COMMITTED_STAC.rglob("*.json"))
+_STAC_FILES = sorted(p for tree in _PUBLIC_BASES for p in tree.rglob("*.json"))
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize(
     "json_path",
     _STAC_FILES,
-    ids=[str(p.relative_to(COMMITTED_STAC)) for p in _STAC_FILES],
+    ids=[str(p.relative_to(REPO_ROOT)) for p in _STAC_FILES],
 )
 def test_internal_links_resolve_to_committed_files(
     json_path: pathlib.Path,
@@ -125,19 +127,20 @@ def test_internal_links_resolve_to_committed_files(
         if rel not in _INTERNAL_LINK_RELS:
             continue
         href = link.get("href", "")
-        target = _public_url_to_local_path(href)
-        # rel=root/self/parent/child/item that escapes our publication tree
-        # is a bug — the catalog should not be cross-linking to a different
-        # STAC root.
+        tree = _tree_of(json_path)
+        target = _public_url_to_local_path(href, tree)
+        # rel=root/self/parent/child/item that escapes its tier's publication
+        # tree is a bug — the catalog should not be cross-linking to a
+        # different STAC root, another tier's included.
         assert target is not None, (
-            f"{json_path.relative_to(COMMITTED_STAC)}: rel={rel} "
-            f"href={href!r} is not under {_PUBLIC_BASE!r}"
+            f"{json_path.relative_to(REPO_ROOT)}: rel={rel} "
+            f"href={href!r} is not under {_PUBLIC_BASES[tree]!r}"
         )
         if not target.is_file():
             broken.append(f"rel={rel} href={href} -> {target} (missing)")
 
     assert not broken, (
-        f"{json_path.relative_to(COMMITTED_STAC)} has dangling links:\n  "
+        f"{json_path.relative_to(REPO_ROOT)} has dangling links:\n  "
         + "\n  ".join(broken)
     )
 
@@ -146,7 +149,7 @@ def test_internal_links_resolve_to_committed_files(
 @pytest.mark.parametrize(
     "json_path",
     _STAC_FILES,
-    ids=[str(p.relative_to(COMMITTED_STAC)) for p in _STAC_FILES],
+    ids=[str(p.relative_to(REPO_ROOT)) for p in _STAC_FILES],
 )
 def test_self_link_matches_file_location(json_path: pathlib.Path) -> None:
     """The `self` link's href, mapped back through the public base URL,
@@ -159,18 +162,18 @@ def test_self_link_matches_file_location(json_path: pathlib.Path) -> None:
     obj = json.loads(json_path.read_text())
     self_links = [link for link in obj.get("links", []) if link.get("rel") == "self"]
     assert len(self_links) == 1, (
-        f"{json_path.relative_to(COMMITTED_STAC)}: expected exactly one "
+        f"{json_path.relative_to(REPO_ROOT)}: expected exactly one "
         f"rel=self link, found {len(self_links)}"
     )
     href = self_links[0]["href"]
-    target = _public_url_to_local_path(href)
+    target = _public_url_to_local_path(href, _tree_of(json_path))
     assert target is not None, (
-        f"{json_path.relative_to(COMMITTED_STAC)}: self href {href!r} "
-        f"is not under {_PUBLIC_BASE!r}"
+        f"{json_path.relative_to(REPO_ROOT)}: self href {href!r} "
+        f"is not under {_PUBLIC_BASES[_tree_of(json_path)]!r}"
     )
     assert target.resolve() == json_path.resolve(), (
-        f"{json_path.relative_to(COMMITTED_STAC)}: self link points at "
-        f"{target.relative_to(COMMITTED_STAC)}, not at itself"
+        f"{json_path.relative_to(REPO_ROOT)}: self link points at "
+        f"{target.relative_to(REPO_ROOT)}, not at itself"
     )
 
 
@@ -178,7 +181,7 @@ def test_self_link_matches_file_location(json_path: pathlib.Path) -> None:
 @pytest.mark.parametrize(
     "json_path",
     _STAC_FILES,
-    ids=[str(p.relative_to(COMMITTED_STAC)) for p in _STAC_FILES],
+    ids=[str(p.relative_to(REPO_ROOT)) for p in _STAC_FILES],
 )
 def test_root_link_points_to_catalog(json_path: pathlib.Path) -> None:
     """Every file declares the same `rel=root` href, pointing at the
@@ -188,12 +191,12 @@ def test_root_link_points_to_catalog(json_path: pathlib.Path) -> None:
     obj = json.loads(json_path.read_text())
     root_links = [link for link in obj.get("links", []) if link.get("rel") == "root"]
     assert len(root_links) == 1, (
-        f"{json_path.relative_to(COMMITTED_STAC)}: expected exactly one "
+        f"{json_path.relative_to(REPO_ROOT)}: expected exactly one "
         f"rel=root link, found {len(root_links)}"
     )
-    expected = f"{_PUBLIC_BASE}catalog.json"
+    expected = f"{_PUBLIC_BASES[_tree_of(json_path)]}catalog.json"
     assert root_links[0]["href"] == expected, (
-        f"{json_path.relative_to(COMMITTED_STAC)}: root href "
+        f"{json_path.relative_to(REPO_ROOT)}: root href "
         f"{root_links[0]['href']!r} != {expected!r}"
     )
 
@@ -202,9 +205,10 @@ def test_root_link_points_to_catalog(json_path: pathlib.Path) -> None:
 
 
 @pytest.mark.integration
-def test_link_graph_reaches_every_committed_file() -> None:
+@pytest.mark.parametrize("tree", _PUBLIC_BASES, ids=lambda tree: tree.name)
+def test_link_graph_reaches_every_committed_file(tree: pathlib.Path) -> None:
     """BFS from `catalog.json` via `child`+`item` links must reach every
-    *.json file in `stac/`, and every reached file must exist on disk.
+    *.json file in the tier's tree, and every reached file must exist on disk.
 
     Detects two failure modes a generic STAC reader can't recover from:
       * Orphaned files: committed but no parent links to them. A reader
@@ -213,7 +217,7 @@ def test_link_graph_reaches_every_committed_file() -> None:
       * Phantom children: a `child`/`item` link whose target was never
         committed. The reader 404s and either skips the entry or aborts.
     """
-    on_disk = {p.resolve() for p in _all_committed_files()}
+    on_disk = {p.resolve() for p in tree.rglob("*.json")}
     # The edge serves a legacy root in place of `catalog.json`, so nothing
     # links to one: each is an entry point of its own.
     root_filenames = [
@@ -221,7 +225,7 @@ def test_link_graph_reaches_every_committed_file() -> None:
         *(legacy_range.root_filename for legacy_range in LEGACY_CLIENT_RANGES),
     ]
     queue: deque[pathlib.Path] = deque(
-        (COMMITTED_STAC / root_filename).resolve() for root_filename in root_filenames
+        (tree / root_filename).resolve() for root_filename in root_filenames
     )
     seen: set[pathlib.Path] = set()
     missing: list[str] = []
@@ -232,13 +236,13 @@ def test_link_graph_reaches_every_committed_file() -> None:
             continue
         seen.add(path)
         if not path.is_file():
-            missing.append(str(path.relative_to(COMMITTED_STAC)))
+            missing.append(str(path.relative_to(REPO_ROOT)))
             continue
         obj = json.loads(path.read_text())
         for link in obj.get("links", []):
             if link.get("rel") not in {"child", "item"}:
                 continue
-            target = _public_url_to_local_path(link.get("href", ""))
+            target = _public_url_to_local_path(link.get("href", ""), tree)
             if target is None:
                 continue
             queue.append(target.resolve())
@@ -249,6 +253,6 @@ def test_link_graph_reaches_every_committed_file() -> None:
 
     orphans = on_disk - seen
     assert not orphans, (
-        "files in stac/ are unreachable from catalog.json via child/item "
-        f"links: {sorted(p.relative_to(COMMITTED_STAC) for p in orphans)}"
+        f"files in {tree.name}/ are unreachable from catalog.json via child/item "
+        f"links: {sorted(p.relative_to(REPO_ROOT) for p in orphans)}"
     )
