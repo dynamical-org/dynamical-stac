@@ -112,3 +112,40 @@ def test_single_tier_generate_opens_only_that_tiers_stores(
         generate.generate(tmp_path, include_staging=False, include_test=False)
 
     assert opened == [i.id for i in CATALOG_ITEMS if not (i.staging or i.test)]
+
+
+def test_a_failure_while_swapping_restores_every_tree(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for tier in generate.TIERS:
+        (tmp_path / tier.directory).mkdir()
+        (tmp_path / tier.directory / "catalog.json").write_text("committed")
+    monkeypatch.setattr(generate, "_load_datasets", lambda items: {})
+    monkeypatch.setattr(generate, "generate", _fake_generate())
+
+    real_rename = pathlib.Path.rename
+    installs: list[str] = []
+
+    def rename_failing_on_second_install(
+        src: pathlib.Path, dst: pathlib.Path
+    ) -> pathlib.Path:
+        installing = dst.parent == tmp_path and src.name == dst.name
+        if installing:
+            installs.append(dst.name)
+            if len(installs) == 2:
+                raise OSError("disk trouble")
+        return real_rename(src, dst)
+
+    monkeypatch.setattr(pathlib.Path, "rename", rename_failing_on_second_install)
+
+    with pytest.raises(OSError, match="disk trouble"):
+        generate.generate_tiers(tmp_path)
+
+    assert installs == ["stac", "stac-staging"]
+    for tier in generate.TIERS:
+        assert (tmp_path / tier.directory / "catalog.json").read_text() == "committed"
+    assert sorted(p.name for p in tmp_path.iterdir()) == [
+        "stac",
+        "stac-staging",
+        "stac-test",
+    ]

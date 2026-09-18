@@ -4,7 +4,6 @@ import concurrent.futures
 import json
 import os
 import pathlib
-import shutil
 import tempfile
 from typing import NamedTuple
 
@@ -255,7 +254,9 @@ def generate_tiers(parent_dir: pathlib.Path) -> None:
 
     Tiers are built beside their destination and swapped in only once all of
     them validated, so a store that fails to open leaves the committed trees
-    untouched, and a collection that left a tier leaves its tree too. The
+    untouched, and a collection that left a tier leaves its tree too. A failure
+    during the swap itself is rolled back (`_swap_in`); a killed process is not,
+    and `git checkout` is the recovery for that. The
     caller's STAC_* environment is ignored: each tier is what `TIERS` says.
     """
     loaded = _load_datasets(CATALOG_ITEMS)
@@ -268,8 +269,27 @@ def generate_tiers(parent_dir: pathlib.Path) -> None:
                 include_test=tier.include_test,
                 loaded=loaded,
             )
-        for tier in TIERS:
-            output_dir = parent_dir / tier.directory
-            if output_dir.exists():
-                shutil.rmtree(output_dir)
-            shutil.move(pathlib.Path(build) / tier.directory, output_dir)
+        _swap_in(pathlib.Path(build), parent_dir, [tier.directory for tier in TIERS])
+
+
+def _swap_in(build: pathlib.Path, parent_dir: pathlib.Path, names: list[str]) -> None:
+    """Replace each `parent_dir/name` with `build/name`, or put them all back.
+
+    Both sit on one filesystem, so every step is a rename. The old trees are kept
+    inside `build` until every new one is in place; if a rename fails, the new
+    trees already installed are moved out again and the old ones restored.
+    """
+    replaced: list[str] = []
+    try:
+        for name in names:
+            if (parent_dir / name).exists():
+                (parent_dir / name).rename(build / f"{name}.old")
+            replaced.append(name)
+            (build / name).rename(parent_dir / name)
+    except BaseException:
+        for name in replaced:
+            if (parent_dir / name).exists():
+                (parent_dir / name).rename(build / f"{name}.failed")
+            if (build / f"{name}.old").exists():
+                (build / f"{name}.old").rename(parent_dir / name)
+        raise
