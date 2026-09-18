@@ -16,7 +16,7 @@ The source files this archive is constructed from are provided by NASA and acces
 
 {{ storage_aws_open_data }}
 
-### Chunks & shards
+### Chunks and shards
 
 {{ chunking }}
 

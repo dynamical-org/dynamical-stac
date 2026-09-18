@@ -12,7 +12,7 @@ on the ECMWF website.
 
 {{ storage }}
 
-### Chunks & shards
+### Chunks and shards
 
 {{ chunking }}
 

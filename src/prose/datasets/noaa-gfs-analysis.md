@@ -10,7 +10,7 @@ GFS starts a new model run every 6 hours and dynamical.org has created this anal
 
 {{ storage }}
 
-### Chunks & shards
+### Chunks and shards
 
 {{ chunking }}
 

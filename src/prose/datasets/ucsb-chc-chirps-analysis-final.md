@@ -10,7 +10,7 @@ The [CHIRPS v3 documentation](https://www.chc.ucsb.edu/data/chirps3) describes t
 
 {{ storage_aws_open_data }}
 
-### Chunks & shards
+### Chunks and shards
 
 {{ chunking }}
 

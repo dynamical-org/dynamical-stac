@@ -19,7 +19,7 @@ Operational data is additionally accessed from [NCEP](https://mrms.ncep.noaa.gov
 
 {{ storage }}
 
-### Chunks & shards
+### Chunks and shards
 
 {{ chunking }}
 
