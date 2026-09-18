@@ -148,11 +148,7 @@ def generate(
     catalog = pystac.Catalog(
         id="dynamical-org",
         title=CATALOG_TITLE,
-        description=(
-            "Cloud-optimized weather and climate datasets from dynamical.org. "
-            "Reading this catalog with the dynamical-catalog Python package requires "
-            "version 1.0.0 or newer; earlier releases cannot load it."
-        ),
+        description="Cloud-optimized weather and climate datasets from dynamical.org",
     )
 
     items = _select_items(

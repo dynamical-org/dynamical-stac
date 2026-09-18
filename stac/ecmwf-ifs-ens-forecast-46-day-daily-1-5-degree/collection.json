@@ -145,7 +145,7 @@
     }
   },
   "cube:variables": {
-    "average_convective_available_potential_energy_atmosphere": {
+    "average_convective_available_potential_energy_surface": {
       "dimensions": [
         "init_time",
         "lead_time",
