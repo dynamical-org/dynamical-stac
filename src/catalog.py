@@ -128,6 +128,25 @@ LEGACY_CLIENT_RANGES: tuple[LegacyClientRange, ...] = (
 )
 
 
+def _check_legacy_client_ranges(ranges: tuple[LegacyClientRange, ...]) -> None:
+    """The edge applies the first matching rewrite, so a client must match at most
+    one range, or CI and the edge could disagree about the root it reads."""
+    names = [legacy_range.name for legacy_range in ranges]
+    if len(set(names)) != len(names):
+        raise ValueError(f"duplicate legacy client range names: {names}")
+    for i, legacy_range in enumerate(ranges):
+        for other in ranges[i + 1 :]:
+            a, b = legacy_range.user_agent_prefix, other.user_agent_prefix
+            if a.startswith(b) or b.startswith(a):
+                raise ValueError(
+                    f"legacy client ranges {legacy_range.name} and {other.name} "
+                    f"have overlapping User-Agent prefixes {a!r} and {b!r}"
+                )
+
+
+_check_legacy_client_ranges(LEGACY_CLIENT_RANGES)
+
+
 def root_filename_for_client(client_version: str) -> str:
     """The root catalog file the edge serves a dynamical-catalog release."""
     for legacy_range in LEGACY_CLIENT_RANGES:

@@ -11,6 +11,8 @@ from catalog import (
     CATALOG_ITEMS,
     LEGACY_CLIENT_RANGES,
     CatalogItem,
+    LegacyClientRange,
+    _check_legacy_client_ranges,
     root_filename_for_client,
 )
 from generate import legacy_root
@@ -61,13 +63,27 @@ def test_root_filename_for_client(client_version: str, root_filename: str) -> No
     assert root_filename_for_client(client_version) == root_filename
 
 
-def test_each_client_is_served_by_at_most_one_legacy_range() -> None:
-    # The edge applies the first matching rewrite; overlapping prefixes would
-    # make CI and the edge disagree about which root a release reads.
-    prefixes = [legacy_range.user_agent_prefix for legacy_range in LEGACY_CLIENT_RANGES]
-    for prefix in prefixes:
-        others = [other for other in prefixes if other is not prefix]
-        assert not any(other.startswith(prefix) for other in others)
+def _range(name: str, prefix: str) -> LegacyClientRange:
+    return LegacyClientRange(name=name, user_agent_prefix=prefix, s3_only=False)
+
+
+@pytest.mark.parametrize(
+    ("other_name", "other_prefix", "message"),
+    [
+        ("0.4.0-0.8.0", "dynamical-catalog/1.0.", "duplicate"),
+        ("0.9.0-0.9.9", "dynamical-catalog/0.", "overlapping"),
+        ("0.9.0-0.9.9", "dynamical-catalog/0.9.", "overlapping"),
+    ],
+)
+def test_ranges_must_have_distinct_names_and_disjoint_prefixes(
+    other_name: str, other_prefix: str, message: str
+) -> None:
+    first = _range("0.4.0-0.8.0", "dynamical-catalog/0.")
+    with pytest.raises(ValueError, match=message):
+        _check_legacy_client_ranges((first, _range(other_name, other_prefix)))
+    _check_legacy_client_ranges(
+        (first, _range("1.0.0-1.0.1", "dynamical-catalog/1.0."))
+    )
 
 
 def _item_fields(**overrides: object) -> dict[str, object]:
