@@ -6,7 +6,7 @@
 
 {{ storage }}
 
-### Chunks & shards
+### Chunks and shards
 
 {{ chunking }}
 

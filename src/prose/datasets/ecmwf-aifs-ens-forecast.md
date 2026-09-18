@@ -12,7 +12,7 @@ on the ECMWF website.
 
 {{ storage_aws_open_data }}
 
-### Chunks & shards
+### Chunks and shards
 
 {{ chunking }}
 
