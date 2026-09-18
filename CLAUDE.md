@@ -159,5 +159,7 @@ still passes this suite. Verify the live rule whenever it or a range changes.
   old clients again; only then may the rule be turned off.
 - The range name is a label, not parsed; it is in a published file name and
   in the edge rule, so don't rename one.
-- Shared collection documents must stay readable by every range that links
-  them; the compat matrix is what checks that.
+- Shared collection documents must stay parseable and openable by every range
+  that links them; the compat matrix is what checks that. It also reads one
+  value per collection, except that 0.4.0 can't read virtual datasets at all
+  (see above), whatever their storage.

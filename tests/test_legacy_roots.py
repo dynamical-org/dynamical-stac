@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import pathlib
 import re
+import sys
 
 import pydantic
 import pytest
@@ -19,6 +20,9 @@ from generate import legacy_root
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMITTED_STAC = REPO_ROOT / "stac"
+
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+from compat_matrix import MIN_VERSION, reads_virtual_chunks  # noqa: E402
 
 _ROOT = {
     "type": "Catalog",
@@ -140,3 +144,24 @@ def test_committed_legacy_root_links_exactly_its_production_items(
 def test_range_names_are_safe_in_file_names_and_edge_rules() -> None:
     for legacy_range in LEGACY_CLIENT_RANGES:
         assert re.fullmatch(r"catalog-[0-9.-]+\.json", legacy_range.root_filename)
+
+
+@pytest.mark.parametrize(
+    ("target", "expected"),
+    [
+        ("0.4.0", False),
+        ("0.5.0", True),
+        ("0.10.0", True),
+        ("1.0.1", True),
+        ("main", True),
+    ],
+)
+def test_only_releases_before_virtual_support_skip_virtual_reads(
+    target: str, expected: bool
+) -> None:
+    assert reads_virtual_chunks(target) is expected
+
+
+def test_the_floor_is_the_only_release_exempt_from_virtual_reads() -> None:
+    # Lowering the floor further must not quietly widen the exemption's reach.
+    assert MIN_VERSION == "0.4.0"

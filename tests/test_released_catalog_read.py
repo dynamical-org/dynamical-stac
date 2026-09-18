@@ -55,9 +55,9 @@ sys.path.insert(0, str(_SCRIPTS_DIR))
 from compat_matrix import (  # noqa: E402
     CANARY_REFS,
     PACKAGE,
-    _version_tuple,
     build_targets,
     fetch_releases,
+    reads_virtual_chunks,
     safe_id,
 )
 
@@ -74,12 +74,6 @@ _GRIBBERISH_SPEC = "gribberish==1.5.0"
 # releases resolved by `uv run --with` might otherwise pull an earlier zarr and
 # fail to open the store, so floor it here as a real consumer would.
 _ZARR_SPEC = "zarr>=3.2.1"
-
-# dynamical-catalog gained virtual chunk container support in 0.5.0. An earlier
-# release opens a virtual dataset but can't fetch its chunks (icechunk refuses
-# the unauthorized container), so it is held to opening those, not reading them.
-# Reading index 0 can still pass by luck when that chunk was never written.
-_VIRTUAL_READS_SINCE = "0.5.0"
 
 # Resolve targets at module import (collection time) so each one becomes
 # its own pytest parametrize id. PyPI is hit once; the result is reused
@@ -132,10 +126,12 @@ def _expected_collection_ids(target: str) -> list[str]:
 
 
 def _open_only_ids(target: str) -> list[str]:
-    """Collections `target` can open but not read."""
-    if not _is_release(target) or _version_tuple(target) >= _version_tuple(
-        _VIRTUAL_READS_SINCE
-    ):
+    """Collections `target` can open but not read (see `reads_virtual_chunks`).
+
+    Reading index 0 proves a fetch only where that chunk was written; elsewhere
+    it returns the fill value, which is how 0.4.0 once passed a virtual read.
+    """
+    if reads_virtual_chunks(target):
         return []
     return [item.id for item in CATALOG_ITEMS if item.virtual_chunk_container_prefixes]
 

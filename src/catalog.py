@@ -107,8 +107,9 @@ class LegacyClientRange(BaseModel):
     # A label, never parsed: it is the `exclude_from` value and the file name.
     name: str = Field(pattern=r"^\d+\.\d+\.\d+-\d+\.\d+\.\d+$")
     user_agent_prefix: str = Field(pattern=r"^dynamical-catalog/[0-9.]+$")
-    # These releases read only `s3://` repositories and `s3://` virtual chunk
+    # These releases parse only `s3://` repositories and `s3://` virtual chunk
     # containers; `_s3_only_ranges_exclude_other_storage` holds items to that.
+    # (Parse, not read: 0.4.0 can't read any virtual dataset's data.)
     s3_only: bool
 
     @property
