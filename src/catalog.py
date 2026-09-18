@@ -963,6 +963,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
         notebooks=(_quickstart_notebook("ecmwf-aifs-single-forecast-virtual"),),
         additional_terms=ECMWF_TERMS,
+        # Staging only: the gs:// virtual chunk container is rejected by
+        # dynamical-catalog <= 0.8.0, which parses every collection up front,
+        # so listing this in production made every dataset unopenable for
+        # those releases. Returns to production once gs:// support is the
+        # client baseline or the container is mirrored to s3.
+        staging=True,
     ),
     CatalogItem(
         id="ecmwf-aifs-ens-forecast",
