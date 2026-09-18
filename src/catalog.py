@@ -742,6 +742,33 @@ CATALOG_ITEMS: list[CatalogItem] = [
         staging=True,
     ),
     CatalogItem(
+        id="noaa-gefs-forecast-10-day-0-25-degree-virtual",
+        icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-10-day-0-25-degree-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-gefs-pds/",),
+        model_id="noaa-gefs",
+        description_summary=(
+            "This dataset is an archive of past and present GEFS forecasts at "
+            "0.25 degree resolution, optimized for spatial (map) access "
+            "patterns. Forecasts are identified by an initialization time "
+            "(`init_time`) denoting the start time of the model run as well as "
+            "by the `ensemble_member`, and step forward 3 hourly along the "
+            "`lead_time` dimension out to 10 days. A new forecast is "
+            "initialized every 6 hours.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.5`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_10_day_0_25_degree_virtual/template_config.py",
+        examples=(
+            _example(
+                "Ensemble mean temperature map",
+                'ds = dynamical_catalog.open("noaa-gefs-forecast-10-day-0-25-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").mean("ensemble_member")',
+            ),
+        ),
+        staging=True,
+    ),
+    CatalogItem(
         id="noaa-hrrr-forecast-18-hour-virtual",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-18-hour-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
