@@ -383,7 +383,8 @@
       "unit": "J kg-1",
       "long_name": "Convective available potential energy",
       "standard_name": "atmosphere_convective_available_potential_energy",
-      "short_name": "cape"
+      "short_name": "cape",
+      "comment": "Energy released by a parcel lifted from the most unstable of six 30 hPa layers in the lowest 180 hPa, rather than from one parcel averaged over that depth."
     },
     "convective_available_potential_energy_255_0mb": {
       "dimensions": [
@@ -400,7 +401,8 @@
       "unit": "J kg-1",
       "long_name": "Convective available potential energy",
       "standard_name": "atmosphere_convective_available_potential_energy",
-      "short_name": "cape"
+      "short_name": "cape",
+      "comment": "Energy released by a parcel lifted from the most unstable level in the lowest 300 hPa. The source labels the record 255 hPa but searches 300."
     },
     "convective_available_potential_energy_90_0mb": {
       "dimensions": [
@@ -451,7 +453,8 @@
       "unit": "J kg-1",
       "long_name": "Convective inhibition",
       "standard_name": "atmosphere_convective_inhibition",
-      "short_name": "cin"
+      "short_name": "cin",
+      "comment": "Negative where there is inhibition and at or near zero where there is none."
     },
     "convective_inhibition_255_0mb": {
       "dimensions": [
@@ -468,7 +471,8 @@
       "unit": "J kg-1",
       "long_name": "Convective inhibition",
       "standard_name": "atmosphere_convective_inhibition",
-      "short_name": "cin"
+      "short_name": "cin",
+      "comment": "Negative where there is inhibition and at or near zero where there is none."
     },
     "convective_inhibition_90_0mb": {
       "dimensions": [
@@ -485,7 +489,8 @@
       "unit": "J kg-1",
       "long_name": "Convective inhibition",
       "standard_name": "atmosphere_convective_inhibition",
-      "short_name": "cin"
+      "short_name": "cin",
+      "comment": "Negative where there is inhibition and at or near zero where there is none."
     },
     "convective_inhibition_surface": {
       "dimensions": [
@@ -502,7 +507,8 @@
       "unit": "J kg-1",
       "long_name": "Convective inhibition",
       "standard_name": "atmosphere_convective_inhibition",
-      "short_name": "cin"
+      "short_name": "cin",
+      "comment": "Negative where there is inhibition and at or near zero where there is none."
     },
     "critical_angle_0_500m": {
       "dimensions": [
@@ -1207,7 +1213,8 @@
       ],
       "unit": "m s-1",
       "long_name": "Maximum downward vertical velocity",
-      "short_name": "maxdvv"
+      "short_name": "maxdvv",
+      "comment": "The 100-1000 mb in the name are pressure differences from the surface, not isobaric levels."
     },
     "maximum_hail_diameter_0p1sigma": {
       "dimensions": [
@@ -1354,7 +1361,8 @@
       "unit": "m s-1",
       "long_name": "Maximum upward vertical velocity",
       "standard_name": "upward_air_velocity",
-      "short_name": "maxuvv"
+      "short_name": "maxuvv",
+      "comment": "The 100-1000 mb in the name are pressure differences from the surface, not isobaric levels."
     },
     "maximum_vegetation_surface": {
       "dimensions": [
@@ -2187,7 +2195,7 @@
       "unit": "m s-1",
       "long_name": "U-component storm motion",
       "short_name": "ustm",
-      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+      "comment": "Bunkers right-moving supercell motion along the model grid's x dimension, not eastward velocity."
     },
     "upward_long_wave_radiation_flux_surface": {
       "dimensions": [
@@ -2272,7 +2280,7 @@
       "unit": "m s-1",
       "long_name": "V-component storm motion",
       "short_name": "vstm",
-      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+      "comment": "Bunkers right-moving supercell motion along the model grid's y dimension, not northward velocity."
     },
     "vegetation_surface": {
       "dimensions": [
