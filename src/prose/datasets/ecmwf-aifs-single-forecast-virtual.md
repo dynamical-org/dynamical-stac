@@ -21,7 +21,3 @@ on the ECMWF website.
 ### Validation report
 
 {{ validation_report }}
-
-### Compression
-
-{{ compression }}

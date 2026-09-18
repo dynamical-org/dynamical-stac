@@ -32,7 +32,3 @@ the [validation report]({{ validation_url }}) for details.
 ### Validation report
 
 {{ validation_report }}
-
-### Compression
-
-{{ compression }}
