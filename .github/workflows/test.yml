@@ -24,9 +24,50 @@ jobs:
       - run: uv sync --group integration
       - run: uv run ruff check
       - run: uv run ruff format --check
-      - run: uv run pytest tests/ --ignore=tests/test_released_catalog_read.py
+      - run: uv run pytest tests/ --ignore=tests/test_released_catalog_read.py --ignore=tests/test_stac_drift.py
         env:
           REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
+
+  # Committed stac/ must match a fresh generate(). Its own job, separate from
+  # `test`, because its failure means one of two different things and the
+  # test says which: a dataset store changed after the last regen (STORE
+  # DRIFT, main needs a regen commit, nobody broke anything) or this branch
+  # changed src/ without running scripts/generate. Classifying needs the base
+  # ref's src/ and stac/, hence the fetch of main. On a push to main every
+  # mismatch is store drift by construction, and notify-on-drift files it as
+  # such instead of leaving main red with no stated reason.
+  stac-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: git fetch --no-tags --depth=1 origin main
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - run: uv sync
+      - run: uv run pytest tests/test_stac_drift.py -m integration -v
+
+  notify-on-drift:
+    needs: stac-drift
+    if: failure() && (github.event_name == 'push' || github.event_name == 'repository_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Open or update the regen issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TITLE: "Catalog needs regen: a dataset store changed"
+        run: |
+          body="A dataset store changed after the last \`scripts/generate\`, so the committed \`stac/\` no longer matches it. Nothing in this repo broke; run \`./scripts/generate\` on main and commit the result.
+
+          Run: ${RUN_URL}"
+          existing=$(gh issue list --state open --search "\"${TITLE}\" in:title" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$TITLE" --body "$body"
+          fi
 
   # Per-target compatibility checks. Each matrix entry shows up as its own
   # PR status check (via the job-level `name:` template) so a breaking

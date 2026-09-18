@@ -138,3 +138,30 @@ and accepted), never bundled into the catalog PR whose `compat` failure it
 would silence. If a catalog change needs a client feature that only newer
 releases have, the dataset stays in staging (see above) until the floor has
 been raised separately or the store is made readable by the floor release.
+
+## Drift on `main` and required checks
+
+`tests/test_stac_drift.py` runs in its own `stac-drift` CI job. When the
+committed `stac/` no longer matches `generate()`, the test regenerates from
+`origin/main`'s `src/` and compares that with `origin/main`'s own `stac/` to
+say which of two things happened:
+
+- **Store drift**: a dataset's Icechunk store changed after the last regen
+  (a reformatters deploy renamed a variable or added an attribute). Nothing in
+  this repo is wrong; `main` needs a regen commit. On a push to `main` this is
+  the only possible cause, and `notify-on-drift` opens or updates the issue
+  "Catalog needs regen: a dataset store changed" so `main` is never red
+  without a stated reason. Fix: `./scripts/generate` on `main`, commit, merge.
+- **Unregenerated change**: the branch edited `src/` without running
+  `./scripts/generate`. Fix: regenerate on the branch.
+
+Both fail the job. Merging a stale `stac/` ships a stale catalog through
+`upload-stac.yml`, so a store-drift failure on a PR still means someone must
+regenerate, and the message names which files and why.
+
+The `Protect main` ruleset requires the `test` and `compat-required` checks.
+It does not require `stac-drift` until it is added there, and repository
+admins can bypass it, which is how a PR with a red `test` check has been
+merged before. Keep the required checks in step with the jobs in
+`.github/workflows/test.yml` when a job is added or renamed.
+
