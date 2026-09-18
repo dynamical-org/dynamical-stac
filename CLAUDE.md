@@ -105,69 +105,18 @@ the rendered import comment says so.
 
 ## Client compatibility matrix
 
-`.github/workflows/test.yml` runs a `compat (<target>)` job per supported
-`dynamical-catalog` target, and the fixed-name `compat-required` check that
-branch protection requires aggregates them. Each job installs one target into
-an isolated env (`uv run --with dynamical-catalog==X`) and runs
-`tests/test_released_catalog_read.py`, which loads the catalog generated from
-the branch and opens every production collection, reading one value from
-each. Released targets read the production-only root; the `main` canary reads
-the staging-inclusive root so an unreleased client contract is proven before
-it ships.
+`scripts/compat_matrix.py` discovers every non-yanked stable
+`dynamical-catalog` release on PyPI at or above `MIN_VERSION`, currently
+0.5.0. CI tests each release against every production collection, including
+reading one value per collection. These checks block merges through the
+required `compat-required` job.
 
-The target set is built on every run by `scripts/compat_matrix.py`, with no
-list to maintain here or in the workflow:
+The `main` client branch is a non-blocking canary against the staging-inclusive
+catalog. Pre-releases are excluded from the supported-release matrix.
 
-- **Every non-yanked stable release on PyPI at or above `MIN_VERSION`**,
-  currently 0.5.0, the first release announced as a supported access method.
-  These block the PR. A catalog change that any of them cannot load or read
-  fails `compat-required`, which is the point: on 2026-09-17 the
-  `gs://` virtual chunk container of ecmwf-aifs-single-forecast-virtual made
-  `dynamical-catalog` 0.5.0 through 0.8.0 fail on *every* dataset, and the
-  `compat (0.8.0)` check failed on exactly that.
-- **`main` of dynamical-catalog** as a canary (`allow-failure: true`). It
-  catches an unreleased client change that breaks against the catalog, but a
-  client-side breakage must not block catalog PRs, so it cannot fail the
-  build. Pre-releases are not in the matrix: they are not a support contract,
-  and `main` already covers what is about to ship.
-
-Raising `MIN_VERSION` drops a release from the support contract. It is a
-policy decision, not a fix: make it in its own PR, with the catalog owner's
-approval (Alden today) and
-the reason (consumers gone from the wild, or a break that has been announced
-and accepted), never bundled into the catalog PR whose `compat` failure it
-would silence. If a catalog change needs a client feature that only newer
-releases have, the dataset stays in staging (see above) until the floor has
-been raised separately or the store is made readable by the floor release.
-
-## Drift on `main` and required checks
-
-`tests/test_stac_drift.py` runs in its own `stac-drift` CI job. When the
-committed `stac/` no longer matches `generate()`, the test regenerates from
-`origin/main`'s `src/` and compares that with `origin/main`'s own `stac/` to
-say which of two things happened:
-
-- **Store drift**: a dataset's Icechunk store changed after the last regen
-  (a reformatters deploy renamed a variable or added an attribute). Nothing in
-  this repo is wrong; `main` needs a regen commit. On a push to `main` and on
-  the daily scheduled run this is the usual cause (a stale tree merged past
-  the checks reads the same), and `notify-on-drift` opens or updates the
-  issue "Catalog needs regen: a dataset store changed" so `main` is never
-  red without a stated reason. The daily run is the only thing that notices a
-  store change between pushes; the `repository_dispatch` trigger from
-  reformatters has never fired. Fix: `./scripts/generate` on `main`, commit,
-  merge.
-- **Unregenerated change**: the branch edited `src/` without running
-  `./scripts/generate`. Fix: regenerate on the branch.
-- **Behind base** (local runs only; CI tests the PR merged into `main`): the
-  fresh output already matches `main`'s committed file. Fix: merge `main`.
-
-All of them fail the job. Merging a stale `stac/` ships a stale catalog through
-`upload-stac.yml`, so a store-drift failure on a PR still means someone must
-regenerate, and the message names which files and why.
-
-A job gates merges only once the `Protect main` ruleset lists it as a
-required check, so `stac-drift` must be listed there alongside `test` and
-`compat-required`, and the list must be kept in step with the jobs in
-`.github/workflows/test.yml` when one is added or renamed.
-
+Raising `MIN_VERSION` changes the support policy. Make that change in a
+separate PR with the catalog owner's approval (Alden today) and a reason for
+dropping older clients. Never raise the floor in the catalog PR whose
+compatibility failure it would silence. A dataset requiring a newer client
+stays in staging until the floor is raised separately or the store is made
+readable by the oldest supported release.

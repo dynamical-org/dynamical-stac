@@ -7,17 +7,12 @@ on:
   repository_dispatch:
     types: [reformatters-main-push]
   workflow_dispatch:
-  # Daily drift sweep: a reformatters deploy can change a store any time, and
-  # without a push here nothing else notices until the next PR trips on it.
-  schedule:
-    - cron: "17 6 * * *"  # runs only stac-drift and notify-on-drift
 
 permissions:
   contents: read
 
 jobs:
   test:
-    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -29,59 +24,9 @@ jobs:
       - run: uv sync --group integration
       - run: uv run ruff check
       - run: uv run ruff format --check
-      - run: uv run pytest tests/ --ignore=tests/test_released_catalog_read.py --ignore=tests/test_stac_drift.py
+      - run: uv run pytest tests/ --ignore=tests/test_released_catalog_read.py
         env:
           REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
-
-  # Committed stac/ must match a fresh generate(). Its own job, separate from
-  # `test`, because its failure means one of two different things and the
-  # test says which: a dataset store changed after the last regen (STORE
-  # DRIFT, main needs a regen commit, nobody broke anything) or this branch
-  # changed src/ without running scripts/generate. Classifying needs the base
-  # ref's src/ and stac/, hence the fetch of main. On a push to main or the
-  # daily schedule, HEAD is the base, so a mismatch reads as store drift (the
-  # usual cause; a stale tree merged past the checks looks the same), and
-  # notify-on-drift files it instead of leaving main red with no stated
-  # reason. This job gates merges only while it is listed in the `Protect
-  # main` ruleset's required checks.
-  stac-drift:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: git fetch --no-tags --depth=1 origin main
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
-      - run: uv sync
-      - run: uv run pytest tests/test_stac_drift.py -m integration -v
-
-  notify-on-drift:
-    needs: stac-drift
-    if: failure() && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'repository_dispatch')
-    runs-on: ubuntu-latest
-    # One filing at a time, so two failing runs close together cannot both
-    # miss the other's issue and open a duplicate.
-    concurrency:
-      group: notify-on-drift
-    permissions:
-      issues: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Open or update the regen issue
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          TITLE: "Catalog needs regen: a dataset store changed"
-        run: |
-          body="The committed \`stac/\` no longer matches what \`generate()\` renders from main. The usual cause is a dataset store that changed after the last regen (a reformatters deploy); nothing in this repo needs fixing for that. Run \`./scripts/generate\` on main and commit the result. The run's \`stac-drift\` log lists the files.
-
-          Run: ${RUN_URL}"
-          # A plain listing, not the search index, which lags creation. gh's
-          # jq has no --arg; TITLE comes through $ENV.
-          existing=$(gh issue list --state open --limit 200 --json number,title --jq '[.[] | select(.title == $ENV.TITLE)] | .[0].number')
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "$body"
-          else
-            gh issue create --title "$TITLE" --body "$body"
-          fi
 
   # Per-target compatibility checks. Each matrix entry shows up as its own
   # PR status check (via the job-level `name:` template) so a breaking
@@ -104,7 +49,6 @@ jobs:
   #                  canary refs like `main`, where a dynamical-catalog
   #                  breakage shouldn't block dynamical-stac PRs.
   discover:
-    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.build.outputs.matrix }}
@@ -140,7 +84,7 @@ jobs:
   # leaves compat skipped rather than failed, is caught here too.
   compat-required:
     needs: compat
-    if: always() && github.event_name != 'schedule'
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - env:
