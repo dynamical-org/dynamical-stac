@@ -27,7 +27,9 @@ def main(argv: list[str]) -> int:
             upload(pathlib.Path(stac_dir))
         case _:
             print(  # noqa: T201
-                "usage: generate [--output DIR [--environment production|staging|test]] | upload DIR"
+                "usage: generate [--output DIR [--environment NAME]] | upload DIR\n"
+                "environments: "
+                + ", ".join(environment.name for environment in STAC_ENVIRONMENTS)
             )
             return 1
     return 0

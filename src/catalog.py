@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
-from environments import STAC_ENVIRONMENTS, StacEnvironmentName
+from environments import STAC_ENVIRONMENTS, stac_environment
 
 PROSE_DIR = pathlib.Path(__file__).parent / "prose"
 
@@ -411,7 +411,7 @@ class CatalogItem(BaseModel):
     notebooks: tuple[DatasetNotebook, ...] = ()
     additional_terms: AdditionalTerms | None = None
     # Required, explicit publication membership; environments never imply others.
-    environments: tuple[StacEnvironmentName, ...] = Field(min_length=1)
+    environments: tuple[str, ...] = Field(min_length=1)
 
     @property
     def icechunk_scheme(self) -> StorageScheme:
@@ -457,7 +457,7 @@ class CatalogItem(BaseModel):
     def catalog_url(self) -> str:
         """Prefer production, then staging, then test for runnable examples."""
         return next(
-            f"{environment.root_href}/catalog.json"
+            environment.catalog_url
             for environment in STAC_ENVIRONMENTS
             if environment.name in self.environments
         )
@@ -485,7 +485,9 @@ class CatalogItem(BaseModel):
         return text
 
     @model_validator(mode="after")
-    def _environments_are_unique(self) -> CatalogItem:
+    def _environments_are_valid(self) -> CatalogItem:
+        for name in self.environments:
+            stac_environment(name)
         if len(self.environments) != len(set(self.environments)):
             raise ValueError(
                 f"CatalogItem {self.id!r} environments must not contain duplicates"
@@ -626,7 +628,7 @@ def _quickstart_notebook(slug: str) -> DatasetNotebook:
 
 CATALOG_ITEMS: list[CatalogItem] = [
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="noaa-gfs-analysis",
         icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-analysis/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -648,7 +650,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-gfs-analysis"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="noaa-gfs-forecast",
         icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-forecast/v0.2.7.icechunk/",
         icechunk_region="us-west-2",
@@ -673,7 +675,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="noaa-gefs-forecast-35-day",
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-35-day/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
@@ -698,7 +700,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-gefs-forecast-35-day"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="noaa-gefs-analysis",
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-analysis/v0.1.2.icechunk/",
         icechunk_region="us-west-2",
@@ -771,7 +773,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.5.0-0.8.0"],
         id="noaa-hrrr-forecast-18-hour-virtual",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-18-hour-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -808,7 +810,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-18-hour-virtual"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="noaa-hrrr-forecast-48-hour",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -836,7 +838,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.5.0-0.8.0"],
         id="noaa-hrrr-forecast-48-hour-virtual",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour-virtual/v0.5.0.icechunk/",
         icechunk_region="us-west-2",
@@ -874,7 +876,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour-virtual"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="noaa-hrrr-analysis",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-analysis/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
@@ -900,7 +902,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.5.0-0.8.0"],
         id="noaa-hrrr-analysis-virtual",
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-analysis-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -935,7 +937,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis-virtual"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="noaa-mrms-conus-analysis-hourly",
         icechunk_href="s3://dynamical-noaa-mrms/noaa-mrms-conus-analysis-hourly/v0.3.0.icechunk/",
         icechunk_region="us-west-2",
@@ -956,7 +958,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-mrms-conus-analysis-hourly"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="ecmwf-aifs-single-forecast",
         icechunk_href="s3://dynamical-ecmwf-aifs-single/ecmwf-aifs-single-forecast/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1029,7 +1031,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         # client baseline or the container is mirrored to s3.
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="ecmwf-aifs-ens-forecast",
         icechunk_href="s3://dynamical-ecmwf-aifs-ens/ecmwf-aifs-ens-forecast/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1053,7 +1055,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="ecmwf-ifs-ens-forecast-15-day-0-25-degree",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-15-day-0-25-degree/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1080,7 +1082,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1120,7 +1122,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1229,7 +1231,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         # Link it after that PR merges; staging items may omit notebooks.
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="dwd-icon-eu-forecast-5-day",
         icechunk_href="s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1253,7 +1255,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("dwd-icon-eu-forecast-5-day"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="nasa-imerg-analysis-early",
         icechunk_href="s3://dynamical-nasa-imerg/nasa-imerg-analysis-early/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1277,7 +1279,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("nasa-imerg-analysis-early"),),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="nasa-imerg-analysis-late",
         icechunk_href="s3://dynamical-nasa-imerg/nasa-imerg-analysis-late/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1349,7 +1351,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_CHIRPS_PRELIMINARY_FINAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["production", "staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],
         id="eccc-hrdps-forecast",
         icechunk_href="s3://dynamical-eccc-hrdps/eccc-hrdps-forecast/v0.1.0.icechunk/",
         icechunk_region="us-west-2",

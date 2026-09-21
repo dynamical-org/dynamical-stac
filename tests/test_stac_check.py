@@ -9,6 +9,7 @@ equivalent to linting freshly-generated catalogs.
 from __future__ import annotations
 
 import pathlib
+import shutil
 
 import pytest
 
@@ -21,13 +22,26 @@ STAC_CHECK_CONFIG = pathlib.Path(__file__).with_name("stac-check.config.yml")
 @pytest.mark.integration
 @pytest.mark.parametrize(
     "environment_directory",
-    [environment.directory for environment in STAC_ENVIRONMENTS],
+    sorted({environment.directory for environment in STAC_ENVIRONMENTS}),
 )
-def test_no_stac_check_best_practice_warnings(environment_directory: str) -> None:
+def test_no_stac_check_best_practice_warnings(
+    environment_directory: str, tmp_path: pathlib.Path
+) -> None:
     stac_check = pytest.importorskip("stac_check.lint")
 
     committed = REPO_ROOT / environment_directory
     files = [committed / "catalog.json", *committed.glob("*/collection.json")]
+
+    # Additional roots are served as catalogs, so lint under the standard filename.
+    for environment in STAC_ENVIRONMENTS:
+        if (
+            environment.directory == environment_directory
+            and environment.client_versions is not None
+        ):
+            renamed_root = tmp_path / environment.name / "catalog.json"
+            renamed_root.parent.mkdir()
+            shutil.copy(committed / environment.root_filename, renamed_root)
+            files.append(renamed_root)
 
     failures: list[str] = []
     for f in files:
