@@ -736,13 +736,7 @@ class CollectionInput(BaseModel):
             description_summary=item.description_summary,
             description_details=item.description_details(chunking_table),
             description_model=model.description,
-            catalog_url=(
-                "https://stac-test.dynamical.org/catalog.json"
-                if item.test
-                else "https://stac-staging.dynamical.org/catalog.json"
-                if item.staging
-                else STAC_CATALOG_URL
-            ),
+            catalog_url=item.catalog_url,
             examples=item.examples,
             notebooks=item.notebooks,
         )

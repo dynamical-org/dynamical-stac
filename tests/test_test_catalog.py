@@ -1,7 +1,7 @@
 """Integration test: the test catalog renders the fixture collections.
 
-These are the only tests that generate with `include_test=True`, so they're the
-only ones that open `gs://` and `az://` icechunk repositories over the network.
+These generate the test environment, opening `gs://` and `az://` Icechunk
+repositories over the network alongside the weather datasets assigned to it.
 `generate()` calls `pystac.Catalog.validate_all()`, so reaching the assertions
 below also means the fixture collections passed STAC + extension schema
 validation. The catalog is generated once per module — a full `generate()` run
@@ -37,8 +37,7 @@ def test_catalog_dir(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
     generate(
         output_dir,
         root_href="https://stac-test.dynamical.org",
-        include_staging=True,
-        include_test=True,
+        environment="test",
     )
     return output_dir
 

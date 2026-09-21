@@ -1,0 +1,223 @@
+{
+  "type": "Collection",
+  "id": "test-azure-virtual",
+  "stac_version": "1.1.0",
+  "description": "Synthetic fixture on Azure Blob Storage with one virtual chunk, for testing anonymous Azure reads.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/test-azure-virtual/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/test-azure-virtual/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-test.dynamical.org/test-azure-virtual/collection.json",
+      "type": "application/json",
+      "title": "Test Azure virtual"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "dynamical.org",
+  "version": "0.1.0",
+  "model_id": "dynamical-test",
+  "model_name": "dynamical.org test fixtures",
+  "description_summary": "A synthetic 2x3x4 `temperature_2m` array on Azure Blob Storage whose single chunk is a virtual reference into the same container. Published only to the test catalog so dynamical-catalog can exercise anonymous Azure repository and virtual chunk reads against real generator output.",
+  "description_details": "### Purpose\n\nA tiny synthetic array \u2014 a 2\u00d73\u00d74 `temperature_2m` grid of made-up values. This\nis not weather data and should not be used for anything but testing. It exists\nso [dynamical-catalog](https://github.com/dynamical-org/dynamical-catalog) can\nexercise its Azure Blob Storage read path \u2014 an anonymous `az://` icechunk\nrepository whose single chunk is a virtual reference into an `az://` container \u2014\nagainst real catalog output rather than a hand-written STAC document.\n\n### Storage\n\nThe store lives in a public container in dynamical.org's Azure storage account.\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| time | 2 (12 hours) |\n| latitude | 3 (3\u00b0) |\n| longitude | 4 (4\u00b0) |\n| **uncompressed** | 96.0 B |",
+  "description_model": "These are tiny synthetic datasets used to exercise dynamical-catalog's read paths against real generator output; they are not weather data.",
+  "examples": [
+    {
+      "title": "Read the array",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=1.0.0\n\nds = dynamical_catalog.open(\"test-azure-virtual\", chunks=None)\nds[\"temperature_2m\"].isel(time=0)",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-test.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"test-azure-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"az://dynamical-icechunk-azure-demo/test-azure-virtual/source/\": icechunk.azure_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].isel(time=0)",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        40.0,
+        42.0
+      ],
+      "axis": "y",
+      "unit": "degrees_north",
+      "size": 3
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -105.0,
+        -102.0
+      ],
+      "axis": "x",
+      "unit": "degrees_east",
+      "size": 4
+    },
+    "time": {
+      "type": "temporal",
+      "extent": [
+        "2026-01-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    }
+  },
+  "cube:variables": {
+    "temperature_2m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        2,
+        3,
+        4
+      ],
+      "unit": "degC",
+      "long_name": "2 metre temperature"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        2,
+        3,
+        4
+      ],
+      "lengths": {
+        "time": "12 hours",
+        "latitude": "3\u00b0",
+        "longitude": "4\u00b0"
+      },
+      "uncompressed_size_bytes": 96,
+      "uncompressed_size": "96.0 B"
+    }
+  },
+  "title": "Test Azure virtual",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -105.0,
+          40.0,
+          -102.0,
+          42.0
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-01-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "3x4 grid over Colorado"
+    ],
+    "spatial_resolution": [
+      "1 degree"
+    ],
+    "time_domain": [
+      "2026-01-01T00 to 2026-01-01T06"
+    ],
+    "time_resolution": [
+      "6 hours"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "az://dynamical-icechunk-azure-demo/test-azure-virtual/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "account_name": "dynamicalicechunktest",
+        "anon": true
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "az://dynamical-icechunk-azure-demo/test-azure-virtual/source/",
+          "credentials": {
+            "type": "azure",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamicalicechunktest.blob.core.windows.net/dynamical-icechunk-azure-demo/test-azure-virtual/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "az://dynamical-icechunk-azure-demo/test-azure-virtual/source/",
+          "credentials": {
+            "type": "azure",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

@@ -137,12 +137,10 @@ def test_released_dynamical_catalog_opens_every_collection(
         pytest.skip("uv not available; cannot install released dynamical-catalog")
 
     _, root_url = served_catalog
-    staging = not re.fullmatch(r"\d+\.\d+\.\d+", target)
-    # Test-tier fixtures are never in the served catalog (see `served_catalog`).
+    environment = "production" if re.fullmatch(r"\d+\.\d+\.\d+", target) else "staging"
+    # Read only the collections explicitly assigned to this environment.
     collection_ids = [
-        item.id
-        for item in CATALOG_ITEMS
-        if not item.test and (staging or not item.staging)
+        item.id for item in CATALOG_ITEMS if environment in item.environments
     ]
     harness = tmp_path / "harness.py"
     harness.write_text(_HARNESS)

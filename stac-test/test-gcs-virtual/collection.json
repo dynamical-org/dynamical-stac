@@ -1,0 +1,222 @@
+{
+  "type": "Collection",
+  "id": "test-gcs-virtual",
+  "stac_version": "1.1.0",
+  "description": "Synthetic fixture on Google Cloud Storage with one virtual chunk, for testing anonymous GCS reads.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/test-gcs-virtual/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/test-gcs-virtual/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-test.dynamical.org/test-gcs-virtual/collection.json",
+      "type": "application/json",
+      "title": "Test GCS virtual"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "dynamical.org",
+  "version": "0.1.0",
+  "model_id": "dynamical-test",
+  "model_name": "dynamical.org test fixtures",
+  "description_summary": "A synthetic 2x3x4 `temperature_2m` array on Google Cloud Storage whose single chunk is a virtual reference into the same bucket. Published only to the test catalog so dynamical-catalog can exercise anonymous GCS repository and virtual chunk reads against real generator output.",
+  "description_details": "### Purpose\n\nA tiny synthetic array \u2014 a 2\u00d73\u00d74 `temperature_2m` grid of made-up values. This\nis not weather data and should not be used for anything but testing. It exists\nso [dynamical-catalog](https://github.com/dynamical-org/dynamical-catalog) can\nexercise its Google Cloud Storage read path \u2014 an anonymous `gs://` icechunk\nrepository whose single chunk is a virtual reference into a `gs://` container \u2014\nagainst real catalog output rather than a hand-written STAC document.\n\n### Storage\n\nThe store lives in a public bucket in dynamical.org's Google Cloud project.\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| time | 2 (12 hours) |\n| latitude | 3 (3\u00b0) |\n| longitude | 4 (4\u00b0) |\n| **uncompressed** | 96.0 B |",
+  "description_model": "These are tiny synthetic datasets used to exercise dynamical-catalog's read paths against real generator output; they are not weather data.",
+  "examples": [
+    {
+      "title": "Read the array",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=1.0.0\n\nds = dynamical_catalog.open(\"test-gcs-virtual\", chunks=None)\nds[\"temperature_2m\"].isel(time=0)",
+          "language": "python"
+        },
+        {
+          "label": "pystac + icechunk",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-test.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"test-gcs-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"gs://dynamical-icechunk-gcs-demo/test-gcs-virtual/source/\": icechunk.gcs_credentials(anonymous=True)})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].isel(time=0)",
+          "language": "python"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "latitude": {
+      "type": "spatial",
+      "extent": [
+        40.0,
+        42.0
+      ],
+      "axis": "y",
+      "unit": "degrees_north",
+      "size": 3
+    },
+    "longitude": {
+      "type": "spatial",
+      "extent": [
+        -105.0,
+        -102.0
+      ],
+      "axis": "x",
+      "unit": "degrees_east",
+      "size": 4
+    },
+    "time": {
+      "type": "temporal",
+      "extent": [
+        "2026-01-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    }
+  },
+  "cube:variables": {
+    "temperature_2m": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "type": "data",
+      "chunks": [
+        2,
+        3,
+        4
+      ],
+      "unit": "degC",
+      "long_name": "2 metre temperature"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "time",
+        "latitude",
+        "longitude"
+      ],
+      "shape": [
+        2,
+        3,
+        4
+      ],
+      "lengths": {
+        "time": "12 hours",
+        "latitude": "3\u00b0",
+        "longitude": "4\u00b0"
+      },
+      "uncompressed_size_bytes": 96,
+      "uncompressed_size": "96.0 B"
+    }
+  },
+  "title": "Test GCS virtual",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -105.0,
+          40.0,
+          -102.0,
+          42.0
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-01-01T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "3x4 grid over Colorado"
+    ],
+    "spatial_resolution": [
+      "1 degree"
+    ],
+    "time_domain": [
+      "2026-01-01T00 to 2026-01-01T06"
+    ],
+    "time_resolution": [
+      "6 hours"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "gs://dynamical-icechunk-gcs-demo/test-gcs-virtual/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "token": "anon"
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "gs://dynamical-icechunk-gcs-demo/test-gcs-virtual/source/",
+          "credentials": {
+            "type": "gcs",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://storage.googleapis.com/dynamical-icechunk-gcs-demo/test-gcs-virtual/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "gs://dynamical-icechunk-gcs-demo/test-gcs-virtual/source/",
+          "credentials": {
+            "type": "gcs",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

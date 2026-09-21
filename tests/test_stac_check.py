@@ -1,11 +1,9 @@
-"""Integration test: run stac-check best-practices linter on the committed catalog.
+"""Integration test: run stac-check best-practices linter on the committed catalogs.
 
-Lints the committed `stac/` tree — the production catalog we actually ship to
-stac.dynamical.org — rather than the `served_catalog` fixture, which
-includes staging items. `test_stac_drift.py` guarantees the committed tree
-equals what `generate()` produces, so linting it is equivalent to linting a
-freshly-generated production catalog, and it keeps this prod contract separate
-from the staging-inclusive fixture.
+Lints the committed trees — what we actually ship to each environment's host — rather
+than the `served_catalog` fixture. `test_stac_drift.py` guarantees the
+committed trees equal what `generate_environments()` produces, so linting them is
+equivalent to linting freshly-generated catalogs.
 """
 
 from __future__ import annotations
@@ -14,20 +12,22 @@ import pathlib
 
 import pytest
 
+from environments import STAC_ENVIRONMENTS
+
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-COMMITTED_STAC = REPO_ROOT / "stac"
 STAC_CHECK_CONFIG = pathlib.Path(__file__).with_name("stac-check.config.yml")
 
 
 @pytest.mark.integration
-def test_no_stac_check_best_practice_warnings() -> None:
+@pytest.mark.parametrize(
+    "environment_directory",
+    [environment.directory for environment in STAC_ENVIRONMENTS],
+)
+def test_no_stac_check_best_practice_warnings(environment_directory: str) -> None:
     stac_check = pytest.importorskip("stac_check.lint")
 
-    files = [
-        COMMITTED_STAC / "catalog.json",
-        *COMMITTED_STAC.glob("*/collection.json"),
-    ]
-    assert files, "no committed STAC files found"
+    committed = REPO_ROOT / environment_directory
+    files = [committed / "catalog.json", *committed.glob("*/collection.json")]
 
     failures: list[str] = []
     for f in files:

@@ -3,3 +3,5 @@ __pycache__/
 .venv/
 .python-version
 .claude/
+# generate_tiers builds here; only a killed run leaves one behind
+/.stac-build-*/

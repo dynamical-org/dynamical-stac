@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import http.server
-import json
 import pathlib
 import socketserver
 import sys
@@ -14,7 +13,7 @@ import pytest
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
 
 from catalog import CATALOG_ITEMS
-from generate import generate
+from generate import _load_datasets, generate
 
 
 @contextmanager
@@ -46,35 +45,39 @@ def served_catalog(
     STAC extension schema. That's ~40s of network and it's identical for every
     integration test that needs a catalog — so we do it once and share.
 
-    Includes staging items (but not test-tier fixtures, which have their own
+    Includes staging items (but not test-environment fixtures, which have their own
     coverage in `test_test_catalog.py`) so the served catalog covers every
     `_COLLECTION_IDS` entry: the integration tests assert against that list
     (which spans staging items too), and staging datasets are still published
     to stac-staging, so they must generate and read correctly here.
 
-    Also writes `catalog-production.json`, the same root with staging children
-    removed, for `test_released_catalog_read.py`: released readers are held to
-    the production contract only, while the `main` canary reads `catalog.json`.
+    Also generates production independently under `production/`, exposing its
+    root as `catalog-production.json`.
+    Production-only items need not belong to staging. Both catalogs reuse the
+    same loaded stores.
 
     Yields (catalog_dir, root_url). Consumers must treat both as read-only.
     """
     tmp_path = tmp_path_factory.mktemp("served_catalog")
     with _serve(tmp_path) as port:
         root_url = f"http://127.0.0.1:{port}"
-        generate(tmp_path, root_href=root_url, include_staging=True)
-        root_path = tmp_path / "catalog.json"
-        production_ids = {
-            item.id for item in CATALOG_ITEMS if not (item.staging or item.test)
-        }
-        production_root = json.loads(root_path.read_text())
-        production_root["links"] = [
-            link
-            for link in production_root["links"]
-            if link.get("rel") != "child"
-            or pathlib.PurePosixPath(link["href"]).parent.name in production_ids
-        ]
+        loaded = _load_datasets(
+            [
+                item
+                for item in CATALOG_ITEMS
+                if {"production", "staging"}.intersection(item.environments)
+            ]
+        )
+        generate(tmp_path, root_href=root_url, environment="staging", loaded=loaded)
+        production_dir = tmp_path / "production"
+        generate(
+            production_dir,
+            root_href=f"{root_url}/production",
+            environment="production",
+            loaded=loaded,
+        )
         (tmp_path / "catalog-production.json").write_text(
-            json.dumps(production_root, indent=2)
+            (production_dir / "catalog.json").read_text()
         )
         yield tmp_path, root_url
 

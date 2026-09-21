@@ -23,6 +23,7 @@ def _catalog_item(
     virtual_chunk_container_prefixes: tuple[str, ...] = (),
 ) -> CatalogItem:
     return CatalogItem(
+        environments=["production", "staging", "test"],
         id=item_id,
         icechunk_href=icechunk_href,
         icechunk_region=icechunk_region,  # type: ignore[arg-type]
@@ -278,6 +279,7 @@ def test_from_dataset_passes_additional_terms_through() -> None:
         title="Extra Terms",
     )
     item = CatalogItem(
+        environments=["production", "staging", "test"],
         id=_TEST_ID,
         icechunk_href=f"s3://test-bucket/{_TEST_ID}/v0.icechunk/",
         icechunk_region="us-west-2",
@@ -391,6 +393,7 @@ _GCS_SOURCE_PREFIX = f"gs://{_GCS_BUCKET}/{_GCS_ID}/source/"
 def _gcs_catalog_item() -> CatalogItem:
     """The `test-gcs-virtual` fixture item, shaped like `CATALOG_ITEMS`' entry."""
     return CatalogItem(
+        environments=["test"],
         id=_GCS_ID,
         icechunk_href=_GCS_HREF,
         virtual_chunk_container_prefixes=(_GCS_SOURCE_PREFIX,),
@@ -408,7 +411,6 @@ def _gcs_catalog_item() -> CatalogItem:
             ),
         ),
         notebooks=(),
-        test=True,
     )
 
 
@@ -539,6 +541,7 @@ _AZ_CREDENTIALS = {"type": "azure", "anonymous": True}
 def _azure_catalog_item() -> CatalogItem:
     """The `test-azure-virtual` fixture item, shaped like `CATALOG_ITEMS`' entry."""
     return CatalogItem(
+        environments=["test"],
         id=_AZ_ID,
         icechunk_href=_AZ_HREF,
         icechunk_account=_AZ_ACCOUNT,
@@ -557,7 +560,6 @@ def _azure_catalog_item() -> CatalogItem:
             ),
         ),
         notebooks=(),
-        test=True,
     )
 
 
