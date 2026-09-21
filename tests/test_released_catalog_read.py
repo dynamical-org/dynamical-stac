@@ -1,5 +1,6 @@
 """Integration test: every supported `dynamical-catalog` release on PyPI
-must still open every production collection, while the `main` canary must open
+must open and read every collection in its production environment, while the
+`main` canary must open
 the staging-inclusive locally generated STAC.
 
 `tests/test_catalog_read.py` exercises whatever `dynamical-catalog` is
@@ -42,6 +43,7 @@ import textwrap
 import pytest
 
 from catalog import CATALOG_ITEMS
+from environments import environment_for_client
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 _SCRIPTS_DIR = REPO_ROOT / "scripts"
@@ -90,11 +92,9 @@ def _install_spec(target: str) -> str:
 
 
 def _catalog_filename(target: str) -> str:
-    return (
-        "catalog-production.json"
-        if re.fullmatch(r"\d+\.\d+\.\d+", target)
-        else "catalog.json"
-    )
+    if re.fullmatch(r"\d+\.\d+\.\d+", target):
+        return f"production/{environment_for_client(target).root_filename}"
+    return "catalog.json"
 
 
 _HARNESS = textwrap.dedent(
@@ -136,12 +136,23 @@ def test_released_dynamical_catalog_opens_every_collection(
     if uv is None:
         pytest.skip("uv not available; cannot install released dynamical-catalog")
 
-    _, root_url = served_catalog
-    environment = "production" if re.fullmatch(r"\d+\.\d+\.\d+", target) else "staging"
+    catalog_dir, root_url = served_catalog
+    environment = (
+        environment_for_client(target).name
+        if re.fullmatch(r"\d+\.\d+\.\d+", target)
+        else "staging"
+    )
     # Read only the collections explicitly assigned to this environment.
     collection_ids = [
         item.id for item in CATALOG_ITEMS if environment in item.environments
     ]
+    root = json.loads((catalog_dir / _catalog_filename(target)).read_text())
+    assert sorted(
+        pathlib.PurePosixPath(link["href"]).parent.name
+        for link in root["links"]
+        if link["rel"] == "child"
+    ) == sorted(collection_ids)
+    assert collection_ids
     harness = tmp_path / "harness.py"
     harness.write_text(_HARNESS)
 

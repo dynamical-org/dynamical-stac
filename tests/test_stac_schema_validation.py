@@ -28,9 +28,11 @@ from environments import STAC_ENVIRONMENTS
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 _STAC_FILES = sorted(
-    p
-    for environment in STAC_ENVIRONMENTS
-    for p in (REPO_ROOT / environment.directory).rglob("*.json")
+    {
+        p
+        for environment in STAC_ENVIRONMENTS
+        for p in (REPO_ROOT / environment.directory).rglob("*.json")
+    }
 )
 
 

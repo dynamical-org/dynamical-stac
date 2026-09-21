@@ -83,3 +83,34 @@ def test_upload_passes_r2_creds_to_boto(
     assert seen_kwargs["endpoint_url"] == _FAKE_ENDPOINT
     assert seen_kwargs["aws_access_key_id"] == _FAKE_KEY_ID
     assert seen_kwargs["aws_secret_access_key"] == _FAKE_SECRET
+
+
+def test_upload_sends_collections_before_root_catalogs(
+    stac_tree: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A root published before a collection it links to fails every dataset for
+    # clients that fetch all children up front.
+    (stac_tree / "catalog_0.4.0-0.4.0.json").write_text("{}")
+    (stac_tree / "catalog_0.5.0-0.8.0.json").write_text("{}")
+    (stac_tree / "zzz-last-alphabetically").mkdir()
+    (stac_tree / "zzz-last-alphabetically" / "collection.json").write_text("{}")
+    monkeypatch.setenv("R2_ENDPOINT_URL", _FAKE_ENDPOINT)
+    monkeypatch.setenv("R2_ACCESS_KEY_ID", _FAKE_KEY_ID)
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", _FAKE_SECRET)
+    client = MagicMock()
+    monkeypatch.setattr(upload_module.boto3, "client", lambda *a, **kw: client)
+
+    upload(stac_tree)
+
+    uploaded_keys = [call.args[2] for call in client.upload_file.call_args_list]
+    collection_keys = {
+        "noaa-gfs-analysis/collection.json",
+        "zzz-last-alphabetically/collection.json",
+    }
+    root_keys = {"catalog.json", "catalog_0.4.0-0.4.0.json", "catalog_0.5.0-0.8.0.json"}
+    assert len(uploaded_keys) == len(collection_keys | root_keys)
+    assert set(uploaded_keys) == collection_keys | root_keys
+    assert max(uploaded_keys.index(key) for key in collection_keys) < min(
+        uploaded_keys.index(key) for key in root_keys
+    )

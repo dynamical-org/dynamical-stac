@@ -34,9 +34,10 @@ flags have been replaced by `--environment`.
 
 `STAC_ENVIRONMENTS` in `src/environments.py` defines each publication's name,
 directory and host using the Pydantic `StacEnvironment` model. Each `CatalogItem`
-must declare a nonempty `environments` list; unknown and duplicate names are
+must declare a nonempty `environments` list of registered environment names; unknown and duplicate names are
 rejected. Pydantic stores it as a tuple to preserve the model's immutability. No environment implies membership in another. Released datasets
-currently list `["production", "staging", "test"]` explicitly. A separate test
+explicitly list `production`, `staging`, and `test`, plus each supported legacy
+environment (see below). A separate test
 checks both item definitions and committed roots, requiring production
 collections to appear in staging and staging collections to appear in test; this publication policy does not add implicit membership.
 
@@ -135,7 +136,8 @@ the rendered import comment says so.
 
 `scripts/compat_matrix.py` discovers every non-yanked stable
 `dynamical-catalog` release on PyPI at or above `MIN_VERSION`, currently
-0.5.0. CI tests each release against every production collection, including
+0.4.0. CI tests each release against every collection explicitly assigned to its
+production environment, including
 reading one value per collection. These checks block merges through the
 required `compat-required` job.
 
@@ -148,3 +150,47 @@ dropping older clients. Never raise the floor in the catalog PR whose
 compatibility failure it would silence. A dataset requiring a newer client
 stays in staging until the floor is raised separately or the store is made
 readable by the oldest supported release.
+
+
+## Legacy client environments
+
+The same `STAC_ENVIRONMENTS` registry includes two production-only publications:
+
+| environment | root on stac.dynamical.org | capability guidance |
+|---|---|---|
+| `0.4.0-0.4.0` | `catalog_0.4.0-0.4.0.json` | S3 repositories; no virtual Icechunk Zarr datasets |
+| `0.5.0-0.8.0` | `catalog_0.5.0-0.8.0.json` | S3 repositories; virtual source files must all be on S3 |
+
+`ClientVersionRange` has explicit inclusive `min_version` and `max_version`
+bounds, normalized and compared with `packaging.version.Version`. Its name and
+root filename are generated from those bounds. Overlapping ranges and duplicate
+publication names/paths are rejected. Capability descriptions guide authors and
+agents; they do not infer membership or enforce storage restrictions. The
+compatibility matrix installs each supported client and opens and reads every
+collection in its selected environment, including 0.4.0 (no open-only exception).
+
+Add the appropriate range name explicitly to each supported production item's
+`environments` list. The legacy environments must be subsets of production;
+staging-only and fixture datasets must not be included. Current 0.4.0 membership
+excludes virtual datasets; current 0.5.0–0.8.0 membership includes all 19 production
+collections. Adding a new production dataset does not add it to either legacy
+root automatically.
+
+These are extra top-level roots in `stac/`, sharing the existing production
+collection documents. No versioned roots are generated in `stac-staging/` or
+`stac-test/`. The normal roots and collection JSON remain unchanged. The uploader
+writes collection documents before any top-level root so a new root never
+links to a collection that has not been uploaded yet.
+
+`generate --output DIR --environment 0.4.0-0.4.0` writes just that root, linking
+canonical production collections. All-environment generation loads stores once
+and swaps each publication directory only once, even when multiple environments
+share it.
+
+No edge routing is changed here. Serving an old client's request for
+`/catalog.json` from its versioned root still requires a separate routing change.
+The compatibility matrix models the intended numeric routing; it does not
+validate the live edge. Confirm the published roots and routing before promoting
+a collection older clients cannot parse. Removing a collection from a supported
+legacy environment changes its compatibility contract and needs the same review
+as raising the client support floor.

@@ -23,7 +23,7 @@ def generated(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
 @pytest.mark.integration
 @pytest.mark.parametrize(
     "environment_directory",
-    [environment.directory for environment in STAC_ENVIRONMENTS],
+    sorted({environment.directory for environment in STAC_ENVIRONMENTS}),
 )
 def test_committed_stac_matches_generated(
     generated: pathlib.Path, environment_directory: str

@@ -14,17 +14,22 @@ def _fake_generate(fail_on: str | None = None) -> Callable[..., None]:
     def fake(output_dir: pathlib.Path, **kwargs: object) -> None:
         if output_dir.name == fail_on:
             raise RuntimeError("store unreachable")
-        output_dir.mkdir(parents=True)
-        (output_dir / "catalog.json").write_text(str(kwargs["root_href"]))
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (
+            output_dir
+            / generate.stac_environment(str(kwargs["environment"])).root_filename
+        ).write_text(str(kwargs["root_href"]))
 
     return fake
 
 
-def test_environments_are_production_staging_and_test() -> None:
+def test_environments_include_production_client_ranges() -> None:
     assert [(t.directory, t.name) for t in generate.STAC_ENVIRONMENTS] == [
         ("stac", "production"),
         ("stac-staging", "staging"),
         ("stac-test", "test"),
+        ("stac", "0.4.0-0.4.0"),
+        ("stac", "0.5.0-0.8.0"),
     ]
     for environment in generate.STAC_ENVIRONMENTS:
         assert environment.root_href == f"https://{environment.directory}.dynamical.org"
@@ -50,11 +55,13 @@ def test_generate_environments_opens_every_store_once_and_ignores_the_environmen
 
     assert loads == [[item.id for item in CATALOG_ITEMS]]
     assert all(call["loaded"] == {"loaded": True} for call in calls)
-    assert [call["environment"] for call in calls] == ["production", "staging", "test"]
+    assert [call["environment"] for call in calls] == [
+        environment.name for environment in generate.STAC_ENVIRONMENTS
+    ]
     for environment in generate.STAC_ENVIRONMENTS:
-        assert (tmp_path / environment.directory / "catalog.json").read_text() == (
-            environment.root_href
-        )
+        assert (
+            tmp_path / environment.directory / environment.root_filename
+        ).read_text() == (environment.root_href)
     assert sorted(p.name for p in tmp_path.iterdir()) == [
         "stac",
         "stac-staging",
@@ -80,8 +87,10 @@ def test_a_failing_environment_leaves_every_committed_tree_untouched(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     for environment in generate.STAC_ENVIRONMENTS:
-        (tmp_path / environment.directory).mkdir()
-        (tmp_path / environment.directory / "catalog.json").write_text("committed")
+        (tmp_path / environment.directory).mkdir(exist_ok=True)
+        (tmp_path / environment.directory / environment.root_filename).write_text(
+            "committed"
+        )
     monkeypatch.setattr(generate, "_load_datasets", lambda items: {})
     monkeypatch.setattr(generate, "generate", _fake_generate(fail_on="stac-test"))
 
@@ -90,7 +99,7 @@ def test_a_failing_environment_leaves_every_committed_tree_untouched(
 
     for environment in generate.STAC_ENVIRONMENTS:
         assert (
-            tmp_path / environment.directory / "catalog.json"
+            tmp_path / environment.directory / environment.root_filename
         ).read_text() == "committed"
     assert sorted(p.name for p in tmp_path.iterdir()) == [
         "stac",
@@ -99,7 +108,9 @@ def test_a_failing_environment_leaves_every_committed_tree_untouched(
     ]
 
 
-@pytest.mark.parametrize("environment", ["production", "staging", "test"])
+@pytest.mark.parametrize(
+    "environment", [environment.name for environment in generate.STAC_ENVIRONMENTS]
+)
 def test_single_environment_generate_opens_only_that_environments_stores(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, environment: str
 ) -> None:
@@ -120,8 +131,10 @@ def test_a_failure_while_swapping_restores_every_tree(
     tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     for environment in generate.STAC_ENVIRONMENTS:
-        (tmp_path / environment.directory).mkdir()
-        (tmp_path / environment.directory / "catalog.json").write_text("committed")
+        (tmp_path / environment.directory).mkdir(exist_ok=True)
+        (tmp_path / environment.directory / environment.root_filename).write_text(
+            "committed"
+        )
     monkeypatch.setattr(generate, "_load_datasets", lambda items: {})
     monkeypatch.setattr(generate, "generate", _fake_generate())
 
@@ -146,7 +159,7 @@ def test_a_failure_while_swapping_restores_every_tree(
     assert installs == ["stac", "stac-staging"]
     for environment in generate.STAC_ENVIRONMENTS:
         assert (
-            tmp_path / environment.directory / "catalog.json"
+            tmp_path / environment.directory / environment.root_filename
         ).read_text() == "committed"
     assert sorted(p.name for p in tmp_path.iterdir()) == [
         "stac",

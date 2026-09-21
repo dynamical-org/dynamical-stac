@@ -208,7 +208,7 @@ def test_root_link_points_to_catalog(json_path: pathlib.Path) -> None:
 @pytest.mark.integration
 @pytest.mark.parametrize("tree", _PUBLIC_BASES, ids=lambda tree: tree.name)
 def test_link_graph_reaches_every_committed_file(tree: pathlib.Path) -> None:
-    """BFS from `catalog.json` via `child`+`item` links must reach every
+    """BFS from every environment root via `child`+`item` links must reach every
     *.json file in the environment's tree, and every reached file must exist on disk.
 
     Detects two failure modes a generic STAC reader can't recover from:
@@ -219,7 +219,11 @@ def test_link_graph_reaches_every_committed_file(tree: pathlib.Path) -> None:
         committed. The reader 404s and either skips the entry or aborts.
     """
     on_disk = {p.resolve() for p in tree.rglob("*.json")}
-    queue: deque[pathlib.Path] = deque([(tree / "catalog.json").resolve()])
+    queue: deque[pathlib.Path] = deque(
+        (tree / environment.root_filename).resolve()
+        for environment in STAC_ENVIRONMENTS
+        if environment.directory == tree.name
+    )
     seen: set[pathlib.Path] = set()
     missing: list[str] = []
 

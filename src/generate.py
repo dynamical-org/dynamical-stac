@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import concurrent.futures
+import json
 import os
 import pathlib
 import tempfile
@@ -12,15 +13,13 @@ import xarray as xr
 import zarr
 
 from catalog import CATALOG_ITEMS, CatalogItem, url_scheme
-from environments import STAC_ENVIRONMENTS, StacEnvironmentName, stac_environment
+from environments import STAC_ENVIRONMENTS, stac_environment
 from models import CollectionInput
 
 CATALOG_TITLE = "dynamical.org STAC Catalog"
 
 
-def _select_items(
-    items: list[CatalogItem], *, environment: StacEnvironmentName
-) -> list[CatalogItem]:
+def _select_items(items: list[CatalogItem], *, environment: str) -> list[CatalogItem]:
     """Select only items explicitly published in this environment."""
     return [item for item in items if environment in item.environments]
 
@@ -143,7 +142,7 @@ def _load_datasets(items: list[CatalogItem]) -> Loaded:
 def generate(
     output_dir: pathlib.Path,
     root_href: str | None = None,
-    environment: StacEnvironmentName = "production",
+    environment: str = "production",
     loaded: Loaded | None = None,
 ) -> None:
     """Write one environment's catalog, optionally reusing loaded stores."""
@@ -168,10 +167,20 @@ def generate(
     catalog.normalize_hrefs(root_href)
     _set_self_link_titles(catalog)
     catalog.validate_all()
-    catalog.save(
-        catalog_type=pystac.CatalogType.ABSOLUTE_PUBLISHED,
-        dest_href=str(output_dir),
-    )
+    if publication.client_versions is None:
+        catalog.save(
+            catalog_type=pystac.CatalogType.ABSOLUTE_PUBLISHED,
+            dest_href=str(output_dir),
+        )
+    else:
+        # Versioned environments publish an additional root only. Their child
+        # links reuse canonical production collections; never rewrite the leaves.
+        root = catalog.to_dict()
+        for link in root["links"]:
+            if link["rel"] == "self":
+                link["href"] = f"{root_href}/{publication.root_filename}"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / publication.root_filename).write_text(json.dumps(root, indent=2))
 
 
 def generate_environments(parent_dir: pathlib.Path) -> None:
@@ -196,7 +205,11 @@ def generate_environments(parent_dir: pathlib.Path) -> None:
         _swap_in(
             pathlib.Path(build),
             parent_dir,
-            [environment.directory for environment in STAC_ENVIRONMENTS],
+            list(
+                dict.fromkeys(
+                    environment.directory for environment in STAC_ENVIRONMENTS
+                )
+            ),
         )
 
 

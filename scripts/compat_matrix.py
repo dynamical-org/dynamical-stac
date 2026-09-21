@@ -34,13 +34,13 @@ import urllib.request
 
 PACKAGE = "dynamical-catalog"
 
-# Drop releases older than this. 0.5.0 is the first release we officially
-# announced as a supported access method. Every non-yanked stable release at
+# Drop releases older than this. Versioned production environments preserve
+# support for 0.4.0 and later. Every non-yanked stable release at
 # or above it is a support contract: a production catalog change that breaks
 # one fails CI. Bumping this floor is a support-policy change, so it goes in
 # its own PR with the catalog owner's approval, never in the PR whose
 # catalog change needs it. See "Client compatibility matrix" in CLAUDE.md.
-MIN_VERSION = "0.5.0"
+MIN_VERSION = "0.4.0"
 
 # Long-lived non-PyPI refs to also exercise. `main` catches breakage in
 # unreleased dynamical-catalog before it ships to users — but it's a canary,

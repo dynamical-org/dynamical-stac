@@ -13,6 +13,7 @@ import pytest
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
 
 from catalog import CATALOG_ITEMS
+from environments import STAC_ENVIRONMENTS
 from generate import _load_datasets, generate
 
 
@@ -76,6 +77,14 @@ def served_catalog(
             environment="production",
             loaded=loaded,
         )
+        for environment in STAC_ENVIRONMENTS:
+            if environment.client_versions is not None:
+                generate(
+                    production_dir,
+                    root_href=f"{root_url}/production",
+                    environment=environment.name,
+                    loaded=loaded,
+                )
         (tmp_path / "catalog-production.json").write_text(
             (production_dir / "catalog.json").read_text()
         )
