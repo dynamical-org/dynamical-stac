@@ -10,6 +10,7 @@ from __future__ import annotations
 import ast
 import json
 import pathlib
+from collections.abc import Iterator
 
 import pytest
 
@@ -76,7 +77,7 @@ def test_examples_found() -> None:
     ids=[f"{cid}:{title}:{label}" for cid, title, label, _ in _PYTHON_EXAMPLES],
 )
 def test_example_executes(  # noqa: PLR0917
-    dynamical_catalog_fixture: object,
+    served_production_catalog: object,
     served_catalog: tuple[pathlib.Path, str],
     collection_id: str,
     title: str,
@@ -84,15 +85,33 @@ def test_example_executes(  # noqa: PLR0917
     code: str,
 ) -> None:
     _assert_allowed_imports(code)
-    # The dynamical_catalog fixture has already imported the library and pointed
+    # The served_production_catalog fixture has already imported the library and pointed
     # it at the locally-served catalog; exec's `import dynamical_catalog` then
     # hits sys.modules and reuses that configured module. The pystac variant
     # reads the same catalog directly, so redirect its hardcoded prod URL too.
-    assert dynamical_catalog_fixture is not None
+    assert served_production_catalog is not None
     _, root_url = served_catalog
-    local_code = code.replace(_PROD_CATALOG_URL, f"{root_url}/catalog.json")
+    local_code = code.replace(_PROD_CATALOG_URL, f"{root_url}/catalog-production.json")
     globals_ns: dict[str, object] = {"__name__": f"example::{collection_id}"}
     exec(  # noqa: S102
         compile(local_code, f"<example:{collection_id}:{label}>", "exec"),
         globals_ns,
     )
+
+
+@pytest.fixture(scope="module")
+def served_production_catalog(
+    served_catalog: tuple[pathlib.Path, str],
+) -> Iterator[object]:
+    """Examples under stac/ must also work for production-only datasets."""
+    dynamical_catalog = pytest.importorskip("dynamical_catalog")
+    from dynamical_catalog import _stac  # noqa: PLC0415
+
+    _, root_url = served_catalog
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(_stac, "STAC_CATALOG_URL", f"{root_url}/catalog-production.json")
+        _stac.clear_cache()
+        try:
+            yield dynamical_catalog
+        finally:
+            _stac.clear_cache()

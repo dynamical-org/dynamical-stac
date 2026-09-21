@@ -108,8 +108,12 @@ def test_about_links_cover_docs_and_validation_report() -> None:
 
 
 def test_every_dataset_details_links_to_its_validation_report() -> None:
-    # Test-tier fixtures are synthetic, so they have no validation report to link.
-    for item in (i for i in CATALOG_ITEMS if not i.test):
+    # Test-environment fixtures are synthetic, so they have no validation report to link.
+    for item in (
+        i
+        for i in CATALOG_ITEMS
+        if {"production", "staging"}.intersection(i.environments)
+    ):
         section = (
             "### Validation report\n\n"
             f"Review the [validation report](https://dynamical.org/catalog/{item.id}/validation/) "
@@ -130,6 +134,7 @@ def test_every_dataset_details_links_to_its_validation_report() -> None:
 _TEST_ID = "noaa-gfs-analysis"
 
 _PROSE_KWARGS: dict[str, object] = {
+    "environments": ["production", "staging", "test"],
     "model_id": "noaa-gfs",
     "description_summary": "summary",
     "reformatter_url": "https://example.com/reformatter.py",
@@ -248,7 +253,7 @@ def test_catalog_item_allows_staging_item_without_notebooks() -> None:
         **{  # type: ignore[arg-type]
             **_PROSE_KWARGS,
             "notebooks": (),
-            "staging": True,
+            "environments": ["staging", "test"],
         },
     )
     assert item.notebooks == ()
@@ -262,26 +267,10 @@ def test_catalog_item_allows_test_item_without_notebooks() -> None:
         **{  # type: ignore[arg-type]
             **_PROSE_KWARGS,
             "notebooks": (),
-            "test": True,
+            "environments": ["test"],
         },
     )
     assert item.notebooks == ()
-
-
-def test_catalog_item_rejects_staging_and_test_together() -> None:
-    with pytest.raises(
-        pydantic.ValidationError, match="sets both staging=True and test=True"
-    ):
-        CatalogItem(
-            id=_TEST_ID,
-            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
-            icechunk_region="us-west-2",
-            **{  # type: ignore[arg-type]
-                **_PROSE_KWARGS,
-                "staging": True,
-                "test": True,
-            },
-        )
 
 
 def test_catalog_item_accepts_gs_href_without_region() -> None:

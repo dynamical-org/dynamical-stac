@@ -20,6 +20,7 @@ _TEST_ID = "noaa-gfs-analysis"
 
 def _catalog_item() -> CatalogItem:
     return CatalogItem(
+        environments=["production", "staging", "test"],
         id=_TEST_ID,
         icechunk_href=f"s3://test-bucket/{_TEST_ID}/v0.icechunk/",
         icechunk_region="us-west-2",

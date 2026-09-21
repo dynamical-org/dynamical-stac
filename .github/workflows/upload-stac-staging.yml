@@ -1,15 +1,14 @@
 name: Upload staging STAC catalog
 
-# Deploys the STAC catalog to stac-staging.dynamical.org from `main`. Unlike the
-# production workflow this REGENERATES the catalog with STAC_INCLUDE_STAGING=1
-# (so CatalogItem.staging=True datasets are included) and the staging root href
-# baked into every link, then uploads to the stac-staging R2 bucket. Production
-# (upload-stac.yml) leaves those datasets out.
+# Deploys the committed `stac-staging/` tree to stac-staging.dynamical.org from
+# `main`. Like production it uploads what was reviewed and merged, without
+# regenerating: the tree carries items listing the staging environment and the
+# staging root href, written by `scripts/generate`.
 
 on:
   push:
     branches: [main]
-    paths: ["src/**", "stac/**"]
+    paths: ["stac-staging/**"]
   workflow_dispatch:
 
 permissions:
@@ -25,13 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
-      - name: Generate catalog (incl. staging) with staging root href
-        run: uv run --locked python src/__main__.py generate
-        env:
-          STAC_ROOT_HREF: https://stac-staging.dynamical.org
-          STAC_INCLUDE_STAGING: "1"
       - name: Upload to staging R2 bucket
-        run: uv run --locked python src/__main__.py upload stac
+        run: uv run --locked python src/__main__.py upload stac-staging
         env:
           R2_BUCKET: stac-staging
           R2_ENDPOINT_URL: ${{ secrets.R2_STAC_ENDPOINT_URL }}

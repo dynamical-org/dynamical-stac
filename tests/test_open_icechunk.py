@@ -40,6 +40,7 @@ _ITEM_KWARGS: dict[str, Any] = {
 
 def _s3_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
     return CatalogItem(
+        environments=["production", "staging", "test"],
         id=_S3_ID,
         icechunk_href=f"s3://dynamical-noaa-gfs/{_S3_ID}/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -56,7 +57,7 @@ def _gcs_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
         icechunk_href=f"gs://dynamical-icechunk-gcs-demo/{_GCS_ID}/v0.1.0.icechunk/",
         virtual_chunk_container_prefixes=virtual_prefixes,
         model_id="dynamical-test",
-        test=True,
+        environments=["test"],
         **_ITEM_KWARGS,
     )
 
@@ -68,7 +69,7 @@ def _azure_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
         icechunk_account=_AZ_ACCOUNT,
         virtual_chunk_container_prefixes=virtual_prefixes,
         model_id="dynamical-test",
-        test=True,
+        environments=["test"],
         **_ITEM_KWARGS,
     )
 
@@ -79,7 +80,7 @@ def _https_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
         icechunk_href=_HTTPS_HREF,
         virtual_chunk_container_prefixes=virtual_prefixes,
         model_id="google-weathernext2",
-        staging=True,
+        environments=["staging", "test"],
         **_ITEM_KWARGS,
     )
 
