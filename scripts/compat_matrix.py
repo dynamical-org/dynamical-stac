@@ -36,8 +36,9 @@ PACKAGE = "dynamical-catalog"
 
 # Drop releases older than this. Versioned production environments preserve
 # support for 0.4.0 and later. Every non-yanked stable release at
-# or above it is a support contract: a production catalog change that breaks
-# one fails CI. Bumping this floor is a support-policy change, so it goes in
+# or above it is a support contract: installed with only its declared
+# dependencies, a production catalog change that breaks one fails CI. Bumping
+# this floor is a support-policy change, so it goes in
 # its own PR with the catalog owner's approval, never in the PR whose
 # catalog change needs it. See "Client compatibility matrix" in CLAUDE.md.
 MIN_VERSION = "0.4.0"

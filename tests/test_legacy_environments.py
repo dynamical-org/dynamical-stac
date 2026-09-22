@@ -19,10 +19,11 @@ from environments import (
 @pytest.mark.parametrize(
     ("client", "filename"),
     [
-        ("0.4.0", "catalog_0.4.0-0.4.0.json"),
-        ("0.5.0", "catalog_0.5.0-0.8.0.json"),
-        ("0.7.0", "catalog_0.5.0-0.8.0.json"),
-        ("0.8.0", "catalog_0.5.0-0.8.0.json"),
+        ("0.4.0", "catalog_0.4.0-0.5.0.json"),
+        ("0.5.0", "catalog_0.4.0-0.5.0.json"),
+        ("0.6.0", "catalog.json"),
+        ("0.7.0", "catalog_0.7.0-0.8.0.json"),
+        ("0.8.0", "catalog_0.7.0-0.8.0.json"),
         ("0.8.1", "catalog.json"),
         ("0.10.0", "catalog.json"),
         ("1.0.1", "catalog.json"),
@@ -35,8 +36,8 @@ def test_client_selects_numeric_range(client: str, filename: str) -> None:
 
 
 def test_range_name_is_derived_from_normalized_versions() -> None:
-    versions = ClientVersionRange(min_version="v0.5.0", max_version="0.8.0")
-    assert versions.name == "0.5.0-0.8.0"
+    versions = ClientVersionRange(min_version="v0.7.0", max_version="0.8.0")
+    assert versions.name == "0.7.0-0.8.0"
     assert versions.contains("0.8.0")
     assert not versions.contains("0.10.0")
 
@@ -50,7 +51,7 @@ def test_invalid_version_bounds_are_rejected(minimum: str, maximum: str) -> None
         ClientVersionRange(min_version=minimum, max_version=maximum)
 
 
-@pytest.mark.parametrize("name", ["0.4.0-0.4.0", "0.5.0-0.8.0"])
+@pytest.mark.parametrize("name", ["0.4.0-0.5.0", "0.7.0-0.8.0"])
 def test_legacy_membership_is_explicit_and_production_only(name: str) -> None:
     environment = stac_environment(name)
     assert environment.description
@@ -58,12 +59,35 @@ def test_legacy_membership_is_explicit_and_production_only(name: str) -> None:
     items = [item for item in CATALOG_ITEMS if name in item.environments]
     assert items
     assert all("production" in item.environments for item in items)
-    if name == "0.4.0-0.4.0":
+    if name == "0.4.0-0.5.0":
         assert all(not item.virtual_chunk_container_prefixes for item in items)
     for directory in ("stac-staging", "stac-test"):
         assert not (
             pathlib.Path(__file__).parents[1] / directory / environment.root_filename
         ).exists()
+
+
+def test_plain_0_5_excludes_virtual_collections_requiring_an_optional_codec() -> None:
+    materialized_name = environment_for_client("0.5.0").name
+    virtual_name = environment_for_client("0.7.0").name
+    selected = {
+        environment: {
+            item.id for item in CATALOG_ITEMS if environment in item.environments
+        }
+        for environment in (materialized_name, virtual_name)
+    }
+    s3_virtual_ids = {
+        "noaa-hrrr-analysis-virtual",
+        "noaa-hrrr-forecast-18-hour-virtual",
+        "noaa-hrrr-forecast-48-hour-virtual",
+    }
+
+    assert len(selected[materialized_name]) == 16
+    assert selected[materialized_name].isdisjoint(s3_virtual_ids)
+    assert s3_virtual_ids <= selected[virtual_name]
+    assert "ecmwf-aifs-single-forecast-virtual" not in (
+        selected[materialized_name] | selected[virtual_name]
+    )
 
 
 @pytest.mark.parametrize(
@@ -91,7 +115,7 @@ def test_duplicate_environment_outputs_are_rejected() -> None:
         _check_environments((PRODUCTION, PRODUCTION))
 
 
-@pytest.mark.parametrize("name", ["0.4.0-0.4.0", "0.5.0-0.8.0"])
+@pytest.mark.parametrize("name", ["0.4.0-0.5.0", "0.7.0-0.8.0"])
 def test_committed_legacy_root_links_exactly_its_explicit_items(name: str) -> None:
     environment = stac_environment(name)
     repo_root = pathlib.Path(__file__).parents[1]

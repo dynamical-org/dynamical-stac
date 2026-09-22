@@ -100,11 +100,11 @@ STAC_ENVIRONMENTS = (
     ),
     PRODUCTION.for_client_range(
         min_version="0.4.0",
-        max_version="0.4.0",
+        max_version="0.5.0",
         description="Only S3 Icechunk repositories. Virtual Icechunk Zarr datasets are not supported.",
     ),
     PRODUCTION.for_client_range(
-        min_version="0.5.0",
+        min_version="0.7.0",
         max_version="0.8.0",
         description="Only S3 Icechunk repositories. Virtual datasets are supported only when all source files are on S3.",
     ),

@@ -10,9 +10,10 @@ still in the wild — the kind introduced when we dropped the `zarr` asset
 and stopped emitting `icechunk:storage.{bucket,prefix,region}`, both of
 which silently broke 0.3.0 consumers.
 
-Each target is installed into an isolated env via `uv run --with` and the
-check runs in a subprocess so it can't share import state with the project
-venv. Released versions read the production-only root because staging may
+Each target is installed by itself into an isolated env via `uv run --with`;
+the harness does not supplement the client's declared dependencies. The check
+runs in a subprocess so it can't share import state with the project venv.
+Released versions read the production-only root because staging may
 exercise a contract that has not shipped yet; canary refs read every staging
 collection so that new contract is proven before release. The full `open + read
 first variable` flow runs against the just-generated STAC.
@@ -61,18 +62,6 @@ from compat_matrix import (  # noqa: E402
 
 _DYNAMICAL_CATALOG_REPO = "https://github.com/dynamical-org/dynamical-catalog"
 
-# Virtual datasets store chunks as GRIB messages, decoded by the gribberish
-# codec, which dynamical-catalog does not depend on. A real consumer installs
-# it and imports gribberish.zarr to register the codec; the harness does the
-# same. Pin matches the version that wrote the chunks (see pyproject.toml).
-_GRIBBERISH_SPEC = "gribberish==1.5.0"
-
-# Virtual datasets also apply zarr's built-in `scale_offset` codec (read-time
-# unit scaling, e.g. Kelvin->Celsius), which only exists in zarr >= 3.2.1. Old
-# releases resolved by `uv run --with` might otherwise pull an earlier zarr and
-# fail to open the store, so floor it here as a real consumer would.
-_ZARR_SPEC = "zarr>=3.2.1"
-
 # Resolve targets at module import (collection time) so each one becomes
 # its own pytest parametrize id. PyPI is hit once; the result is reused
 # inside this process. If PyPI is unreachable, collection fails loudly —
@@ -101,7 +90,6 @@ _HARNESS = textwrap.dedent(
     """
     import json, math, sys
     import dynamical_catalog
-    import gribberish.zarr  # registers the GribberishCodec for virtual datasets
     from dynamical_catalog import _stac
 
     catalog_url, collection_ids_json = sys.argv[1], sys.argv[2]
@@ -120,6 +108,44 @@ _HARNESS = textwrap.dedent(
             assert not math.isinf(value), f"{cid}.{first} is inf"
     """
 ).strip()
+
+
+def _compat_command(
+    uv: str,
+    target: str,
+    harness: pathlib.Path,
+    catalog_url: str,
+    collection_ids: list[str],
+) -> list[str]:
+    return [
+        uv,
+        "run",
+        "--isolated",
+        "--no-project",
+        "--quiet",
+        "--python",
+        f"{sys.version_info.major}.{sys.version_info.minor}",
+        "--with",
+        _install_spec(target),
+        "python",
+        str(harness),
+        catalog_url,
+        json.dumps(collection_ids),
+    ]
+
+
+@pytest.mark.parametrize("target", ["0.5.0", "main"])
+def test_compat_command_installs_only_the_selected_client(target: str) -> None:
+    command = _compat_command(
+        "uv",
+        target,
+        pathlib.Path("harness.py"),
+        "https://example.test/catalog.json",
+        [],
+    )
+
+    assert command.count("--with") == 1
+    assert command[command.index("--with") + 1] == _install_spec(target)
 
 
 @pytest.mark.integration
@@ -157,25 +183,13 @@ def test_released_dynamical_catalog_opens_every_collection(
     harness.write_text(_HARNESS)
 
     subprocess.run(  # noqa: S603
-        [
+        _compat_command(
             uv,
-            "run",
-            "--isolated",
-            "--no-project",
-            "--quiet",
-            "--python",
-            f"{sys.version_info.major}.{sys.version_info.minor}",
-            "--with",
-            _install_spec(target),
-            "--with",
-            _GRIBBERISH_SPEC,
-            "--with",
-            _ZARR_SPEC,
-            "python",
-            str(harness),
+            target,
+            harness,
             f"{root_url}/{_catalog_filename(target)}",
-            json.dumps(collection_ids),
-        ],
+            collection_ids,
+        ),
         check=True,
     )
 

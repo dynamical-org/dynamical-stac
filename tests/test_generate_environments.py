@@ -28,8 +28,8 @@ def test_environments_include_production_client_ranges() -> None:
         ("stac", "production"),
         ("stac-staging", "staging"),
         ("stac-test", "test"),
-        ("stac", "0.4.0-0.4.0"),
-        ("stac", "0.5.0-0.8.0"),
+        ("stac", "0.4.0-0.5.0"),
+        ("stac", "0.7.0-0.8.0"),
     ]
     for environment in generate.STAC_ENVIRONMENTS:
         assert environment.root_href == f"https://{environment.directory}.dynamical.org"

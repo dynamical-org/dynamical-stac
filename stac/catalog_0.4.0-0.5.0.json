@@ -108,7 +108,7 @@
     },
     {
       "rel": "self",
-      "href": "https://stac.dynamical.org/catalog_0.4.0-0.4.0.json",
+      "href": "https://stac.dynamical.org/catalog_0.4.0-0.5.0.json",
       "type": "application/json",
       "title": "dynamical.org STAC Catalog"
     }

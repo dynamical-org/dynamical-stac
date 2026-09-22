@@ -158,8 +158,8 @@ The same `STAC_ENVIRONMENTS` registry includes two production-only publications:
 
 | environment | root on stac.dynamical.org | capability guidance |
 |---|---|---|
-| `0.4.0-0.4.0` | `catalog_0.4.0-0.4.0.json` | S3 repositories; no virtual Icechunk Zarr datasets |
-| `0.5.0-0.8.0` | `catalog_0.5.0-0.8.0.json` | S3 repositories; virtual source files must all be on S3 |
+| `0.4.0-0.5.0` | `catalog_0.4.0-0.5.0.json` | S3 repositories; no virtual Icechunk Zarr datasets |
+| `0.7.0-0.8.0` | `catalog_0.7.0-0.8.0.json` | S3 repositories; virtual source files must all be on S3 |
 
 `ClientVersionRange` has explicit inclusive `min_version` and `max_version`
 bounds, normalized and compared with `packaging.version.Version`. Its name and
@@ -171,10 +171,23 @@ collection in its selected environment, including 0.4.0 (no open-only exception)
 
 Add the appropriate range name explicitly to each supported production item's
 `environments` list. The legacy environments must be subsets of production;
-staging-only and fixture datasets must not be included. Current 0.4.0 membership
-excludes virtual datasets; current 0.5.0–0.8.0 membership includes 19 of the 20 production
-collections, all but `ecmwf-aifs-single-forecast-virtual` (its `gs://` container). Adding a new production dataset does not add it to either legacy
-root automatically.
+staging-only and fixture datasets must not be included. The 0.4.0–0.5.0 root
+contains the 16 materialized production collections. The 0.7.0–0.8.0 root adds
+the three S3-backed virtual collections, for 19 of the 20 production
+collections. Both exclude `ecmwf-aifs-single-forecast-virtual`, whose `gs://`
+virtual chunk container is unsupported by these clients. Adding a new
+production dataset does not add it to either legacy root automatically.
+
+A stock 0.5.0 install does not declare the `gribberish` codec required by the
+virtual collections. The compatibility contract therefore uses the
+materialized-only root (choice a) instead of retaining virtual collections and
+stopping CI's dependency injection while leaving the stock-client failure
+visible (rejected choice b). This makes the stock-install contract honest, but
+users who manually added `gribberish` lose those virtual dataset names from the
+0.5.0 root; upgrading is the supported way to regain them. Keep the virtual
+collection prose conservative at
+`dynamical-catalog>=0.8.0`. Version 0.6.0 was never released and belongs to no
+legacy range, so numeric selection falls back to the production root.
 
 These are extra top-level roots in `stac/`, sharing the existing production
 collection documents. No versioned roots are generated in `stac-staging/` or
@@ -182,7 +195,7 @@ collection documents. No versioned roots are generated in `stac-staging/` or
 writes collection documents before any top-level root so a new root never
 links to a collection that has not been uploaded yet.
 
-`generate --output DIR --environment 0.4.0-0.4.0` writes just that root, linking
+`generate --output DIR --environment 0.4.0-0.5.0` writes just that root, linking
 canonical production collections. All-environment generation loads stores once
 and swaps each publication directory only once, even when multiple environments
 share it.
