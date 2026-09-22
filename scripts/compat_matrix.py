@@ -3,10 +3,13 @@
 stable `dynamical-catalog` release on PyPI (>= MIN_VERSION) plus the `main`
 canary branch.
 
-Two callers:
+Used by:
 
 * `tests/test_released_catalog_read.py` imports the helpers below to
-  parametrize its compat test against the same set of targets.
+  parametrize its compat test and build its isolated install command.
+  The command must install only the client and its declared dependencies.
+* `tests/test_compat_matrix.py` guards discovery and the stock-client
+  install command; it runs in the normal CI test job.
 * `.github/workflows/test.yml`'s `discover` job runs this script and pipes
   `matrix=…` into `$GITHUB_OUTPUT` so the `compat` job's matrix is built
   fresh on every run — no manual maintenance when a new release ships, and
