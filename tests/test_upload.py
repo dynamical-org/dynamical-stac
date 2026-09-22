@@ -91,8 +91,8 @@ def test_upload_sends_collections_before_root_catalogs(
 ) -> None:
     # A root published before a collection it links to fails every dataset for
     # clients that fetch all children up front.
-    (stac_tree / "catalog_0.4.0-0.4.0.json").write_text("{}")
-    (stac_tree / "catalog_0.5.0-0.8.0.json").write_text("{}")
+    (stac_tree / "catalog_0.4.0-0.5.0.json").write_text("{}")
+    (stac_tree / "catalog_0.7.0-0.8.0.json").write_text("{}")
     (stac_tree / "zzz-last-alphabetically").mkdir()
     (stac_tree / "zzz-last-alphabetically" / "collection.json").write_text("{}")
     monkeypatch.setenv("R2_ENDPOINT_URL", _FAKE_ENDPOINT)
@@ -108,7 +108,7 @@ def test_upload_sends_collections_before_root_catalogs(
         "noaa-gfs-analysis/collection.json",
         "zzz-last-alphabetically/collection.json",
     }
-    root_keys = {"catalog.json", "catalog_0.4.0-0.4.0.json", "catalog_0.5.0-0.8.0.json"}
+    root_keys = {"catalog.json", "catalog_0.4.0-0.5.0.json", "catalog_0.7.0-0.8.0.json"}
     assert len(uploaded_keys) == len(collection_keys | root_keys)
     assert set(uploaded_keys) == collection_keys | root_keys
     assert max(uploaded_keys.index(key) for key in collection_keys) < min(
