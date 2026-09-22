@@ -10,9 +10,10 @@ still in the wild — the kind introduced when we dropped the `zarr` asset
 and stopped emitting `icechunk:storage.{bucket,prefix,region}`, both of
 which silently broke 0.3.0 consumers.
 
-Each target is installed into an isolated env via `uv run --with` and the
-check runs in a subprocess so it can't share import state with the project
-venv. Released versions read the production-only root because staging may
+Each target is installed by itself into an isolated env via `uv run --with`;
+the harness does not supplement the client's declared dependencies. The check
+runs in a subprocess so it can't share import state with the project venv.
+Released versions read the production-only root because staging may
 exercise a contract that has not shipped yet; canary refs read every staging
 collection so that new contract is proven before release. The full `open + read
 first variable` flow runs against the just-generated STAC.
@@ -52,26 +53,12 @@ _SCRIPTS_DIR = REPO_ROOT / "scripts"
 # .github/workflows/test.yml's `discover` job.
 sys.path.insert(0, str(_SCRIPTS_DIR))
 from compat_matrix import (  # noqa: E402
-    CANARY_REFS,
     PACKAGE,
     build_targets,
-    fetch_releases,
-    safe_id,
+    client_read_command,
 )
 
 _DYNAMICAL_CATALOG_REPO = "https://github.com/dynamical-org/dynamical-catalog"
-
-# Virtual datasets store chunks as GRIB messages, decoded by the gribberish
-# codec, which dynamical-catalog does not depend on. A real consumer installs
-# it and imports gribberish.zarr to register the codec; the harness does the
-# same. Pin matches the version that wrote the chunks (see pyproject.toml).
-_GRIBBERISH_SPEC = "gribberish==1.5.0"
-
-# Virtual datasets also apply zarr's built-in `scale_offset` codec (read-time
-# unit scaling, e.g. Kelvin->Celsius), which only exists in zarr >= 3.2.1. Old
-# releases resolved by `uv run --with` might otherwise pull an earlier zarr and
-# fail to open the store, so floor it here as a real consumer would.
-_ZARR_SPEC = "zarr>=3.2.1"
 
 # Resolve targets at module import (collection time) so each one becomes
 # its own pytest parametrize id. PyPI is hit once; the result is reused
@@ -101,7 +88,6 @@ _HARNESS = textwrap.dedent(
     """
     import json, math, sys
     import dynamical_catalog
-    import gribberish.zarr  # registers the GribberishCodec for virtual datasets
     from dynamical_catalog import _stac
 
     catalog_url, collection_ids_json = sys.argv[1], sys.argv[2]
@@ -157,74 +143,13 @@ def test_released_dynamical_catalog_opens_every_collection(
     harness.write_text(_HARNESS)
 
     subprocess.run(  # noqa: S603
-        [
+        client_read_command(
             uv,
-            "run",
-            "--isolated",
-            "--no-project",
-            "--quiet",
-            "--python",
-            f"{sys.version_info.major}.{sys.version_info.minor}",
-            "--with",
-            _install_spec(target),
-            "--with",
-            _GRIBBERISH_SPEC,
-            "--with",
-            _ZARR_SPEC,
-            "python",
-            str(harness),
-            f"{root_url}/{_catalog_filename(target)}",
-            json.dumps(collection_ids),
-        ],
+            install_spec=_install_spec(target),
+            python_version=f"{sys.version_info.major}.{sys.version_info.minor}",
+            harness=str(harness),
+            catalog_url=f"{root_url}/{_catalog_filename(target)}",
+            collection_ids=collection_ids,
+        ),
         check=True,
     )
-
-
-# --- Sanity guards on the discovered target set ---------------------------
-
-
-def test_pypi_discovery_returns_at_least_one_release() -> None:
-    """PyPI fetch + version filtering must yield at least one supported
-    release. A zero-length result almost certainly means PyPI changed its
-    response shape, MIN_VERSION crept above every published version, or
-    every release got yanked — any of which silently disables the
-    *entire* compat job.
-    """
-    releases = fetch_releases()
-    assert releases, (
-        f"No PyPI releases of {PACKAGE} matched the filter; "
-        f"compat job would run only against canary refs."
-    )
-
-
-def test_canary_refs_are_plausible_git_refs() -> None:
-    """CANARY_REFS get interpolated into a `pip install … @ git+…@<ref>`
-    spec and a workflow matrix value, so simple branch/tag names only —
-    no whitespace, no shell metacharacters.
-    """
-    pattern = re.compile(r"^[A-Za-z0-9._/-]+$")
-    bad = [r for r in CANARY_REFS if not pattern.match(r)]
-    assert not bad, f"Suspicious git refs in CANARY_REFS: {bad}"
-
-
-def test_compat_matrix_script_is_executable_with_bare_python() -> None:
-    """The workflow's `discover` job runs `scripts/compat_matrix.py` with
-    a bare Python (no `uv sync`). If it ever grows a third-party import,
-    that job will fail. Re-run the script in a clean subprocess via the
-    current interpreter and assert it emits a parseable matrix=… line.
-    """
-    result = subprocess.run(  # noqa: S603
-        [sys.executable, str(_SCRIPTS_DIR / "compat_matrix.py")],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    line = result.stdout.strip()
-    assert line.startswith("matrix="), f"unexpected output: {line!r}"
-    matrix = json.loads(line[len("matrix=") :])
-    entries = matrix.get("include")
-    assert entries, f"matrix has no entries: {matrix!r}"
-    # Every entry must carry the three keys the workflow consumes.
-    for entry in entries:
-        assert {"target", "id", "allow-failure"} <= entry.keys(), entry
-        assert entry["id"] == safe_id(entry["target"])

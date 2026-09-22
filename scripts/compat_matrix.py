@@ -3,10 +3,13 @@
 stable `dynamical-catalog` release on PyPI (>= MIN_VERSION) plus the `main`
 canary branch.
 
-Two callers:
+Used by:
 
 * `tests/test_released_catalog_read.py` imports the helpers below to
-  parametrize its compat test against the same set of targets.
+  parametrize its compat test and build its isolated install command.
+  The command must install only the client and its declared dependencies.
+* `tests/test_compat_matrix.py` guards discovery and the stock-client
+  install command; it runs in the normal CI test job.
 * `.github/workflows/test.yml`'s `discover` job runs this script and pipes
   `matrix=…` into `$GITHUB_OUTPUT` so the `compat` job's matrix is built
   fresh on every run — no manual maintenance when a new release ships, and
@@ -36,8 +39,9 @@ PACKAGE = "dynamical-catalog"
 
 # Drop releases older than this. Versioned production environments preserve
 # support for 0.4.0 and later. Every non-yanked stable release at
-# or above it is a support contract: a production catalog change that breaks
-# one fails CI. Bumping this floor is a support-policy change, so it goes in
+# or above it is a support contract: installed with only its declared
+# dependencies, a production catalog change that breaks one fails CI. Bumping
+# this floor is a support-policy change, so it goes in
 # its own PR with the catalog owner's approval, never in the PR whose
 # catalog change needs it. See "Client compatibility matrix" in CLAUDE.md.
 MIN_VERSION = "0.4.0"
@@ -107,6 +111,33 @@ def build_targets() -> list[dict[str, object]]:
             for v in releases
         ),
         *({"target": r, "id": safe_id(r), "allow-failure": True} for r in CANARY_REFS),
+    ]
+
+
+def client_read_command(
+    uv: str,
+    *,
+    install_spec: str,
+    python_version: str,
+    harness: str,
+    catalog_url: str,
+    collection_ids: list[str],
+) -> list[str]:
+    """Read with a stock client: never supplement its declared dependencies."""
+    return [
+        uv,
+        "run",
+        "--isolated",
+        "--no-project",
+        "--quiet",
+        "--python",
+        python_version,
+        "--with",
+        install_spec,
+        "python",
+        harness,
+        catalog_url,
+        json.dumps(collection_ids),
     ]
 
 
