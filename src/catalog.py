@@ -985,7 +985,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test"],
         id="ecmwf-aifs-single-forecast-virtual",
         icechunk_href="s3://dynamical-ecmwf-aifs-single/ecmwf-aifs-single-forecast-virtual/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1024,11 +1024,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
         notebooks=(_quickstart_notebook("ecmwf-aifs-single-forecast-virtual"),),
         additional_terms=ECMWF_TERMS,
-        # Staging only: the gs:// virtual chunk container is rejected by
-        # dynamical-catalog <= 0.8.0, which parses every collection up front,
-        # so listing this in production made every dataset unopenable for
-        # those releases. Returns to production once gs:// support is the
-        # client baseline or the container is mirrored to s3.
+        # Not in the legacy environments: dynamical-catalog <= 0.8.0 rejects
+        # the gs:// virtual chunk container and parses every collection up
+        # front, so listing it in their roots would make every dataset
+        # unopenable for those releases.
     ),
     CatalogItem(
         environments=["production", "staging", "test", "0.4.0-0.4.0", "0.5.0-0.8.0"],

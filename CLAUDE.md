@@ -172,8 +172,8 @@ collection in its selected environment, including 0.4.0 (no open-only exception)
 Add the appropriate range name explicitly to each supported production item's
 `environments` list. The legacy environments must be subsets of production;
 staging-only and fixture datasets must not be included. Current 0.4.0 membership
-excludes virtual datasets; current 0.5.0–0.8.0 membership includes all 19 production
-collections. Adding a new production dataset does not add it to either legacy
+excludes virtual datasets; current 0.5.0–0.8.0 membership includes 19 of the 20 production
+collections, all but `ecmwf-aifs-single-forecast-virtual` (its `gs://` container). Adding a new production dataset does not add it to either legacy
 root automatically.
 
 These are extra top-level roots in `stac/`, sharing the existing production

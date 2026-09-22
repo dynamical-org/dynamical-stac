@@ -6,7 +6,7 @@
   "links": [
     {
       "rel": "root",
-      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "href": "https://stac.dynamical.org/catalog.json",
       "type": "application/json",
       "title": "dynamical.org STAC Catalog"
     },
@@ -48,13 +48,13 @@
     },
     {
       "rel": "self",
-      "href": "https://stac-staging.dynamical.org/ecmwf-aifs-single-forecast-virtual/collection.json",
+      "href": "https://stac.dynamical.org/ecmwf-aifs-single-forecast-virtual/collection.json",
       "type": "application/json",
       "title": "ECMWF AIFS Single forecast, virtual"
     },
     {
       "rel": "parent",
-      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "href": "https://stac.dynamical.org/catalog.json",
       "type": "application/json",
       "title": "dynamical.org STAC Catalog"
     }
