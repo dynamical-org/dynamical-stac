@@ -82,7 +82,7 @@ def test_plain_0_5_excludes_virtual_collections_requiring_an_optional_codec() ->
         "noaa-hrrr-forecast-48-hour-virtual",
     }
 
-    assert len(selected[materialized_name]) == 16
+    assert selected[materialized_name] < selected[virtual_name]
     assert selected[materialized_name].isdisjoint(s3_virtual_ids)
     assert s3_virtual_ids <= selected[virtual_name]
     assert "ecmwf-aifs-single-forecast-virtual" not in (

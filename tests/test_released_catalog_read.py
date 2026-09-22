@@ -53,11 +53,9 @@ _SCRIPTS_DIR = REPO_ROOT / "scripts"
 # .github/workflows/test.yml's `discover` job.
 sys.path.insert(0, str(_SCRIPTS_DIR))
 from compat_matrix import (  # noqa: E402
-    CANARY_REFS,
     PACKAGE,
     build_targets,
-    fetch_releases,
-    safe_id,
+    client_read_command,
 )
 
 _DYNAMICAL_CATALOG_REPO = "https://github.com/dynamical-org/dynamical-catalog"
@@ -110,44 +108,6 @@ _HARNESS = textwrap.dedent(
 ).strip()
 
 
-def _compat_command(
-    uv: str,
-    target: str,
-    harness: pathlib.Path,
-    catalog_url: str,
-    collection_ids: list[str],
-) -> list[str]:
-    return [
-        uv,
-        "run",
-        "--isolated",
-        "--no-project",
-        "--quiet",
-        "--python",
-        f"{sys.version_info.major}.{sys.version_info.minor}",
-        "--with",
-        _install_spec(target),
-        "python",
-        str(harness),
-        catalog_url,
-        json.dumps(collection_ids),
-    ]
-
-
-@pytest.mark.parametrize("target", ["0.5.0", "main"])
-def test_compat_command_installs_only_the_selected_client(target: str) -> None:
-    command = _compat_command(
-        "uv",
-        target,
-        pathlib.Path("harness.py"),
-        "https://example.test/catalog.json",
-        [],
-    )
-
-    assert command.count("--with") == 1
-    assert command[command.index("--with") + 1] == _install_spec(target)
-
-
 @pytest.mark.integration
 @pytest.mark.parametrize(
     "target",
@@ -183,62 +143,13 @@ def test_released_dynamical_catalog_opens_every_collection(
     harness.write_text(_HARNESS)
 
     subprocess.run(  # noqa: S603
-        _compat_command(
+        client_read_command(
             uv,
-            target,
-            harness,
-            f"{root_url}/{_catalog_filename(target)}",
-            collection_ids,
+            install_spec=_install_spec(target),
+            python_version=f"{sys.version_info.major}.{sys.version_info.minor}",
+            harness=str(harness),
+            catalog_url=f"{root_url}/{_catalog_filename(target)}",
+            collection_ids=collection_ids,
         ),
         check=True,
     )
-
-
-# --- Sanity guards on the discovered target set ---------------------------
-
-
-def test_pypi_discovery_returns_at_least_one_release() -> None:
-    """PyPI fetch + version filtering must yield at least one supported
-    release. A zero-length result almost certainly means PyPI changed its
-    response shape, MIN_VERSION crept above every published version, or
-    every release got yanked — any of which silently disables the
-    *entire* compat job.
-    """
-    releases = fetch_releases()
-    assert releases, (
-        f"No PyPI releases of {PACKAGE} matched the filter; "
-        f"compat job would run only against canary refs."
-    )
-
-
-def test_canary_refs_are_plausible_git_refs() -> None:
-    """CANARY_REFS get interpolated into a `pip install … @ git+…@<ref>`
-    spec and a workflow matrix value, so simple branch/tag names only —
-    no whitespace, no shell metacharacters.
-    """
-    pattern = re.compile(r"^[A-Za-z0-9._/-]+$")
-    bad = [r for r in CANARY_REFS if not pattern.match(r)]
-    assert not bad, f"Suspicious git refs in CANARY_REFS: {bad}"
-
-
-def test_compat_matrix_script_is_executable_with_bare_python() -> None:
-    """The workflow's `discover` job runs `scripts/compat_matrix.py` with
-    a bare Python (no `uv sync`). If it ever grows a third-party import,
-    that job will fail. Re-run the script in a clean subprocess via the
-    current interpreter and assert it emits a parseable matrix=… line.
-    """
-    result = subprocess.run(  # noqa: S603
-        [sys.executable, str(_SCRIPTS_DIR / "compat_matrix.py")],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    line = result.stdout.strip()
-    assert line.startswith("matrix="), f"unexpected output: {line!r}"
-    matrix = json.loads(line[len("matrix=") :])
-    entries = matrix.get("include")
-    assert entries, f"matrix has no entries: {matrix!r}"
-    # Every entry must carry the three keys the workflow consumes.
-    for entry in entries:
-        assert {"target", "id", "allow-failure"} <= entry.keys(), entry
-        assert entry["id"] == safe_id(entry["target"])

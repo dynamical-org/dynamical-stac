@@ -111,6 +111,33 @@ def build_targets() -> list[dict[str, object]]:
     ]
 
 
+def client_read_command(
+    uv: str,
+    *,
+    install_spec: str,
+    python_version: str,
+    harness: str,
+    catalog_url: str,
+    collection_ids: list[str],
+) -> list[str]:
+    """Read with a stock client: never supplement its declared dependencies."""
+    return [
+        uv,
+        "run",
+        "--isolated",
+        "--no-project",
+        "--quiet",
+        "--python",
+        python_version,
+        "--with",
+        install_spec,
+        "python",
+        harness,
+        catalog_url,
+        json.dumps(collection_ids),
+    ]
+
+
 def main() -> None:
     matrix = {"include": build_targets()}
     sys.stdout.write(f"matrix={json.dumps(matrix)}\n")
