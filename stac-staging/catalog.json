@@ -48,6 +48,18 @@
     },
     {
       "rel": "child",
+      "href": "https://stac-staging.dynamical.org/noaa-gefs-forecast-16-day-0-5-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA GEFS forecast, 16 day, 0.5 degree, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-staging.dynamical.org/noaa-gefs-forecast-35-day-0-5-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA GEFS forecast, 35 day, 0.5 degree, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac-staging.dynamical.org/noaa-hrrr-forecast-18-hour-virtual/collection.json",
       "type": "application/json",
       "title": "NOAA HRRR forecast, 18 hour, virtual"
