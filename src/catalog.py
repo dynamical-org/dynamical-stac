@@ -611,6 +611,12 @@ _CHIRPS_PRELIMINARY_FINAL_NOTEBOOK = DatasetNotebook(
     title="CHIRPS preliminary and final",
 )
 
+# One notebook covers all four GEFS virtual datasets.
+_GEFS_VIRTUAL_NOTEBOOK = DatasetNotebook(
+    slug="noaa-gefs-forecast-analysis-virtual",
+    title="GEFS forecasts and analysis, virtual",
+)
+
 # One notebook covers the 46 day daily and 6 hourly datasets.
 _ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
     slug="ecmwf-ifs-ens-forecast-46-day-1-5-degree",
@@ -746,6 +752,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(time="2025-01-01T00")',
             ),
         ),
+        notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
         environments=["staging", "test"],
@@ -772,6 +779,83 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").mean("ensemble_member")',
             ),
         ),
+        notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-gefs-forecast-16-day-0-5-degree-virtual",
+        icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-16-day-0-5-degree-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-gefs-pds/",),
+        model_id="noaa-gefs",
+        description_summary=(
+            "This dataset is an archive of past and present GEFS forecasts at "
+            "0.5 degree resolution, optimized for spatial (map) access "
+            "patterns. Forecasts are identified by an initialization time "
+            "(`init_time`) denoting the start time of the model run as well as "
+            "by the `ensemble_member`, and step forward along the `lead_time` "
+            "dimension. A new forecast is initialized every 6 hours.\n\n"
+            "Variables on pressure levels, model levels and fixed heights above "
+            "mean sea level live in the `pressure_level`, `model_level` and "
+            "`height_above_mean_sea_level` groups.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.2.1 "
+            "gribberish>=1.5`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_16_day_0_5_degree_virtual/template_config.py",
+        examples=(
+            _example(
+                "Ensemble mean temperature map",
+                'ds = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").mean("ensemble_member")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level, model_level\n"
+                "# and height_above_mean_sea_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", group="pressure_level", chunks=None)\n'
+                'ds_model = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", group="model_level", chunks=None)\n'
+                'ds_height = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", group="height_above_mean_sea_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["geopotential_height"].sel(init_time="2025-01-01T00", lead_time="24h", pressure_level=500).mean("ensemble_member")',
+            ),
+        ),
+        notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-gefs-forecast-35-day-0-5-degree-virtual",
+        icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-35-day-0-5-degree-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-gefs-pds/",),
+        model_id="noaa-gefs",
+        description_summary=(
+            "This dataset is an archive of past and present GEFS forecasts at "
+            "0.5 degree resolution, optimized for spatial (map) access "
+            "patterns. Forecasts are identified by an initialization time "
+            "(`init_time`) denoting the start time of the model run as well as "
+            "by the `ensemble_member`, and step forward along the `lead_time` "
+            "dimension. This dataset contains only the 00 hour UTC initialization times, which produce the full length 35 day forecast.\n\n"
+            "Variables on pressure levels, model levels and fixed heights above "
+            "mean sea level live in the `pressure_level`, `model_level` and "
+            "`height_above_mean_sea_level` groups.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.2.1 "
+            "gribberish>=1.5`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_35_day_0_5_degree_virtual/template_config.py",
+        examples=(
+            _example(
+                "Ensemble mean temperature map",
+                'ds = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").mean("ensemble_member")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level, model_level\n"
+                "# and height_above_mean_sea_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", group="pressure_level", chunks=None)\n'
+                'ds_model = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", group="model_level", chunks=None)\n'
+                'ds_height = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", group="height_above_mean_sea_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["geopotential_height"].sel(init_time="2025-01-01T00", lead_time="24h", pressure_level=500).mean("ensemble_member")',
+            ),
+        ),
+        notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
         environments=["production", "staging", "test", "0.7.0-0.8.0"],
