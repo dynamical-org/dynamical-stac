@@ -75,7 +75,7 @@
         },
         {
           "label": "pystac + icechunk",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-gefs-analysis-0-25-degree-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-gefs-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-gefs-analysis-0-25-degree-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-gefs-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
           "language": "python"
         }
       ]

@@ -1,12 +1,12 @@
 {
   "type": "Collection",
-  "id": "noaa-gefs-analysis-0-25-degree-virtual",
+  "id": "noaa-gefs-forecast-10-day-0-25-degree-virtual",
   "stac_version": "1.1.0",
-  "description": "Weather analysis from the Global Ensemble Forecast System (GEFS) operated by NOAA NWS NCEP.",
+  "description": "Weather forecasts from the Global Ensemble Forecast System (GEFS) operated by NOAA NWS NCEP.",
   "links": [
     {
       "rel": "root",
-      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "href": "https://stac.dynamical.org/catalog.json",
       "type": "application/json",
       "title": "dynamical.org STAC Catalog"
     },
@@ -18,13 +18,13 @@
     },
     {
       "rel": "about",
-      "href": "https://dynamical.org/catalog/noaa-gefs-analysis-0-25-degree-virtual/",
+      "href": "https://dynamical.org/catalog/noaa-gefs-forecast-10-day-0-25-degree-virtual/",
       "type": "text/html",
       "title": "Dataset documentation"
     },
     {
       "rel": "about",
-      "href": "https://dynamical.org/catalog/noaa-gefs-analysis-0-25-degree-virtual/validation/",
+      "href": "https://dynamical.org/catalog/noaa-gefs-forecast-10-day-0-25-degree-virtual/validation/",
       "type": "text/html",
       "title": "Validation report"
     },
@@ -42,13 +42,13 @@
     },
     {
       "rel": "self",
-      "href": "https://stac-staging.dynamical.org/noaa-gefs-analysis-0-25-degree-virtual/collection.json",
+      "href": "https://stac.dynamical.org/noaa-gefs-forecast-10-day-0-25-degree-virtual/collection.json",
       "type": "application/json",
-      "title": "NOAA GEFS analysis, 0.25 degree, virtual"
+      "title": "NOAA GEFS forecast, 10 day, 0.25 degree, virtual"
     },
     {
       "rel": "parent",
-      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "href": "https://stac.dynamical.org/catalog.json",
       "type": "application/json",
       "title": "dynamical.org STAC Catalog"
     }
@@ -61,27 +61,44 @@
   "version": "0.1.0",
   "model_id": "noaa-gefs",
   "model_name": "NOAA GEFS",
-  "description_summary": "This analysis dataset is an archive of the model's best estimate of past weather, optimized for spatial (map) access patterns. It is created by concatenating the shortest available step of each historical forecast to provide a dataset with dimensions time, latitude, and longitude.\n\nNote: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.5`) is required.",
-  "description_details": "### Construction\n\nGEFS starts a new model run every 6 hours and dynamical.org has created this analysis by\nconcatenating the shortest usable forecast step of each run along the time dimension.\nInstantaneous variables are read from forecast hour 0 or 3, and variables that describe a\npreceding window (accumulations, averages and window maxima and minima) are read from\nforecast hour 3 or 6.\n\nOnly the control member is used.\n\nThis dataset reads the 0.25 degree `pgrb2s` files, which carry a subset of GEFS variables at\nthe model's highest available resolution.\n\n### Source\n\nThe source grib files this archive is constructed from are provided by\n[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination)\nand accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gefs/).\n\n### Variable availability\n\nFour variables were added by the source after the archive begins and are empty before those\ndates:\n\n- From 2022-10-18T12 UTC: `visibility_surface`, `percent_frozen_precipitation_surface` and\n  `geopotential_height_cloud_ceiling`.\n- From 2021-07-20T12 UTC: `pressure_reduced_to_mean_sea_level_eta_model`.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| time | 1 (3 hours) |\n| latitude | 721 (180.25\u00b0) |\n| longitude | 1440 (360\u00b0) |\n| **uncompressed** | 7.9 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-gefs-analysis-0-25-degree-virtual/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.",
+  "description_summary": "This dataset is an archive of past and present GEFS forecasts at 0.25 degree resolution, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run as well as by the `ensemble_member`, and step forward 3 hourly along the `lead_time` dimension out to 10 days.\n\nNote: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.5`) is required.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by\n[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination)\nand accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-gefs/).\n\n### Variable availability\n\nFour variables were added by the source after the archive begins and are empty before those\ndates:\n\n- From 2021-07-20T12 UTC: `pressure_reduced_to_mean_sea_level_eta_model`.\n- From 2022-10-18T12 UTC: `visibility_surface`, `percent_frozen_precipitation_surface` and\n  `geopotential_height_cloud_ceiling`.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (6 hours) |\n| ensemble_member | 1 |\n| lead_time | 1 (3 hours) |\n| latitude | 721 (180.25\u00b0) |\n| longitude | 1440 (360\u00b0) |\n| **uncompressed** | 7.9 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-gefs-forecast-10-day-0-25-degree-virtual/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.",
   "description_model": "The Global Ensemble Forecast System (GEFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) weather forecast model. GEFS creates 31 separate forecasts (ensemble members) to describe the range of forecast uncertainty.",
   "examples": [
     {
-      "title": "Temperature map",
+      "title": "Ensemble mean temperature map",
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-gefs-analysis-0-25-degree-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-gefs-forecast-10-day-0-25-degree-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", lead_time=\"24h\").mean(\"ensemble_member\")",
           "language": "python"
         },
         {
           "label": "pystac + icechunk",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-gefs-analysis-0-25-degree-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-gefs-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-gefs-forecast-10-day-0-25-degree-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-gefs-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", lead_time=\"24h\").mean(\"ensemble_member\")",
           "language": "python"
         }
       ]
     }
   ],
   "cube:dimensions": {
+    "ensemble_member": {
+      "type": "other",
+      "extent": [
+        0,
+        30
+      ],
+      "unit": "1",
+      "size": 31
+    },
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2020-10-01T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
     "latitude": {
       "type": "spatial",
       "extent": [
@@ -92,6 +109,15 @@
       "unit": "degree_north",
       "size": 721
     },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        864000
+      ],
+      "unit": "seconds",
+      "size": 81
+    },
     "longitude": {
       "type": "spatial",
       "extent": [
@@ -101,25 +127,21 @@
       "axis": "x",
       "unit": "degree_east",
       "size": 1440
-    },
-    "time": {
-      "type": "temporal",
-      "extent": [
-        "2020-10-01T00:00:00Z",
-        null
-      ],
-      "unit": "seconds since 1970-01-01"
     }
   },
   "cube:variables": {
     "categorical_freezing_rain_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -130,12 +152,16 @@
     },
     "categorical_ice_pellets_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -146,12 +172,16 @@
     },
     "categorical_rain_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -162,12 +192,16 @@
     },
     "categorical_snow_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -178,12 +212,16 @@
     },
     "convective_available_potential_energy_180_0mb": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -196,12 +234,16 @@
     },
     "convective_available_potential_energy_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -213,12 +255,16 @@
     },
     "convective_inhibition_180_0mb": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -231,12 +277,16 @@
     },
     "convective_inhibition_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -249,12 +299,16 @@
     },
     "dew_point_temperature_2m": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -266,12 +320,16 @@
     },
     "downward_long_wave_radiation_flux_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -280,16 +338,20 @@
       "long_name": "Surface downward long-wave radiation flux",
       "standard_name": "surface_downwelling_longwave_flux_in_air",
       "short_name": "sdlwrf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Average value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "downward_short_wave_radiation_flux_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -298,16 +360,20 @@
       "long_name": "Surface downward short-wave radiation flux",
       "standard_name": "surface_downwelling_shortwave_flux_in_air",
       "short_name": "sdswrf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Average value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "geopotential_height_cloud_ceiling": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -320,12 +386,16 @@
     },
     "ice_thickness_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -337,12 +407,16 @@
     },
     "latent_heat_flux_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -351,16 +425,20 @@
       "long_name": "Latent heat flux",
       "standard_name": "surface_upward_latent_heat_flux",
       "short_name": "lhf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Average value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "maximum_temperature_2m": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -369,16 +447,20 @@
       "long_name": "Maximum temperature",
       "standard_name": "air_temperature",
       "short_name": "tmax",
-      "comment": "Maximum value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Maximum value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "minimum_temperature_2m": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -387,16 +469,20 @@
       "long_name": "Minimum temperature",
       "standard_name": "air_temperature",
       "short_name": "tmin",
-      "comment": "Minimum value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Minimum value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "percent_frozen_precipitation_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -408,12 +494,16 @@
     },
     "precipitable_water_atmosphere": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -425,12 +515,16 @@
     },
     "pressure_reduced_to_mean_sea_level": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -442,12 +536,16 @@
     },
     "pressure_reduced_to_mean_sea_level_eta_model": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -460,12 +558,16 @@
     },
     "pressure_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -477,12 +579,16 @@
     },
     "relative_humidity_2m": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -494,12 +600,16 @@
     },
     "sensible_heat_flux_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -508,16 +618,20 @@
       "long_name": "Sensible heat flux",
       "standard_name": "surface_upward_sensible_heat_flux",
       "short_name": "shf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Average value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "snow_thickness_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -530,12 +644,16 @@
     },
     "snow_water_equivalent_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -548,12 +666,16 @@
     },
     "soil_temperature_0_10cm": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -566,12 +688,16 @@
     },
     "storm_relative_helicity_3000_0m": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -583,12 +709,16 @@
     },
     "temperature_2m": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -600,12 +730,16 @@
     },
     "total_cloud_cover_atmosphere": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -614,16 +748,20 @@
       "long_name": "Total cloud cover",
       "standard_name": "cloud_area_fraction",
       "short_name": "tcc",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Average value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "total_precipitation_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -632,16 +770,20 @@
       "long_name": "Total precipitation",
       "standard_name": "precipitation_amount",
       "short_name": "tp",
-      "comment": "Total accumulated in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Total accumulated in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "upward_long_wave_radiation_flux_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -650,16 +792,20 @@
       "long_name": "Surface upward long-wave radiation flux",
       "standard_name": "surface_upwelling_longwave_flux_in_air",
       "short_name": "sulwrf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Average value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "upward_long_wave_radiation_flux_top_of_atmosphere": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -668,16 +814,20 @@
       "long_name": "Upward long-wave radiation flux",
       "standard_name": "toa_outgoing_longwave_flux",
       "short_name": "ulwrf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Average value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "upward_short_wave_radiation_flux_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -686,16 +836,20 @@
       "long_name": "Surface upward short-wave radiation flux",
       "standard_name": "surface_upwelling_shortwave_flux_in_air",
       "short_name": "suswrf",
-      "comment": "Average value in the last 6 hour period (00, 06, 12, 18 UTC) or 3 hour period (03, 09, 15, 21 UTC)."
+      "comment": "Average value in the last 6 hour period (lead times 6, 12, 18, ... hours) or 3 hour period (lead times 3, 9, 15, ... hours)."
     },
     "visibility_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -708,12 +862,16 @@
     },
     "volumetric_soil_moisture_0_10cm": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -726,12 +884,16 @@
     },
     "wind_gust_surface": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -743,12 +905,16 @@
     },
     "wind_u_10m": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -760,12 +926,16 @@
     },
     "wind_v_10m": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "type": "data",
       "chunks": [
+        1,
+        1,
         1,
         721,
         1440
@@ -780,17 +950,22 @@
     "dtype": "float64",
     "chunk": {
       "dimensions": [
-        "time",
+        "init_time",
+        "ensemble_member",
+        "lead_time",
         "latitude",
         "longitude"
       ],
       "shape": [
         1,
+        1,
+        1,
         721,
         1440
       ],
       "lengths": {
-        "time": "3 hours",
+        "init_time": "6 hours",
+        "lead_time": "3 hours",
         "latitude": "180.25\u00b0",
         "longitude": "360\u00b0"
       },
@@ -798,7 +973,7 @@
       "uncompressed_size": "7.9 MiB"
     }
   },
-  "title": "NOAA GEFS analysis, 0.25 degree, virtual",
+  "title": "NOAA GEFS forecast, 10 day, 0.25 degree, virtual",
   "extent": {
     "spatial": {
       "bbox": [
@@ -828,15 +1003,21 @@
       "0.25 degrees (~20km)"
     ],
     "time_domain": [
-      "2020-10-01 00:00:00 UTC to Present"
+      "Forecasts initialized 2020-10-01 00:00:00 UTC to Present"
     ],
     "time_resolution": [
-      "3 hours"
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-240 hours ahead"
+    ],
+    "forecast_resolution": [
+      "Forecast step 3 hourly"
     ]
   },
   "assets": {
     "icechunk": {
-      "href": "s3://dynamical-noaa-gefs/noaa-gefs-analysis-0-25-degree-virtual/v0.1.0.icechunk/",
+      "href": "s3://dynamical-noaa-gefs/noaa-gefs-forecast-10-day-0-25-degree-virtual/v0.1.0.icechunk/",
       "type": "application/x-icechunk",
       "title": "Icechunk v2 repository",
       "xarray:open_kwargs": {
@@ -862,7 +1043,7 @@
       ]
     },
     "icechunk-https": {
-      "href": "https://dynamical-noaa-gefs.s3.us-west-2.amazonaws.com/noaa-gefs-analysis-0-25-degree-virtual/v0.1.0.icechunk",
+      "href": "https://dynamical-noaa-gefs.s3.us-west-2.amazonaws.com/noaa-gefs-forecast-10-day-0-25-degree-virtual/v0.1.0.icechunk",
       "type": "application/x-icechunk",
       "title": "Icechunk v2 repository (HTTPS)",
       "xarray:open_kwargs": {

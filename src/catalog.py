@@ -688,7 +688,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-gfs-analysis-virtual",
         icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-analysis-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -724,7 +724,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_GFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-gfs-forecast-virtual",
         icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-forecast-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -808,7 +808,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-gefs-analysis"),),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-gefs-analysis-0-25-degree-virtual",
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-analysis-0-25-degree-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -834,7 +834,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-gefs-forecast-10-day-0-25-degree-virtual",
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-10-day-0-25-degree-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -861,7 +861,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-gefs-forecast-16-day-0-5-degree-virtual",
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-16-day-0-5-degree-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -899,7 +899,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-gefs-forecast-35-day-0-5-degree-virtual",
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-35-day-0-5-degree-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
