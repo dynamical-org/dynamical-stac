@@ -24,6 +24,18 @@
     },
     {
       "rel": "child",
+      "href": "https://stac-staging.dynamical.org/noaa-gfs-analysis-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA GFS analysis, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac-staging.dynamical.org/noaa-gfs-forecast-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA GFS forecast, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac-staging.dynamical.org/noaa-gefs-forecast-35-day/collection.json",
       "type": "application/json",
       "title": "NOAA GEFS forecast, 35 day"

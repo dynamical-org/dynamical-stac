@@ -617,6 +617,12 @@ _GEFS_VIRTUAL_NOTEBOOK = DatasetNotebook(
     title="GEFS forecasts and analysis, virtual",
 )
 
+# One notebook covers the GFS forecast and analysis virtual datasets.
+_GFS_VIRTUAL_NOTEBOOK = DatasetNotebook(
+    slug="noaa-gfs-forecast-analysis-virtual",
+    title="GFS forecast and analysis, virtual",
+)
+
 # One notebook covers the 46 day daily and 6 hourly datasets.
 _ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
     slug="ecmwf-ifs-ens-forecast-46-day-1-5-degree",
@@ -680,6 +686,82 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _quickstart_notebook("noaa-gfs-forecast"),
             _GFS_AIFS_HDD_NOTEBOOK,
         ),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-gfs-analysis-virtual",
+        icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-analysis-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-gfs-bdp-pds/",),
+        model_id="noaa-gfs",
+        description_summary=(
+            "This analysis dataset is an archive of the model's best estimate "
+            "of past weather, optimized for spatial (map) access patterns. It "
+            "is created by concatenating the shortest available step of each "
+            "historical forecast to provide a dataset with dimensions time, "
+            "latitude, and longitude.\n\n"
+            "It carries every variable the source publishes, at 0.25 degree "
+            "resolution. "
+            "Variables on pressure levels and fixed heights above mean sea "
+            "level live in the `pressure_level` and "
+            "`height_above_mean_sea_level` groups.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.5`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/analysis_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-gfs-analysis-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level\n"
+                "# and height_above_mean_sea_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-gfs-analysis-virtual", group="pressure_level", chunks=None)\n'
+                'ds_height = dynamical_catalog.open("noaa-gfs-analysis-virtual", group="height_above_mean_sea_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["temperature"].sel(time="2025-01-01T00", pressure_level=500)',
+            ),
+        ),
+        notebooks=(_GFS_VIRTUAL_NOTEBOOK,),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-gfs-forecast-virtual",
+        icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-forecast-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-gfs-bdp-pds/",),
+        model_id="noaa-gfs",
+        description_summary=(
+            "This dataset is an archive of past and present GFS forecasts at "
+            "0.25 degree resolution, optimized for spatial (map) access "
+            "patterns. Forecasts are identified by an initialization time "
+            "(`init_time`) denoting the start time of the model run, and step "
+            "forward along the `lead_time` dimension. A new forecast is "
+            "initialized every 6 hours.\n\n"
+            "It carries every variable the source publishes. "
+            "Variables on pressure levels and fixed heights above mean sea "
+            "level live in the `pressure_level` and "
+            "`height_above_mean_sea_level` groups.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.5`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/forecast_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-gfs-forecast-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level\n"
+                "# and height_above_mean_sea_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-gfs-forecast-virtual", group="pressure_level", chunks=None)\n'
+                'ds_height = dynamical_catalog.open("noaa-gfs-forecast-virtual", group="height_above_mean_sea_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["temperature"].sel(init_time="2025-01-01T00", lead_time="24h", pressure_level=500)',
+            ),
+        ),
+        notebooks=(_GFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
         environments=["production", "staging", "test", "0.4.0-0.5.0", "0.7.0-0.8.0"],
