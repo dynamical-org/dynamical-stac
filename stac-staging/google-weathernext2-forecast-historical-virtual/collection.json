@@ -29,6 +29,18 @@
       "title": "Validation report"
     },
     {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/google-weathernext2-forecast-historical%2Boperational-virtual.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "WeatherNext 2 historical and operational (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/google-weathernext2-forecast-historical%2Boperational-virtual.ipynb",
+      "type": "text/html",
+      "title": "WeatherNext 2 historical and operational (Colab)"
+    },
+    {
       "rel": "self",
       "href": "https://stac-staging.dynamical.org/google-weathernext2-forecast-historical-virtual/collection.json",
       "type": "application/json",
@@ -63,7 +75,7 @@
         },
         {
           "label": "pystac + icechunk",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"google-weathernext2-forecast-historical-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"https://wn.dynamical.org/chunks/\": icechunk.Credentials.HttpAccess()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"pressure_reduced_to_mean_sea_level\"].sel(init_time=\"2024-07-04T00\", lead_time=\"96h\", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"google-weathernext2-forecast-historical-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"https://wn.dynamical.org/chunks/\": icechunk.Credentials.HttpAccess()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"pressure_reduced_to_mean_sea_level\"].sel(init_time=\"2024-07-04T00\", lead_time=\"96h\", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))",
           "language": "python"
         }
       ]
