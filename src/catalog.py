@@ -312,7 +312,8 @@ MODELS: dict[str, Model] = {
         name="ECMWF IFS ENS",
         description=(
             "The Integrated Forecasting System (IFS) is a global forecast model developed by ECMWF. "
-            "ENS is an ensemble configuration of IFS, containing 51 ensemble members. IFS consists of "
+            "ENS is an ensemble configuration of IFS: 51 ensemble members in the medium range and "
+            "101 in the sub-seasonal (extended) range. IFS consists of "
             "a numerical model of the Earth system, which includes an atmospheric model at its heart, "
             "coupled with models of other Earth system components such as the ocean. The data "
             "assimilation system combines the latest weather observations with a recent forecast to "
