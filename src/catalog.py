@@ -700,8 +700,6 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "is created by concatenating the shortest available step of each "
             "historical forecast to provide a dataset with dimensions time, "
             "latitude, and longitude.\n\n"
-            "It carries every variable the source publishes, at 0.25 degree "
-            "resolution. "
             "Variables on pressure levels and fixed heights above mean sea "
             "level live in the `pressure_level` and "
             "`height_above_mean_sea_level` groups.\n\n"
@@ -733,13 +731,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
         virtual_chunk_container_prefixes=("s3://noaa-gfs-bdp-pds/",),
         model_id="noaa-gfs",
         description_summary=(
-            "This dataset is an archive of past and present GFS forecasts at "
-            "0.25 degree resolution, optimized for spatial (map) access "
+            "This dataset is an archive of past and present GFS forecasts, "
+            "optimized for spatial (map) access "
             "patterns. Forecasts are identified by an initialization time "
             "(`init_time`) denoting the start time of the model run, and step "
             "forward along the `lead_time` dimension. A new forecast is "
             "initialized every 6 hours.\n\n"
-            "It carries every variable the source publishes. "
             "Variables on pressure levels and fixed heights above mean sea "
             "level live in the `pressure_level` and "
             "`height_above_mean_sea_level` groups.\n\n"
@@ -880,7 +877,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "Variables on pressure levels, model levels and fixed heights above "
             "mean sea level live in the `pressure_level`, `model_level` and "
             "`height_above_mean_sea_level` groups.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.2.1 "
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.2.2 "
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_16_day_0_5_degree_virtual/template_config.py",
@@ -918,7 +915,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "Variables on pressure levels, model levels and fixed heights above "
             "mean sea level live in the `pressure_level`, `model_level` and "
             "`height_above_mean_sea_level` groups.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.2.1 "
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.2.2 "
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_35_day_0_5_degree_virtual/template_config.py",
