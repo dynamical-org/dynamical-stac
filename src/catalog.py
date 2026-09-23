@@ -793,19 +793,27 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "patterns. Forecasts are identified by an initialization time "
             "(`init_time`) denoting the start time of the model run as well as "
             "by the `ensemble_member`, and step forward along the `lead_time` "
-            "dimension 3 hourly to 10 days and 6 hourly to 16 days. A new forecast is initialized every 6 hours.\n\n"
+            "dimension. A new forecast is initialized every 6 hours.\n\n"
             "Variables on pressure levels, model levels and fixed heights above "
             "mean sea level live in the `pressure_level`, `model_level` and "
             "`height_above_mean_sea_level` groups.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.2.1 "
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_16_day_0_5_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean 500 hPa height map",
-                'ds = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", group="pressure_level", chunks=None)\n'
-                'ds["geopotential_height"].sel(init_time="2025-01-01T00", lead_time="120h", pressure_level=500).mean("ensemble_member")',
+                "Ensemble mean temperature map",
+                'ds = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").mean("ensemble_member")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level, model_level\n"
+                "# and height_above_mean_sea_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", group="pressure_level", chunks=None)\n'
+                'ds_model = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", group="model_level", chunks=None)\n'
+                'ds_height = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", group="height_above_mean_sea_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["geopotential_height"].sel(init_time="2025-01-01T00", lead_time="24h", pressure_level=500).mean("ensemble_member")',
             ),
         ),
         notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
@@ -823,19 +831,27 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "patterns. Forecasts are identified by an initialization time "
             "(`init_time`) denoting the start time of the model run as well as "
             "by the `ensemble_member`, and step forward along the `lead_time` "
-            "dimension 3 hourly to 10 days and 6 hourly to 35 days. This dataset contains only the 00 hour UTC initialization times, which produce the full length 35 day forecast.\n\n"
+            "dimension. This dataset contains only the 00 hour UTC initialization times, which produce the full length 35 day forecast.\n\n"
             "Variables on pressure levels, model levels and fixed heights above "
             "mean sea level live in the `pressure_level`, `model_level` and "
             "`height_above_mean_sea_level` groups.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.2.1 "
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_35_day_0_5_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean 500 hPa height map",
-                'ds = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", group="pressure_level", chunks=None)\n'
-                'ds["geopotential_height"].sel(init_time="2025-01-01T00", lead_time="240h", pressure_level=500).mean("ensemble_member")',
+                "Ensemble mean temperature map",
+                'ds = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").mean("ensemble_member")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level, model_level\n"
+                "# and height_above_mean_sea_level groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", group="pressure_level", chunks=None)\n'
+                'ds_model = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", group="model_level", chunks=None)\n'
+                'ds_height = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", group="height_above_mean_sea_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["geopotential_height"].sel(init_time="2025-01-01T00", lead_time="24h", pressure_level=500).mean("ensemble_member")',
             ),
         ),
         notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
