@@ -6,7 +6,7 @@
   "links": [
     {
       "rel": "root",
-      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "href": "https://stac.dynamical.org/catalog.json",
       "type": "application/json",
       "title": "dynamical.org STAC Catalog"
     },
@@ -42,13 +42,13 @@
     },
     {
       "rel": "self",
-      "href": "https://stac-staging.dynamical.org/noaa-gefs-analysis-0-25-degree-virtual/collection.json",
+      "href": "https://stac.dynamical.org/noaa-gefs-analysis-0-25-degree-virtual/collection.json",
       "type": "application/json",
       "title": "NOAA GEFS analysis, 0.25 degree, virtual"
     },
     {
       "rel": "parent",
-      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "href": "https://stac.dynamical.org/catalog.json",
       "type": "application/json",
       "title": "dynamical.org STAC Catalog"
     }
