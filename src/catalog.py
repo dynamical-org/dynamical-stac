@@ -629,6 +629,12 @@ _ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
     title="ECMWF IFS ENS 46 day, daily and 6 hourly",
 )
 
+# One notebook covers the historical and operational WeatherNext 2 archives.
+_WEATHERNEXT2_NOTEBOOK = DatasetNotebook(
+    slug="google-weathernext2-forecast-historical+operational-virtual",
+    title="WeatherNext 2 historical and operational",
+)
+
 
 def _quickstart_notebook(slug: str) -> DatasetNotebook:
     """Build the default per-dataset ``{id}.ipynb`` notebook.
@@ -1320,7 +1326,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test"],
         id="google-weathernext2-forecast-historical-virtual",
         icechunk_href=(
             "https://google-weathernext2.r2.dynamical.org/"
@@ -1350,11 +1356,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",  # https:// repository
             ),
         ),
-        # notebooks#56 adds one combined historical + operational quickstart.
-        # Link it after that PR merges; staging items may omit notebooks.
+        notebooks=(_WEATHERNEXT2_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test"],
         id="google-weathernext2-forecast-operational-virtual",
         icechunk_href=(
             "https://google-weathernext2.r2.dynamical.org/"
@@ -1390,8 +1395,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",  # https:// repository
             ),
         ),
-        # notebooks#56 adds one combined historical + operational quickstart.
-        # Link it after that PR merges; staging items may omit notebooks.
+        notebooks=(_WEATHERNEXT2_NOTEBOOK,),
     ),
     CatalogItem(
         environments=["production", "staging", "test", "0.4.0-0.5.0", "0.7.0-0.8.0"],

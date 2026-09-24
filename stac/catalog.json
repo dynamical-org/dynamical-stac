@@ -144,6 +144,18 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/google-weathernext2-forecast-historical-virtual/collection.json",
+      "type": "application/json",
+      "title": "Google WeatherNext 2 historical forecast, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/google-weathernext2-forecast-operational-virtual/collection.json",
+      "type": "application/json",
+      "title": "Google WeatherNext 2 operational forecast, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json",
       "type": "application/json",
       "title": "DWD ICON-EU forecast, 5 day"
