@@ -797,7 +797,12 @@ class CollectionInput(BaseModel):
                         ),
                         "language": ex.language,
                     },
-                ],
+                ]
+                + (
+                    [{"label": "Example prompt", "code": ex.prompt, "language": "text"}]
+                    if ex.prompt is not None
+                    else []
+                ),
             }
             for ex in self.examples
         ]

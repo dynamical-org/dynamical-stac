@@ -516,3 +516,17 @@ def test_pystac_example_uses_collection_catalog_url() -> None:
     code = next(v["code"] for v in variants if v["label"] == "pystac + icechunk")
     assert f'catalog = pystac.Catalog.from_file("{url}")' in code
     assert "https://stac.dynamical.org/catalog.json" not in code
+
+
+def test_prompt_variant_preserves_authored_text() -> None:
+    text = 'First line <&> "quoted"\n\nSecond line.\n'
+    example = _valid_input().examples[0].model_copy(update={"prompt": text})
+    collection = _valid_input(examples=(example,)).to_pystac_collection()
+    variants = collection.extra_fields["examples"][0]["variants"]
+    assert [v["language"] for v in variants] == ["python", "python", "text"]
+    assert variants[2] == {"label": "Example prompt", "code": text, "language": "text"}
+
+
+def test_examples_without_prompts_keep_two_code_variants() -> None:
+    collection = _valid_input().to_pystac_collection()
+    assert len(collection.extra_fields["examples"][0]["variants"]) == 2

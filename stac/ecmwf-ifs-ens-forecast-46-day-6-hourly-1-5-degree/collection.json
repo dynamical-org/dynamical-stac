@@ -83,6 +83,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"maximum_temperature_2m\"].sel(init_time=\"2026-08-01T00\", latitude=0, longitude=0).max()",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree (https://stac.dynamical.org/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/collection.json) and, at the grid point nearest Sao Paulo (-23.55, -46.63), compute weekly total precipitation_surface for each ensemble_member over the first 42 days of the latest init_time with data for the requested lead times. Say which init_time you used and the median and 10th to 90th percentile total for week 1 and week 6. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
+          "language": "text"
         }
       ]
     }

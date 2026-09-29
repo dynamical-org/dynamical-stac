@@ -77,6 +77,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-hrrr-analysis\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\", x=0, y=0, method=\"nearest\")",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-hrrr-analysis (https://stac.dynamical.org/noaa-hrrr-analysis/collection.json) and, at the grid point nearest Houston (29.76, -95.37), sum precipitation_surface from 2017-08-25 00:00 UTC to 2017-08-31 00:00 UTC into total millimetres for Hurricane Harvey. Say which times you used and the total. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
+          "language": "text"
         }
       ]
     }

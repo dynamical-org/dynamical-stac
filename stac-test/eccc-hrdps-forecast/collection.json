@@ -83,6 +83,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"eccc-hrdps-forecast\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-08-01T00\", lead_time=\"12h\")",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open eccc-hrdps-forecast (https://stac.dynamical.org/eccc-hrdps-forecast/collection.json) and compare the mean wind_speed_10m over the 48 hours of the latest init_time with data for the requested lead times for a box over Lake Erie (latitude 42.0 to 42.5, longitude -82.0 to -80.0) and a box on land just north (latitude 43.2 to 43.7, longitude -81.5 to -80.0), using the dataset's projected grid to select each box. Say which init_time you used and both means.",
+          "language": "text"
         }
       ]
     }

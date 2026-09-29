@@ -119,6 +119,7 @@ class DatasetExample(BaseModel):
     title: str = Field(min_length=1)
     code: str = Field(min_length=1)
     language: Literal["python"] = "python"
+    prompt: str | None = Field(default=None, min_length=1)
 
 
 _QUICKSTART_TITLE = "Quickstart"
@@ -139,7 +140,10 @@ class DatasetNotebook(BaseModel):
 
 
 def _example(
-    title: str, body: str, min_version: str = _DEFAULT_MIN_DYNAMICAL_CATALOG
+    title: str,
+    body: str,
+    min_version: str = _DEFAULT_MIN_DYNAMICAL_CATALOG,
+    prompt: str | None = None,
 ) -> DatasetExample:
     """Build an example, prepending the standard dynamical_catalog import preamble.
 
@@ -147,7 +151,9 @@ def _example(
     dataset; it is rendered into the import comment users copy.
     """
     return DatasetExample(
-        title=title, code=f"{_dynamical_catalog_import(min_version)}\n\n{body}"
+        title=title,
+        code=f"{_dynamical_catalog_import(min_version)}\n\n{body}",
+        prompt=prompt,
     )
 
 
@@ -658,6 +664,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Temperature at a place and time",
                 'ds = dynamical_catalog.open("noaa-gfs-analysis", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2026-01-01T00", latitude=0, longitude=0)',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gfs-analysis (https://stac.dynamical.org/noaa-gfs-analysis/collection.json) and compare precipitation_surface with total_cloud_cover_atmosphere in two aligned time-series panels over the latest 24 hours with data at the grid point nearest New Orleans (29.95, -90.07). Label each panel with its units, report missing time steps, and say which times you used.",
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-gfs-analysis"),),
@@ -680,6 +687,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Maximum temperature",
                 'ds = dynamical_catalog.open("noaa-gfs-forecast", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gfs-forecast (https://stac.dynamical.org/noaa-gfs-forecast/collection.json) and at the grid point nearest Chicago (41.88, -87.63), compare temperature_2m from the latest available init_time and the run exactly 24 hours earlier over the first 72 hours of shared valid times with data in both runs. Plot both forecasts and their difference. Say which initialization and valid times you used.",
             ),
         ),
         notebooks=(
@@ -719,6 +727,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_height = dynamical_catalog.open("noaa-gfs-analysis-virtual", group="height_above_mean_sea_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["temperature"].sel(time="2025-01-01T00", pressure_level=500)',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gfs-analysis-virtual (https://stac.dynamical.org/noaa-gfs-analysis-virtual/collection.json) and make two regional maps of convective_available_potential_energy_surface and convective_inhibition_surface over Oklahoma (latitude 34.5 to 37.0, longitude -99.0 to -96.0) at the latest time with data in both fields. Label the units and say which time you used.",
             ),
         ),
         notebooks=(_GFS_VIRTUAL_NOTEBOOK,),
@@ -756,6 +765,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_height = dynamical_catalog.open("noaa-gfs-forecast-virtual", group="height_above_mean_sea_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["temperature"].sel(init_time="2025-01-01T00", lead_time="24h", pressure_level=500)',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gfs-forecast-virtual (https://stac.dynamical.org/noaa-gfs-forecast-virtual/collection.json) and map geopotential_height_0c_isotherm over the Sierra Nevada (latitude 37 to 40, longitude -121 to -118) at lead_time 48 hours from the latest init_time with data for the requested lead times at that lead. Report the minimum and maximum height in metres and say which initialization and valid time you used.",
             ),
         ),
         notebooks=(_GFS_VIRTUAL_NOTEBOOK,),
@@ -781,6 +791,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Maximum ensemble temperature",
                 'ds = dynamical_catalog.open("noaa-gefs-forecast-35-day", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gefs-forecast-35-day (https://stac.dynamical.org/noaa-gefs-forecast-35-day/collection.json) and, at the grid point nearest Chicago (41.88, -87.63), plot the 5th, 50th and 95th percentile across ensemble_member of temperature_2m for the full lead_time of the latest init_time with data for the requested lead times. Say which init_time you used and the ensemble standard deviation at days 1, 14 and 35. Report missing members at each requested lead rather than silently treating an incomplete run as complete.",
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-gefs-forecast-35-day"),),
@@ -803,6 +814,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Temperature at a place and time",
                 'ds = dynamical_catalog.open("noaa-gefs-analysis", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00", latitude=0, longitude=0)',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gefs-analysis (https://stac.dynamical.org/noaa-gefs-analysis/collection.json) and, at the grid point nearest Ulaanbaatar (47.9, 106.9), compare the mean temperature_2m of January 2000, January 2010 and January 2020. Say which times you used and how many time steps went into each mean. Treat these as three separate January comparisons, not a climate-trend estimate; report missing values.",
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-gefs-analysis"),),
@@ -829,6 +841,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Temperature map",
                 'ds = dynamical_catalog.open("noaa-gefs-analysis-0-25-degree-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gefs-analysis-0-25-degree-virtual (https://stac.dynamical.org/noaa-gefs-analysis-0-25-degree-virtual/collection.json) and make two maps of volumetric_soil_moisture_0_10cm and soil_temperature_0_10cm over Iowa (latitude 40.4 to 43.5, longitude -96.6 to -90.1) at the latest time with data in both fields. Label the units and say which time you used.",
             ),
         ),
         notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
@@ -856,6 +869,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Ensemble mean temperature map",
                 'ds = dynamical_catalog.open("noaa-gefs-forecast-10-day-0-25-degree-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", lead_time="24h").mean("ensemble_member")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gefs-forecast-10-day-0-25-degree-virtual (https://stac.dynamical.org/noaa-gefs-forecast-10-day-0-25-degree-virtual/collection.json) and map the fraction of ensemble_member with wind_gust_surface above 15 m/s over New England (latitude 41 to 45, longitude -73 to -69) at lead_time 48 hours from the latest init_time with data for the requested lead times at that lead. Exclude missing members from the denominator and report the member count and times used.",
             ),
         ),
         notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
@@ -894,6 +908,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_height = dynamical_catalog.open("noaa-gefs-forecast-16-day-0-5-degree-virtual", group="height_above_mean_sea_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["geopotential_height"].sel(init_time="2025-01-01T00", lead_time="24h", pressure_level=500).mean("ensemble_member")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gefs-forecast-16-day-0-5-degree-virtual (https://stac.dynamical.org/noaa-gefs-forecast-16-day-0-5-degree-virtual/collection.json) and draw a spaghetti plot of each ensemble_member's 5500 m contour of pressure_level/geopotential_height at pressure_level 500 hPa over North America (latitude 20 to 70, longitude -170 to -50) at lead_time 7 days of the latest init_time with data for the requested lead times. Say which init_time you used. Open the pressure_level group and select the level, lead and region before loading; report how many members have that contour.",
             ),
         ),
         notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
@@ -932,6 +947,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_height = dynamical_catalog.open("noaa-gefs-forecast-35-day-0-5-degree-virtual", group="height_above_mean_sea_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["geopotential_height"].sel(init_time="2025-01-01T00", lead_time="24h", pressure_level=500).mean("ensemble_member")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gefs-forecast-35-day-0-5-degree-virtual (https://stac.dynamical.org/noaa-gefs-forecast-35-day-0-5-degree-virtual/collection.json) and map the ensemble mean and the standard deviation across ensemble_member of five_wave_geopotential_height_500mb over the North Atlantic (latitude 30 to 65, longitude -80 to 0) at lead_time 28 days of the latest init_time with data for the requested lead times. Say which init_time you used.",
             ),
         ),
         notebooks=(_GEFS_VIRTUAL_NOTEBOOK,),
@@ -969,6 +985,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_model = dynamical_catalog.open("noaa-hrrr-forecast-18-hour-virtual", group="model_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["temperature"].sel(pressure_level=500)',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-hrrr-forecast-18-hour-virtual (https://stac.dynamical.org/noaa-hrrr-forecast-18-hour-virtual/collection.json) and map composite_reflectivity over a 100 km square centred on Oklahoma City (35.47, -97.52) at lead_time 1, 3 and 6 hours from the latest init_time with data for the requested lead times at all three leads. Select the square using the projected grid, use a shared dBZ colour scale, and say which initialization and valid times you used.",
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-18-hour-virtual"),),
@@ -997,6 +1014,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Maximum temperature",
                 'ds = dynamical_catalog.open("noaa-hrrr-forecast-48-hour", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", x=0, y=0, method="nearest").max()',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-hrrr-forecast-48-hour (https://stac.dynamical.org/noaa-hrrr-forecast-48-hour/collection.json) and plot wind_gust_surface at the grid point nearest Denver (39.74, -104.99) for lead_time 0 to 48 hours from the latest init_time with data for the requested lead times through 48 hours. Use the projected grid to find the point; report its coordinates and the peak gust and valid time.",
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour"),),
@@ -1035,6 +1053,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_model = dynamical_catalog.open("noaa-hrrr-forecast-48-hour-virtual", group="model_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["temperature"].sel(pressure_level=500)',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-hrrr-forecast-48-hour-virtual (https://stac.dynamical.org/noaa-hrrr-forecast-48-hour-virtual/collection.json) and map the maximum over lead_time 1 to 12 hours of maximum_updraft_helicity_3000_0m across Oklahoma and Kansas (longitude -100 to -96, latitude 35 to 38) for the latest init_time with data for the requested lead times. Say which init_time you used and the largest value. Select the region using the projected grid before loading.",
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-forecast-48-hour-virtual"),),
@@ -1061,6 +1080,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Temperature at a place and time",
                 'ds = dynamical_catalog.open("noaa-hrrr-analysis", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00", x=0, y=0, method="nearest")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-hrrr-analysis (https://stac.dynamical.org/noaa-hrrr-analysis/collection.json) and, at the grid point nearest Houston (29.76, -95.37), sum precipitation_surface from 2017-08-25 00:00 UTC to 2017-08-31 00:00 UTC into total millimetres for Hurricane Harvey. Say which times you used and the total. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis"),),
@@ -1096,6 +1116,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_model = dynamical_catalog.open("noaa-hrrr-analysis-virtual", group="model_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["temperature"].sel(pressure_level=500)',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-hrrr-analysis-virtual (https://stac.dynamical.org/noaa-hrrr-analysis-virtual/collection.json) and plot mass_density_8m (near-surface smoke) at the grid point nearest New York City (40.71, -74.01) hourly from 2023-06-06 12:00 UTC to 2023-06-08 12:00 UTC, converted to ug/m3. Say which times you used and when smoke peaks. Use the projected grid to locate the point and report missing hours.",
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis-virtual"),),
@@ -1117,6 +1138,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Precipitation at a place and time",
                 'ds = dynamical_catalog.open("noaa-mrms-conus-analysis-hourly", chunks=None)\n'
                 'ds["precipitation_surface"].sel(time="2026-01-01T00", latitude=40, longitude=-90, method="nearest")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-mrms-conus-analysis-hourly (https://stac.dynamical.org/noaa-mrms-conus-analysis-hourly/collection.json) and, at the grid point nearest Asheville, NC (35.60, -82.55), total precipitation_surface and precipitation_radar_only_surface from 2024-09-26 00:00 UTC to 2024-09-28 00:00 UTC into millimetres for Hurricane Helene. Say which times you used and the two totals. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-mrms-conus-analysis-hourly"),),
@@ -1140,6 +1162,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Maximum temperature",
                 'ds = dynamical_catalog.open("ecmwf-aifs-single-forecast", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-aifs-single-forecast (https://stac.dynamical.org/ecmwf-aifs-single-forecast/collection.json) and compute 10 m wind speed from wind_u_10m and wind_v_10m over the British Isles (latitude 50 to 60, longitude -12 to 2) valid 2025-01-24 12:00 UTC from the init_time 2025-01-21 00:00 UTC, for Storm Eowyn. Say which times you used and the peak wind speed.",
             ),
         ),
         notebooks=(
@@ -1184,6 +1207,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_pressure = dynamical_catalog.open("ecmwf-aifs-single-forecast-virtual", group="pressure_level", chunks=None)\n'
                 'ds_pressure["geopotential_height"].sel(pressure_level=500)',
                 min_version="1.0.0",  # gs:// virtual chunk container
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-aifs-single-forecast-virtual (https://stac.dynamical.org/ecmwf-aifs-single-forecast-virtual/collection.json) and map pressure_level/geopotential_height at pressure_level 500 hPa over western Europe (latitude 45 to 55, longitude -10 to 15) at lead_time 48 hours from the latest init_time with data for the requested lead times at that lead. Open the pressure_level group, select the level before loading, and say which initialization and valid time you used.",
             ),
         ),
         notebooks=(_quickstart_notebook("ecmwf-aifs-single-forecast-virtual"),),
@@ -1212,6 +1236,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Maximum ensemble temperature",
                 'ds = dynamical_catalog.open("ecmwf-aifs-ens-forecast", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-08-01T00", latitude=0, longitude=0).max()',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-aifs-ens-forecast (https://stac.dynamical.org/ecmwf-aifs-ens-forecast/collection.json) and, at the grid point nearest Kahului, Maui (20.89, -156.47), total precipitation_surface over the first 10 days of the init_time 2026-03-07 00:00 UTC for each ensemble_member, in millimetres, for the Kona Low. Say which init_time you used and the smallest, median and largest member totals. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
             ),
         ),
         notebooks=(_quickstart_notebook("ecmwf-aifs-ens-forecast"),),
@@ -1239,6 +1264,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Maximum ensemble temperature",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2025-01-01T00", latitude=0, longitude=0).max()',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-ifs-ens-forecast-15-day-0-25-degree (https://stac.dynamical.org/ecmwf-ifs-ens-forecast-15-day-0-25-degree/collection.json) and map the standard deviation across ensemble_member of temperature_2m over Europe (latitude 35 to 70, longitude -12 to 30) at lead_time 7 days of the latest init_time with data for the requested lead times. Say which init_time you used and where the spread is largest.",
             ),
         ),
         notebooks=(_quickstart_notebook("ecmwf-ifs-ens-forecast-15-day-0-25-degree"),),
@@ -1279,6 +1305,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "# Variables with a vertical dimension live in the pressure_level group\n"
                 'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree", group="pressure_level", chunks=None)\n'
                 'ds_pressure["geopotential_height"].sel(init_time="2026-08-01T00", lead_time="10d", pressure_level=500).std("ensemble_member")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree (https://stac.dynamical.org/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/collection.json) and plot the area mean sea_surface_temperature over the Nino 3.4 box (latitude -5 to 5, longitude -170 to -120) for each ensemble_member across the full lead_time of the latest init_time with data for the requested lead times, with the median and 10th to 90th percentile band. Say which init_time you used. Weight the regional mean by grid-cell area and exclude missing ocean values; this is a temperature forecast, not an ENSO anomaly index.",
             ),
         ),
         notebooks=(_ECMWF_IFS_ENS_46_DAY_NOTEBOOK,),
@@ -1314,6 +1341,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Maximum ensemble temperature",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree", chunks=None)\n'
                 'ds["maximum_temperature_2m"].sel(init_time="2026-08-01T00", latitude=0, longitude=0).max()',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree (https://stac.dynamical.org/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/collection.json) and, at the grid point nearest Sao Paulo (-23.55, -46.63), compute weekly total precipitation_surface for each ensemble_member over the first 42 days of the latest init_time with data for the requested lead times. Say which init_time you used and the median and 10th to 90th percentile total for week 1 and week 6. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
             ),
         ),
         notebooks=(_ECMWF_IFS_ENS_46_DAY_NOTEBOOK,),
@@ -1413,6 +1441,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Maximum temperature",
                 'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2026-04-01T00", latitude=50, longitude=10).max()',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open dwd-icon-eu-forecast-5-day (https://stac.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json) and map wind_gust_10m over southwest France and Iberia (latitude 40 to 52, longitude -10 to 10) at lead_time 62 hours of the init_time 2026-02-10 00:00 UTC, for Storm Nils. Say which times you used and the peak gust and where.",
             ),
         ),
         notebooks=(_quickstart_notebook("dwd-icon-eu-forecast-5-day"),),
@@ -1437,6 +1466,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Precipitation at a place and time",
                 'ds = dynamical_catalog.open("nasa-imerg-analysis-early", chunks=None)\n'
                 'ds["precipitation_surface"].sel(time="2026-01-01T00:00", latitude=0, longitude=0, method="nearest")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open nasa-imerg-analysis-early (https://stac.dynamical.org/nasa-imerg-analysis-early/collection.json) and sum precipitation_surface over the 24 hours up to its latest time with data across California (latitude 32 to 42, longitude -125 to -114) into millimetres, then report the grid cell with the most rain. Say which times you used. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
             ),
         ),
         notebooks=(_quickstart_notebook("nasa-imerg-analysis-early"),),
@@ -1461,6 +1491,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Precipitation at a place and time",
                 'ds = dynamical_catalog.open("nasa-imerg-analysis-late", chunks=None)\n'
                 'ds["precipitation_surface"].sel(time="2026-01-01T00:00", latitude=0, longitude=0, method="nearest")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open nasa-imerg-analysis-late (https://stac.dynamical.org/nasa-imerg-analysis-late/collection.json) and, at the grid point nearest Mumbai (19.08, 72.88), compute daily total precipitation_surface for June and July 2024 and report the mean precipitation_quality_index_surface for that period. Say which times you used and the wettest day. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
             ),
         ),
         notebooks=(_quickstart_notebook("nasa-imerg-analysis-late"),),
@@ -1532,6 +1563,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Temperature map at a time",
                 'ds = dynamical_catalog.open("eccc-hrdps-forecast", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2026-08-01T00", lead_time="12h")',
+                prompt="Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open eccc-hrdps-forecast (https://stac.dynamical.org/eccc-hrdps-forecast/collection.json) and compare the mean wind_speed_10m over the 48 hours of the latest init_time with data for the requested lead times for a box over Lake Erie (latitude 42.0 to 42.5, longitude -82.0 to -80.0) and a box on land just north (latitude 43.2 to 43.7, longitude -81.5 to -80.0), using the dataset's projected grid to select each box. Say which init_time you used and both means.",
             ),
         ),
         notebooks=(_quickstart_notebook("eccc-hrdps-forecast"),),

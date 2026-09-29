@@ -83,6 +83,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-aifs-ens-forecast\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-08-01T00\", latitude=0, longitude=0).max()",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-aifs-ens-forecast (https://stac.dynamical.org/ecmwf-aifs-ens-forecast/collection.json) and, at the grid point nearest Kahului, Maui (20.89, -156.47), total precipitation_surface over the first 10 days of the init_time 2026-03-07 00:00 UTC for each ensemble_member, in millimetres, for the Kona Low. Say which init_time you used and the smallest, median and largest member totals. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
+          "language": "text"
         }
       ]
     }

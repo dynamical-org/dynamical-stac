@@ -77,6 +77,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"dwd-icon-eu-forecast-5-day\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-04-01T00\", latitude=50, longitude=10).max()",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open dwd-icon-eu-forecast-5-day (https://stac.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json) and map wind_gust_10m over southwest France and Iberia (latitude 40 to 52, longitude -10 to 10) at lead_time 62 hours of the init_time 2026-02-10 00:00 UTC, for Storm Nils. Say which times you used and the peak gust and where.",
+          "language": "text"
         }
       ]
     }

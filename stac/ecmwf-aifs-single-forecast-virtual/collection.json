@@ -83,6 +83,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-aifs-single-forecast-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"gs://ecmwf-open-data/\": icechunk.gcs_credentials(anonymous=True), \"s3://ecmwf-forecasts/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-03-01T00\", lead_time=\"24h\")\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(pressure_level=500)",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-aifs-single-forecast-virtual (https://stac.dynamical.org/ecmwf-aifs-single-forecast-virtual/collection.json) and map pressure_level/geopotential_height at pressure_level 500 hPa over western Europe (latitude 45 to 55, longitude -10 to 15) at lead_time 48 hours from the latest init_time with data for the requested lead times at that lead. Open the pressure_level group, select the level before loading, and say which initialization and valid time you used.",
+          "language": "text"
         }
       ]
     }

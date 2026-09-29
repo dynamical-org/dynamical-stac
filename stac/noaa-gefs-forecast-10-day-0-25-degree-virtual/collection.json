@@ -77,6 +77,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-gefs-forecast-10-day-0-25-degree-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-gefs-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", lead_time=\"24h\").mean(\"ensemble_member\")",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gefs-forecast-10-day-0-25-degree-virtual (https://stac.dynamical.org/noaa-gefs-forecast-10-day-0-25-degree-virtual/collection.json) and map the fraction of ensemble_member with wind_gust_surface above 15 m/s over New England (latitude 41 to 45, longitude -73 to -69) at lead_time 48 hours from the latest init_time with data for the requested lead times at that lead. Exclude missing members from the denominator and report the member count and times used.",
+          "language": "text"
         }
       ]
     }

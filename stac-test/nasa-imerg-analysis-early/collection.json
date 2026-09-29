@@ -77,6 +77,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"nasa-imerg-analysis-early\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00:00\", latitude=0, longitude=0, method=\"nearest\")",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open nasa-imerg-analysis-early (https://stac.dynamical.org/nasa-imerg-analysis-early/collection.json) and sum precipitation_surface over the 24 hours up to its latest time with data across California (latitude 32 to 42, longitude -125 to -114) into millimetres, then report the grid cell with the most rain. Say which times you used. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
+          "language": "text"
         }
       ]
     }

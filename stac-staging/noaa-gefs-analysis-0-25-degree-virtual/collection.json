@@ -77,6 +77,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-gefs-analysis-0-25-degree-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-gefs-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gefs-analysis-0-25-degree-virtual (https://stac.dynamical.org/noaa-gefs-analysis-0-25-degree-virtual/collection.json) and make two maps of volumetric_soil_moisture_0_10cm and soil_temperature_0_10cm over Iowa (latitude 40.4 to 43.5, longitude -96.6 to -90.1) at the latest time with data in both fields. Label the units and say which time you used.",
+          "language": "text"
         }
       ]
     }

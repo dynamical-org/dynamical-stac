@@ -83,6 +83,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-ifs-ens-forecast-15-day-0-25-degree\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", latitude=0, longitude=0).max()",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open ecmwf-ifs-ens-forecast-15-day-0-25-degree (https://stac.dynamical.org/ecmwf-ifs-ens-forecast-15-day-0-25-degree/collection.json) and map the standard deviation across ensemble_member of temperature_2m over Europe (latitude 35 to 70, longitude -12 to 30) at lead_time 7 days of the latest init_time with data for the requested lead times. Say which init_time you used and where the spread is largest.",
+          "language": "text"
         }
       ]
     }

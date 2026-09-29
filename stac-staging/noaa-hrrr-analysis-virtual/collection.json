@@ -77,6 +77,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-hrrr-analysis-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-hrrr-bdp-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")\n\n# Variables with a vertical dimension live in the pressure_level and model_level groups\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_model = xr.open_zarr(session.store, group=\"model_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(pressure_level=500)",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-hrrr-analysis-virtual (https://stac.dynamical.org/noaa-hrrr-analysis-virtual/collection.json) and plot mass_density_8m (near-surface smoke) at the grid point nearest New York City (40.71, -74.01) hourly from 2023-06-06 12:00 UTC to 2023-06-08 12:00 UTC, converted to ug/m3. Say which times you used and when smoke peaks. Use the projected grid to locate the point and report missing hours.",
+          "language": "text"
         }
       ]
     }

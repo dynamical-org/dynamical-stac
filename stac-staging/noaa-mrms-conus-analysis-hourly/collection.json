@@ -77,6 +77,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-mrms-conus-analysis-hourly\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\")",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-mrms-conus-analysis-hourly (https://stac.dynamical.org/noaa-mrms-conus-analysis-hourly/collection.json) and, at the grid point nearest Asheville, NC (35.60, -82.55), total precipitation_surface and precipitation_radar_only_surface from 2024-09-26 00:00 UTC to 2024-09-28 00:00 UTC into millimetres for Hurricane Helene. Say which times you used and the two totals. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
+          "language": "text"
         }
       ]
     }

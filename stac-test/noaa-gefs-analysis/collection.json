@@ -77,6 +77,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-gefs-analysis\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\", latitude=0, longitude=0)",
           "language": "python"
+        },
+        {
+          "label": "Example prompt",
+          "code": "Fetch and follow the setup instructions at https://dynamical.org/prompt.md\n\nAfter setup, my task: open noaa-gefs-analysis (https://stac.dynamical.org/noaa-gefs-analysis/collection.json) and, at the grid point nearest Ulaanbaatar (47.9, 106.9), compare the mean temperature_2m of January 2000, January 2010 and January 2020. Say which times you used and how many time steps went into each mean. Treat these as three separate January comparisons, not a climate-trend estimate; report missing values.",
+          "language": "text"
         }
       ]
     }
