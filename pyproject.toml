@@ -5,7 +5,7 @@ description = "STAC catalog generation for dynamical.org"
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.43.67",
-    "gribberish==1.7.0",
+    "gribberish==1.8.0",
     "icechunk>=2.1.2",
     "packaging>=26.1",
     "pandas>=3.0.5",
@@ -20,7 +20,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
-    "ruff==0.16.8",
+    "ruff==0.16.9",
     "stac-check>=1.14.0",
 ]
 integration = [
