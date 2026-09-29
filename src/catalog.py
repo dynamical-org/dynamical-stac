@@ -405,6 +405,7 @@ class CatalogItem(BaseModel):
     model_id: str = Field(min_length=1)
     description_summary: str = Field(min_length=1)
     reformatter_url: str = Field(min_length=1)
+    example_request: str | None = Field(default=None, min_length=1)
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
     # Optional only while a dataset is unreleased: a staging item may have no
     # notebook written yet. Enforced non-empty for production items by
@@ -653,6 +654,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "dimensions time, latitude, and longitude."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/analysis/template_config.py",
+        example_request="Compare precipitation_surface with total_cloud_cover_atmosphere in two aligned time-series panels over the latest 24 hours with data at the grid point nearest New Orleans (29.95, -90.07). Label each panel with its units, report missing time steps, and report the times used.",
         examples=(
             _example(
                 "Temperature at a place and time",
@@ -675,6 +677,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "forward in time along the `lead_time` dimension."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/forecast/template_config.py",
+        example_request="At the grid point nearest Chicago (41.88, -87.63), compare temperature_2m from the latest available init_time and the run exactly 24 hours earlier over the first 72 hours of shared valid times with data in both runs. Plot both forecasts and their difference. Report the initialization and valid times used.",
         examples=(
             _example(
                 "Maximum temperature",
@@ -707,6 +710,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/analysis_virtual/template_config.py",
+        example_request="Make two regional maps of convective_available_potential_energy_surface and convective_inhibition_surface over Oklahoma (latitude 34.5 to 37.0, longitude -99.0 to -96.0) at the latest time with data in both fields. Label the units and report the time used.",
         examples=(
             _example(
                 "Temperature map",
@@ -744,6 +748,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gfs/forecast_virtual/template_config.py",
+        example_request="Map geopotential_height_0c_isotherm over the Sierra Nevada (latitude 37 to 40, longitude -121 to -118) at lead_time 48 hours from the latest init_time with data for the requested lead times at that lead. Report the minimum and maximum height in metres and report the initialization and valid time used.",
         examples=(
             _example(
                 "Temperature map",
@@ -776,6 +781,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "35 day forecast."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/common_gefs_template_config.py",
+        example_request="At the grid point nearest Chicago (41.88, -87.63), plot the 5th, 50th and 95th percentile across ensemble_member of temperature_2m for the full lead_time of the latest init_time with data for the requested lead times. Report the init_time used and the ensemble standard deviation at days 1, 14 and 35. Report missing members at each requested lead rather than silently treating an incomplete run as complete.",
         examples=(
             _example(
                 "Maximum ensemble temperature",
@@ -798,6 +804,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "dimensions time, latitude, and longitude."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/common_gefs_template_config.py",
+        example_request="At the grid point nearest Ulaanbaatar (47.9, 106.9), compare the mean temperature_2m of January 2000, January 2010 and January 2020. Report the times used and how many time steps went into each mean. Treat these as three separate January comparisons, not a climate-trend estimate; report missing values.",
         examples=(
             _example(
                 "Temperature at a place and time",
@@ -824,6 +831,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/analysis_0_25_degree_virtual/template_config.py",
+        example_request="Make two maps of volumetric_soil_moisture_0_10cm and soil_temperature_0_10cm over Iowa (latitude 40.4 to 43.5, longitude -96.6 to -90.1) at the latest time with data in both fields. Label the units and report the time used.",
         examples=(
             _example(
                 "Temperature map",
@@ -851,6 +859,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_10_day_0_25_degree_virtual/template_config.py",
+        example_request="Map the fraction of ensemble_member with wind_gust_surface above 15 m/s over New England (latitude 41 to 45, longitude -73 to -69) at lead_time 48 hours from the latest init_time with data for the requested lead times at that lead. Exclude missing members from the denominator and report the member count and times used.",
         examples=(
             _example(
                 "Ensemble mean temperature map",
@@ -881,6 +890,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_16_day_0_5_degree_virtual/template_config.py",
+        example_request="Draw a spaghetti plot of each ensemble_member's 5500 m contour of pressure_level/geopotential_height at pressure_level 500 hPa over North America (latitude 20 to 70, longitude -170 to -50) at lead_time 7 days of the latest init_time with data for the requested lead times. Report the init_time used. Open the pressure_level group and select the level, lead and region before loading; report how many members have that contour.",
         examples=(
             _example(
                 "Ensemble mean temperature map",
@@ -919,6 +929,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/gefs/forecast_35_day_0_5_degree_virtual/template_config.py",
+        example_request="Map the ensemble mean and the standard deviation across ensemble_member of five_wave_geopotential_height_500mb over the North Atlantic (latitude 30 to 65, longitude -80 to 0) at lead_time 28 days of the latest init_time with data for the requested lead times. Report the init_time used.",
         examples=(
             _example(
                 "Ensemble mean temperature map",
@@ -958,6 +969,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_18_hour_virtual/template_config.py",
+        example_request="Map composite_reflectivity over a 100 km square centred on Oklahoma City (35.47, -97.52) at lead_time 1, 3 and 6 hours from the latest init_time with data for the requested lead times at all three leads. Select the square using the projected grid, use a shared dBZ colour scale, and report the initialization and valid times used.",
         examples=(
             _example(
                 "Temperature map",
@@ -992,6 +1004,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "spatial reference to select geographic areas of interest."
         ),
         reformatter_url=REFORMATTERS_REPO,
+        example_request="Plot wind_gust_surface at the grid point nearest Denver (39.74, -104.99) for lead_time 0 to 48 hours from the latest init_time with data for the requested lead times through 48 hours. Use the projected grid to find the point; report its coordinates and the peak gust and valid time.",
         examples=(
             _example(
                 "Maximum temperature",
@@ -1024,6 +1037,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/forecast_48_hour_virtual/template_config.py",
+        example_request="Map the maximum over lead_time 1 to 12 hours of maximum_updraft_helicity_3000_0m across Oklahoma and Kansas (longitude -100 to -96, latitude 35 to 38) for the latest init_time with data for the requested lead times. Report the init_time used and the largest value. Select the region using the projected grid before loading.",
         examples=(
             _example(
                 "Temperature map",
@@ -1056,6 +1070,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "interest."
         ),
         reformatter_url=REFORMATTERS_REPO,
+        example_request="At the grid point nearest Houston (29.76, -95.37), sum precipitation_surface from 2017-08-25 00:00 UTC to 2017-08-31 00:00 UTC into total millimetres for Hurricane Harvey. Report the times used and the total. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
         examples=(
             _example(
                 "Temperature at a place and time",
@@ -1085,6 +1100,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/hrrr/analysis_virtual/template_config.py",
+        example_request="Plot mass_density_8m (near-surface smoke) at the grid point nearest New York City (40.71, -74.01) hourly from 2023-06-06 12:00 UTC to 2023-06-08 12:00 UTC, converted to ug/m3. Report the times used and when smoke peaks. Use the projected grid to locate the point and report missing hours.",
         examples=(
             _example(
                 "Temperature map",
@@ -1112,6 +1128,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "contiguous United States (CONUS)."
         ),
         reformatter_url=REFORMATTERS_REPO,
+        example_request="At the grid point nearest Asheville, NC (35.60, -82.55), total precipitation_surface and precipitation_radar_only_surface from 2024-09-26 00:00 UTC to 2024-09-28 00:00 UTC into millimetres for Hurricane Helene. Report the times used and the two totals. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
         examples=(
             _example(
                 "Precipitation at a place and time",
@@ -1135,6 +1152,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "from 0 to 360 hours (15 days) at a 6 hourly step."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_single/forecast/template_config.py",
+        example_request="Compute 10 m wind speed from wind_u_10m and wind_v_10m over the British Isles (latitude 50 to 60, longitude -12 to 2) valid 2025-01-24 12:00 UTC from the init_time 2025-01-21 00:00 UTC, for Storm Eowyn. Report the times used and the peak wind speed.",
         examples=(
             _example(
                 "Maximum temperature",
@@ -1174,6 +1192,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "gribberish>=1.5`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_single/forecast_virtual/template_config.py",
+        example_request="Map pressure_level/geopotential_height at pressure_level 500 hPa over western Europe (latitude 45 to 55, longitude -10 to 15) at lead_time 48 hours from the latest init_time with data for the requested lead times at that lead. Open the pressure_level group, select the level before loading, and report the initialization and valid time used.",
         examples=(
             _example(
                 "Temperature map",
@@ -1207,6 +1226,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "along the `lead_time` dimension."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_ens/forecast/template_config.py",
+        example_request="At the grid point nearest Kahului, Maui (20.89, -156.47), total precipitation_surface over the first 10 days of the init_time 2026-03-07 00:00 UTC for each ensemble_member, in millimetres, for the Kona Low. Report the init_time used and the smallest, median and largest member totals. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
         examples=(
             _example(
                 "Maximum ensemble temperature",
@@ -1234,6 +1254,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "initialization times only."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_15_day_0_25_degree/template_config.py",
+        example_request="Map the standard deviation across ensemble_member of temperature_2m over Europe (latitude 35 to 70, longitude -12 to 30) at lead_time 7 days of the latest init_time with data for the requested lead times. Report the init_time used and where the spread is largest.",
         examples=(
             _example(
                 "Maximum ensemble temperature",
@@ -1270,6 +1291,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "`init_time`."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_46_day_1_5_degree/template_config.py",
+        example_request="Plot the area mean sea_surface_temperature over the Nino 3.4 box (latitude -5 to 5, longitude -170 to -120) for each ensemble_member across the full lead_time of the latest init_time with data for the requested lead times, with the median and 10th to 90th percentile band. Report the init_time used. Weight the regional mean by grid-cell area and exclude missing ocean values; this is a temperature forecast, not an ENSO anomaly index.",
         examples=(
             _example(
                 "Maximum ensemble temperature",
@@ -1309,6 +1331,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "`init_time`."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_46_day_6_hourly_1_5_degree/template_config.py",
+        example_request="At the grid point nearest Sao Paulo (-23.55, -46.63), compute weekly total precipitation_surface for each ensemble_member over the first 42 days of the latest init_time with data for the requested lead times. Report the init_time used and the median and 10th to 90th percentile total for week 1 and week 6. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
         examples=(
             _example(
                 "Maximum ensemble temperature",
@@ -1408,6 +1431,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "the full length, 5 day forecast."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/dwd/icon_eu/forecast_5_day/template_config.py",
+        example_request="Map wind_gust_10m over southwest France and Iberia (latitude 40 to 52, longitude -10 to 10) at lead_time 62 hours of the init_time 2026-02-10 00:00 UTC, for Storm Nils. Report the times used and the peak gust and where.",
         examples=(
             _example(
                 "Maximum temperature",
@@ -1432,6 +1456,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "applications."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/nasa/imerg/template_config.py",
+        example_request="Sum precipitation_surface over the 24 hours up to its latest time with data across California (latitude 32 to 42, longitude -125 to -114) into millimetres, then report the grid cell with the most rain. Report the times used. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
         examples=(
             _example(
                 "Precipitation at a place and time",
@@ -1456,6 +1481,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "after observation time."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/nasa/imerg/template_config.py",
+        example_request="At the grid point nearest Mumbai (19.08, 72.88), compute daily total precipitation_surface for June and July 2024 and report the mean precipitation_quality_index_surface for that period. Report the times used and the wettest day. Convert the precipitation rate to millimetres using each sample\u2019s represented interval in seconds, accounting for interval boundaries; report missing intervals instead of treating them as zero.",
         examples=(
             _example(
                 "Precipitation at a place and time",
@@ -1527,6 +1553,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "48 hours."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/eccc/hrdps/forecast/template_config.py",
+        example_request="Compare the mean wind_speed_10m over the 48 hours of the latest init_time with data for the requested lead times for a box over Lake Erie (latitude 42.0 to 42.5, longitude -82.0 to -80.0) and a box on land just north (latitude 43.2 to 43.7, longitude -81.5 to -80.0), using the dataset's projected grid to select each box. Report the init_time used and both means.",
         examples=(
             _example(
                 "Temperature map at a time",

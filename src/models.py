@@ -622,6 +622,7 @@ class CollectionInput(BaseModel):
     description_details: str = Field(min_length=1)
     description_model: str = Field(min_length=1)
     catalog_url: str = STAC_CATALOG_URL
+    example_request: str | None = Field(default=None, min_length=1)
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
     # May be empty: staging-only datasets can be published before their
     # notebook exists, and test fixtures never get one, in which case the
@@ -737,6 +738,7 @@ class CollectionInput(BaseModel):
             description_details=item.description_details(chunking_table),
             description_model=model.description,
             catalog_url=item.catalog_url,
+            example_request=item.example_request,
             examples=item.examples,
             notebooks=item.notebooks,
         )
@@ -775,6 +777,8 @@ class CollectionInput(BaseModel):
         collection.extra_fields["description_summary"] = self.description_summary
         collection.extra_fields["description_details"] = self.description_details
         collection.extra_fields["description_model"] = self.description_model
+        if self.example_request is not None:
+            collection.extra_fields["dynamical:example_request"] = self.example_request
         # Each example carries two open-snippet variants (rendered as tabs on
         # dataset pages): the dynamical-catalog library and a library-free
         # pystac + icechunk-over-HTTPS equivalent that shares the operations.
