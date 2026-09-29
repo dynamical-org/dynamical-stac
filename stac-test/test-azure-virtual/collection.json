@@ -65,6 +65,11 @@
           "label": "pystac + icechunk",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-test.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"test-azure-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"az://dynamical-icechunk-azure-demo/test-azure-virtual/source/\": icechunk.azure_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].isel(time=0)",
           "language": "python"
+        },
+        {
+          "label": "Prompt",
+          "language": "text",
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: test-azure-virtual\nSTAC collection: https://stac-test.dynamical.org/test-azure-virtual/collection.json"
         }
       ]
     }
