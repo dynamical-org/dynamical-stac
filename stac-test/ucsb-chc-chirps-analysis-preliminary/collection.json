@@ -74,12 +74,12 @@
           "language": "python"
         },
         {
-          "label": "pystac + icechunk",
+          "label": "pystac",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ucsb-chc-chirps-analysis-preliminary\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nimport os\nos.environ[\"DYNAMICAL_STAC_CATALOG_URL\"] = \"https://stac-staging.dynamical.org/catalog.json\"\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2025-01-01\", latitude=-3, longitude=-60, method=\"nearest\")",
           "language": "python"
         },
         {
-          "label": "Prompt",
+          "label": "prompt",
           "language": "text",
           "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: ucsb-chc-chirps-analysis-preliminary\nSTAC collection: https://stac-staging.dynamical.org/ucsb-chc-chirps-analysis-preliminary/collection.json"
         }

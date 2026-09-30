@@ -74,12 +74,12 @@
           "language": "python"
         },
         {
-          "label": "pystac + icechunk",
+          "label": "pystac",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-gefs-forecast-35-day\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2025-01-01T00\", latitude=0, longitude=0).max()",
           "language": "python"
         },
         {
-          "label": "Prompt",
+          "label": "prompt",
           "language": "text",
           "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-gefs-forecast-35-day\nSTAC collection: https://stac.dynamical.org/noaa-gefs-forecast-35-day/collection.json"
         }

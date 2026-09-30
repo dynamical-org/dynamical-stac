@@ -66,7 +66,7 @@ STAC_CATALOG_URL = "https://stac.dynamical.org/catalog.json"
 
 # Labels for the two open-snippet variants rendered as tabs on dataset pages.
 _CATALOG_VARIANT_LABEL = "dynamical-catalog"
-_PYSTAC_VARIANT_LABEL = "pystac + icechunk"
+_PYSTAC_VARIANT_LABEL = "pystac"
 
 # Matches an authored dynamical-catalog open line, e.g.
 #   ds = dynamical_catalog.open("noaa-gfs-analysis", chunks=None)
@@ -804,7 +804,7 @@ class CollectionInput(BaseModel):
 
         collection.extra_fields["examples"][0]["variants"].append(
             {
-                "label": "Prompt",
+                "label": "prompt",
                 "language": "text",
                 "code": (
                     "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\n"

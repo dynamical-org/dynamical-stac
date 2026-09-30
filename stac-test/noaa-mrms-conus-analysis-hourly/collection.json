@@ -74,12 +74,12 @@
           "language": "python"
         },
         {
-          "label": "pystac + icechunk",
+          "label": "pystac",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-mrms-conus-analysis-hourly\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"precipitation_surface\"].sel(time=\"2026-01-01T00\", latitude=40, longitude=-90, method=\"nearest\")",
           "language": "python"
         },
         {
-          "label": "Prompt",
+          "label": "prompt",
           "language": "text",
           "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-mrms-conus-analysis-hourly\nSTAC collection: https://stac.dynamical.org/noaa-mrms-conus-analysis-hourly/collection.json"
         }

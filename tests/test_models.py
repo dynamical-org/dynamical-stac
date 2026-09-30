@@ -513,7 +513,7 @@ def test_pystac_example_uses_collection_catalog_url() -> None:
     url = "https://stac-staging.dynamical.org/catalog.json"
     collection = _valid_input(catalog_url=url).to_pystac_collection()
     variants = collection.extra_fields["examples"][0]["variants"]
-    code = next(v["code"] for v in variants if v["label"] == "pystac + icechunk")
+    code = next(v["code"] for v in variants if v["label"] == "pystac")
     assert f'catalog = pystac.Catalog.from_file("{url}")' in code
     assert "https://stac.dynamical.org/catalog.json" not in code
 
@@ -527,7 +527,7 @@ def test_onboarding_prompt_is_context_only(host: str) -> None:
     variants = collection.extra_fields["examples"][0]["variants"]
     assert [v["language"] for v in variants] == ["python", "python", "text"]
     prompt = variants[-1]
-    assert prompt["label"] == "Prompt"
+    assert prompt["label"] == "prompt"
     assert prompt["code"].splitlines() == [
         "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.",
         f"Data product: {collection.id}",
