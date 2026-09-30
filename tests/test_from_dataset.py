@@ -510,7 +510,7 @@ def test_gcs_icechunk_https_asset_uses_storage_googleapis_host() -> None:
 def test_gcs_pystac_example_authorizes_anonymous_gcs_credentials() -> None:
     examples = _gcs_collection_dict()["examples"]
     pystac_variant = examples[0]["variants"][1]  # type: ignore[index]
-    assert pystac_variant["label"] == "pystac + icechunk"
+    assert pystac_variant["label"] == "STAC"
     assert (
         f'"{_GCS_SOURCE_PREFIX}": icechunk.gcs_credentials(anonymous=True)'
         in pystac_variant["code"]
@@ -657,7 +657,7 @@ def test_azure_icechunk_https_asset_uses_blob_core_windows_host() -> None:
 def test_azure_pystac_example_authorizes_anonymous_azure_credentials() -> None:
     examples = _azure_collection_dict()["examples"]
     pystac_variant = examples[0]["variants"][1]  # type: ignore[index]
-    assert pystac_variant["label"] == "pystac + icechunk"
+    assert pystac_variant["label"] == "STAC"
     assert (
         f'"{_AZ_SOURCE_PREFIX}": icechunk.azure_anonymous_credentials()'
         in pystac_variant["code"]

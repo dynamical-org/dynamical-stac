@@ -80,7 +80,7 @@
           "language": "python"
         },
         {
-          "label": "pystac + icechunk",
+          "label": "STAC",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"eccc-hrdps-forecast\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-08-01T00\", lead_time=\"12h\")",
           "language": "python"
         },
