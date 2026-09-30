@@ -518,25 +518,28 @@ def test_pystac_example_uses_collection_catalog_url() -> None:
     assert "https://stac.dynamical.org/catalog.json" not in code
 
 
-def test_example_request_is_collection_content_not_a_code_variant() -> None:
-    text = 'Plot temperature <&> "quoted".\nReport the maximum.'
-    collection = _valid_input(example_request=text).to_pystac_collection()
-    assert collection.extra_fields["dynamical:example_request"] == text
-    variants = collection.extra_fields["examples"][0]["variants"]
-    assert len(variants) == 2
-    assert all(v["language"] == "python" for v in variants)
-
-
-def test_missing_example_request_is_omitted() -> None:
-    collection = _valid_input().to_pystac_collection()
+@pytest.mark.parametrize("host", ["stac", "stac-staging", "stac-test"])
+def test_onboarding_prompt_is_context_only(host: str) -> None:
+    collection = _valid_input(
+        catalog_url=f"https://{host}.dynamical.org/catalog.json"
+    ).to_pystac_collection()
     assert "dynamical:example_request" not in collection.extra_fields
+    variants = collection.extra_fields["examples"][0]["variants"]
+    assert [v["language"] for v in variants] == ["python", "python", "text"]
+    prompt = variants[-1]
+    assert prompt["label"] == "Prompt"
+    assert prompt["code"].splitlines() == [
+        "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.",
+        f"Data product: {collection.id}",
+        f"STAC collection: https://{host}.dynamical.org/{collection.id}/collection.json",
+    ]
 
 
-def test_production_requests_contain_only_product_specific_content() -> None:
-    items = [item for item in CATALOG_ITEMS if "production" in item.environments]
-    assert len(items) == 26
-    for item in items:
-        assert item.example_request
-        assert "https://" not in item.example_request
-        assert "After setup" not in item.example_request
-        assert "Fetch and follow" not in item.example_request
+def test_only_first_example_has_onboarding_prompt() -> None:
+    inputs = _valid_input()
+    collection = inputs.model_copy(
+        update={"examples": inputs.examples * 2}
+    ).to_pystac_collection()
+    examples = collection.extra_fields["examples"]
+    assert len(examples[0]["variants"]) == 3
+    assert len(examples[1]["variants"]) == 2
