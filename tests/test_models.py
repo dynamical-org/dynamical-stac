@@ -527,7 +527,7 @@ def test_onboarding_prompt_is_context_only(host: str) -> None:
     variants = collection.extra_fields["examples"][0]["variants"]
     assert [v["language"] for v in variants] == ["python", "python", "text"]
     prompt = variants[-1]
-    assert prompt["label"] == "Prompt"
+    assert prompt["label"] == "prompt"
     assert prompt["code"].splitlines() == [
         "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.",
         f"Data product: {collection.id}",

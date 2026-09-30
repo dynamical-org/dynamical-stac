@@ -804,7 +804,7 @@ class CollectionInput(BaseModel):
 
         collection.extra_fields["examples"][0]["variants"].append(
             {
-                "label": "Prompt",
+                "label": "prompt",
                 "language": "text",
                 "code": (
                     "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\n"

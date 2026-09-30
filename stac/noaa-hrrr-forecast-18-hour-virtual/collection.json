@@ -79,7 +79,7 @@
           "language": "python"
         },
         {
-          "label": "Prompt",
+          "label": "prompt",
           "language": "text",
           "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-hrrr-forecast-18-hour-virtual\nSTAC collection: https://stac.dynamical.org/noaa-hrrr-forecast-18-hour-virtual/collection.json"
         }
