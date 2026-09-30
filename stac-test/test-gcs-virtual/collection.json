@@ -62,7 +62,7 @@
           "language": "python"
         },
         {
-          "label": "STAC",
+          "label": "pystac",
           "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-test.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"test-gcs-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"gs://dynamical-icechunk-gcs-demo/test-gcs-virtual/source/\": icechunk.gcs_credentials(anonymous=True)})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].isel(time=0)",
           "language": "python"
         },

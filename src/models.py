@@ -66,7 +66,7 @@ STAC_CATALOG_URL = "https://stac.dynamical.org/catalog.json"
 
 # Labels for the two open-snippet variants rendered as tabs on dataset pages.
 _CATALOG_VARIANT_LABEL = "dynamical-catalog"
-_PYSTAC_VARIANT_LABEL = "STAC"
+_PYSTAC_VARIANT_LABEL = "pystac"
 
 # Matches an authored dynamical-catalog open line, e.g.
 #   ds = dynamical_catalog.open("noaa-gfs-analysis", chunks=None)
