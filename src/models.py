@@ -428,7 +428,7 @@ def _coord_length(ds: xr.Dataset, dim: str, n: int) -> str | None:
     """Human-readable span covered by ``n`` consecutive cells along ``dim``.
 
     Returns ``None`` for dimensions without a physical extent (e.g. integer
-    ``ensemble_member``). The span is measured from the actual coordinate
+    ``ensemble_member`` or string ``statistic``). The span is measured from the actual coordinate
     values, so non-uniform axes (e.g. ECMWF IFS ENS ``lead_time``, which
     switches from a 3- to a 6-hourly step) are handled correctly. When ``n``
     reaches or exceeds the dimension size the chunk spans the whole dimension.
@@ -438,7 +438,8 @@ def _coord_length(ds: xr.Dataset, dim: str, n: int) -> str | None:
     coord = ds[dim]
     values = coord.values
     size = values.size
-    if size < 2:
+    kind = values.dtype.kind
+    if size < 2 or kind not in ("M", "m", "f"):
         return None
     if n < size:
         span = values[n] - values[0]
@@ -451,7 +452,6 @@ def _coord_length(ds: xr.Dataset, dim: str, n: int) -> str | None:
         approx = False
     prefix = "~" if approx else ""
 
-    kind = values.dtype.kind
     if kind in ("M", "m"):  # datetime64 / timedelta64
         return prefix + _human_timedelta(pd.Timedelta(span))
     if kind == "f":

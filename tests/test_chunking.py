@@ -124,6 +124,13 @@ def test_coord_length_none_for_dimensionless_axis() -> None:
     assert _coord_length(ds, "ensemble_member", 3) is None
 
 
+@pytest.mark.parametrize("n", [1, 6])
+def test_coord_length_none_for_string_axis(n: int) -> None:
+    labels = np.array(["mean", "p10", "p25", "p50", "p75", "p90"], dtype=object)
+    ds = xr.Dataset(coords={"statistic": xr.DataArray(labels, dims="statistic")})
+    assert _coord_length(ds, "statistic", n) is None
+
+
 def test_build_chunking_computes_grids_and_sizes() -> None:
     ds = _chunked_dataset(chunks=(1, 2, 2), shards=(2, 4, 4))
     chunking = _build_chunking(ds)
