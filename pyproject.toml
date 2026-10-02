@@ -31,6 +31,10 @@ integration = [
     "dynamical-catalog>=1.0.0",
 ]
 
+deploy = [
+    "modal>=1.5.5",
+]
+
 [tool.pytest.ini_options]
 markers = [
     "integration: slow network-dependent integration tests (reads from public R2 buckets)",
