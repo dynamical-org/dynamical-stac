@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import sys
 
 import boto3
 
@@ -36,3 +37,17 @@ def upload(stac_dir: pathlib.Path) -> None:
             ExtraArgs={"ContentType": "application/json"},
         )
         print(f"uploaded {key}")  # noqa: T201
+
+
+def main(argv: list[str]) -> int:
+    match argv:
+        case [stac_dir]:
+            upload(pathlib.Path(stac_dir))
+            return 0
+        case _:
+            print("usage: upload.py DIR")  # noqa: T201
+            return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
