@@ -1278,7 +1278,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "\n"
                 "# Variables with a vertical dimension live in the pressure_level group\n"
                 'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree", group="pressure_level", chunks=None)\n'
-                'ds_pressure["geopotential_height"].sel(init_time="2026-08-01T00", lead_time="10d", pressure_level=500).std("ensemble_member")',
+                'ds_pressure["geopotential_height"].sel(init_time="2026-08-01T00", lead_time="10D", pressure_level=500).std("ensemble_member")',
             ),
         ),
         notebooks=(_ECMWF_IFS_ENS_46_DAY_NOTEBOOK,),
