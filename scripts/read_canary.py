@@ -65,7 +65,7 @@ _MAX_RUNTIME_MINUTES = _TIMEOUT_SECONDS // 60 + 2
 # still be queued when flush gives up and Modal reclaims the container, and the
 # run then reads as hung or missed even though every read passed. The SDK does
 # not retry a rejected envelope, so this covers a slow edge, not a failing one.
-# 15 s matches reformatters' cron monitoring and is well inside the schedule.
+# 15 s is well inside the ten-minute schedule.
 _FLUSH_TIMEOUT_SECONDS = 15
 
 
@@ -230,7 +230,6 @@ def read_canary() -> None:
     sentry_sdk.init(
         dsn=os.environ.get("SENTRY_DSN"),
         environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
-        # Match the reformatters transport settings across quiet read periods.
         keep_alive=True,
         integrations=[LoggingIntegration(event_level=None, capture_sentry_logs=True)],
     )
@@ -245,13 +244,8 @@ def read_canary() -> None:
     }
     function_call_id = modal.current_function_call_id()
     check_in_id = _check_in_id(function_call_id)
-    # Modal restarts preempted inputs under the same function-call ID. Like
-    # reformatters' job-derived ID, this lets the retry finish the original
-    # check-in. Sentry treats repeated in_progress as a heartbeat: the restart
-    # gets the same max_runtime window, but cannot reopen a terminal check-in.
-    # The first terminal status wins, including ok; a later attempt's failures
-    # are still captured as exceptions even if its error check-in is rejected.
-    # Do not send periodic heartbeats while reads run; hangs must time out.
+    # Preemption retries share this ID. Repeated starts refresh the timeout;
+    # the first terminal status wins. capture_exception still records retry failures.
     sentry_sdk.crons.capture_checkin(
         monitor_slug="read-canary",
         check_in_id=check_in_id,
@@ -279,8 +273,7 @@ def read_canary() -> None:
         flush_started = time.monotonic()
         sentry_sdk.flush(timeout=_FLUSH_TIMEOUT_SECONDS)
         log.info(
-            "%s check-in %s: flush returned after %.1fs (budget %ds); "
-            "delivery not confirmed",
+            "%s check-in %s: flush returned after %.1fs (budget %ds)",
             status,
             check_in_id,
             time.monotonic() - flush_started,

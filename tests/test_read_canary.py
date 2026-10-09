@@ -294,7 +294,7 @@ def test_success_checks_in_ok_and_flushes_with_budget(
         f"(slowest collection-3 1.5s); queueing ok check-in {_CHECK_IN_ID}" in summary
     )
     assert re.fullmatch(
-        rf"ok check-in {_CHECK_IN_ID}: flush returned after \d+\.\ds \(budget 15s\); delivery not confirmed",
+        rf"ok check-in {_CHECK_IN_ID}: flush returned after \d+\.\ds \(budget 15s\)",
         messages[-1],
     )
     assert len(messages) == 4 + 2 * len(_CATALOG)
