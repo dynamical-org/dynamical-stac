@@ -7,6 +7,7 @@ full icechunk -> S3 -> zarr decode path for the whole catalog, not just one
 dataset. The run sends an `in_progress` Sentry cron check-in on start and
 closes it `ok` or `error`; a hung or killed run is caught when it exceeds
 `max_runtime` rather than waiting for the next scheduled miss.
+Preemption restarts share the original invocation's check-in ID.
 
 Every run also logs a start line and a one-line summary to stdout, so
 `modal app logs dynamical-read-canary` is evidence of whether and how the
@@ -36,19 +37,20 @@ import importlib.metadata
 import logging
 import sys
 import time
+import uuid
 
 import modal
 
 image = modal.Image.debian_slim(python_version="3.12").pip_install(
     "dynamical-catalog>=1.0.0",
-    "sentry-sdk>=2.20",
+    "sentry-sdk>=2.68.0",
 )
 
 app = modal.App("dynamical-read-canary")
 
 # Floor on the catalog size, so a truncated/empty catalog fails loudly instead
 # of passing vacuously — with no collections the read loop checks nothing and
-# would otherwise report `ok`. The live catalog has ~12; this is a conservative
+# would otherwise report `ok`. The live catalog has 26; this is a conservative
 # floor well below that.
 MIN_COLLECTIONS = 6
 
@@ -70,7 +72,7 @@ _FLUSH_TIMEOUT_SECONDS = 15
 _STDOUT_HANDLER = "read_canary.stdout"
 
 
-def _logger() -> logging.Logger:
+def _logger(name: str = "read_canary") -> logging.Logger:
     """The canary's stdout logger, wired once per container.
 
     Modal captures stdout; python's root logger only emits WARNING and up, so
@@ -79,9 +81,9 @@ def _logger() -> logging.Logger:
     handler on this logger cannot suppress it. Propagation is off so a root
     handler (a library calling basicConfig, say) cannot print every line twice;
     sentry-sdk's logging integration hooks the logger itself, not the root, so
-    with `enable_logs=True` it still forwards a copy as Sentry logs.
+    with `capture_sentry_logs=True` it still forwards a copy as Sentry logs.
     """
-    log = logging.getLogger("read_canary")
+    log = logging.getLogger(name)
     log.setLevel(logging.INFO)
     log.propagate = False
     if not any(handler.name == _STDOUT_HANDLER for handler in log.handlers):
@@ -111,6 +113,16 @@ def _runtime_versions() -> str:
         f"{name} {_version(name)}"
         for name in ("dynamical-catalog", "icechunk", "zarr", "sentry-sdk")
     )
+
+
+def _check_in_id(function_call_id: str | None) -> str:
+    """Reuse a check-in across preemptions, but never across scheduled calls."""
+    if function_call_id is None:
+        # Local calls have no Modal invocation identity and must not collide.
+        return uuid.uuid4().hex
+    return uuid.uuid5(
+        uuid.NAMESPACE_URL, f"dynamical-read-canary:{function_call_id}"
+    ).hex
 
 
 def _check_collection(collection_id: str) -> float:
@@ -144,8 +156,27 @@ def _read_all(collection_ids: list[str]) -> dict[str, float]:
 
     errors: list[str] = []
     durations: dict[str, float] = {}
+    log = _logger("read_canary.collections")
+
+    def read_collection(collection_id: str) -> float:
+        # Log inside the worker, not when submitting: queued reads have not
+        # started yet. A start without a result identifies an unfinished read.
+        started = time.monotonic()
+        log.info("collection %s started", collection_id)
+        try:
+            duration = _check_collection(collection_id)
+        except Exception:
+            log.exception(
+                "collection %s failed after %.1fs",
+                collection_id,
+                time.monotonic() - started,
+            )
+            raise
+        log.info("collection %s ok in %.1fs", collection_id, duration)
+        return duration
+
     with ThreadPoolExecutor(max_workers=8) as pool:
-        futures = {pool.submit(_check_collection, cid): cid for cid in collection_ids}
+        futures = {pool.submit(read_collection, cid): cid for cid in collection_ids}
         for future in as_completed(futures):
             collection_id = futures[future]
             try:
@@ -181,7 +212,16 @@ def read_canary() -> None:
     import dynamical_catalog  # noqa: PLC0415
     import sentry_sdk  # noqa: PLC0415
     import sentry_sdk.crons  # noqa: PLC0415
-    from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: PLC0415
+    from sentry_sdk.integrations.logging import (  # noqa: PLC0415
+        LoggingIntegration,
+        ignore_logger,
+        ignore_logger_for_sentry_logs,
+    )
+
+    # Detailed progress stays in Modal; the summary and captured exception
+    # still reach Sentry without adding two Sentry logs per collection per run.
+    ignore_logger("read_canary.collections")
+    ignore_logger_for_sentry_logs("read_canary.collections")
 
     # No-op when SENTRY_DSN is unset (e.g. the secret isn't attached yet).
     # `event_level=None`: the failure line below is logged at ERROR, and the
@@ -190,8 +230,9 @@ def read_canary() -> None:
     sentry_sdk.init(
         dsn=os.environ.get("SENTRY_DSN"),
         environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
-        enable_logs=True,
-        integrations=[LoggingIntegration(event_level=None)],
+        # Match the reformatters transport settings across quiet read periods.
+        keep_alive=True,
+        integrations=[LoggingIntegration(event_level=None, capture_sentry_logs=True)],
     )
     monitor_config = {
         # Must match the `modal.Period` schedule above.
@@ -202,10 +243,26 @@ def read_canary() -> None:
         "failure_issue_threshold": 1,
         "recovery_threshold": 1,
     }
-    check_in_id = sentry_sdk.crons.capture_checkin(
-        monitor_slug="read-canary", status="in_progress", monitor_config=monitor_config
+    function_call_id = modal.current_function_call_id()
+    check_in_id = _check_in_id(function_call_id)
+    # Modal restarts preempted inputs under the same function-call ID. Like
+    # reformatters' job-derived ID, this lets the retry finish the original
+    # check-in. Sentry treats repeated in_progress as a heartbeat: the restart
+    # gets the same max_runtime window, but cannot reopen a terminal check-in.
+    # The first terminal status wins, including ok; a later attempt's failures
+    # are still captured as exceptions even if its error check-in is rejected.
+    # Do not send periodic heartbeats while reads run; hangs must time out.
+    sentry_sdk.crons.capture_checkin(
+        monitor_slug="read-canary",
+        check_in_id=check_in_id,
+        status="in_progress",
+        monitor_config=monitor_config,
     )
-    log.info("in_progress check-in %s queued", check_in_id)
+    log.info(
+        "in_progress check-in %s queued; Modal function call %s",
+        check_in_id,
+        function_call_id,
+    )
 
     def _finish(status: Literal["ok", "error"]) -> None:
         sentry_sdk.crons.capture_checkin(
@@ -216,14 +273,14 @@ def read_canary() -> None:
         )
         # Modal may reclaim the container the moment this function returns; an
         # unflushed terminal check-in is lost and reads as a hung run. The
-        # elapsed time is logged as evidence: a flush that returned early left
-        # nothing queued, one that ran the whole budget did not drain (which
-        # envelope was still pending, and whether it was later delivered, it
-        # cannot say).
+        # elapsed time is diagnostic only: even a fast flush can follow a
+        # dropped envelope. Neither its return value nor its duration confirms
+        # that Sentry accepted or processed this check-in.
         flush_started = time.monotonic()
         sentry_sdk.flush(timeout=_FLUSH_TIMEOUT_SECONDS)
         log.info(
-            "%s check-in %s: flush returned after %.1fs (budget %ds)",
+            "%s check-in %s: flush returned after %.1fs (budget %ds); "
+            "delivery not confirmed",
             status,
             check_in_id,
             time.monotonic() - flush_started,

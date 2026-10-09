@@ -16,8 +16,10 @@ import math
 import pathlib
 import re
 import sys
+import threading
 import time
 import types
+import uuid
 from collections.abc import Callable, Iterator
 from typing import Any
 
@@ -30,6 +32,10 @@ _SCRIPT = pathlib.Path(__file__).parent.parent / "scripts" / "read_canary.py"
 _CATALOG = [f"collection-{i}" for i in range(8)]
 
 _LOGGER = "read_canary"
+_FUNCTION_CALL_ID = "fc-test-invocation"
+_CHECK_IN_ID = uuid.uuid5(
+    uuid.NAMESPACE_URL, f"dynamical-read-canary:{_FUNCTION_CALL_ID}"
+).hex
 
 
 class _Recorder:
@@ -98,6 +104,7 @@ def _stub_modal() -> types.ModuleType:
     modal.App = _App  # type: ignore[attr-defined]
     modal.Secret = _Secret  # type: ignore[attr-defined]
     modal.Period = lambda **_: object()  # type: ignore[attr-defined]
+    modal.current_function_call_id = lambda: _FUNCTION_CALL_ID  # type: ignore[attr-defined]
     return modal
 
 
@@ -136,7 +143,7 @@ def _stub_sentry(recorder: _Recorder) -> dict[str, types.ModuleType]:
                 },
             )
         )
-        return "check-in-id"
+        return check_in_id or uuid.uuid4().hex
 
     sentry_sdk.init = init  # type: ignore[attr-defined]
     sentry_sdk.capture_exception = capture_exception  # type: ignore[attr-defined]
@@ -146,6 +153,14 @@ def _stub_sentry(recorder: _Recorder) -> dict[str, types.ModuleType]:
     crons.capture_checkin = capture_checkin  # type: ignore[attr-defined]
     integrations.logging = integrations_logging  # type: ignore[attr-defined]
     integrations_logging.LoggingIntegration = _LoggingIntegration  # type: ignore[attr-defined]
+    integrations_logging.ignore_logger = (  # type: ignore[attr-defined]
+        lambda name: recorder.calls.append(("ignore_logger", {"name": name}))
+    )
+    integrations_logging.ignore_logger_for_sentry_logs = (  # type: ignore[attr-defined]
+        lambda name: recorder.calls.append(
+            ("ignore_logger_for_sentry_logs", {"name": name})
+        )
+    )
     return {
         "sentry_sdk": sentry_sdk,
         "sentry_sdk.crons": crons,
@@ -182,22 +197,21 @@ def canary_logger() -> Iterator[logging.Logger]:
     time, so without this a handler bound to a closed pytest capture stream
     would outlive the test that created it.
     """
-    log = logging.getLogger(_LOGGER)
-    saved_handlers, saved_level, saved_propagate = (
-        list(log.handlers),
-        log.level,
-        log.propagate,
-    )
-    for handler in saved_handlers:
-        log.removeHandler(handler)
-    yield log
-    for handler in list(log.handlers):
-        log.removeHandler(handler)
-        handler.close()
-    for handler in saved_handlers:
-        log.addHandler(handler)
-    log.setLevel(saved_level)
-    log.propagate = saved_propagate
+    saved = []
+    for name in (_LOGGER, f"{_LOGGER}.collections"):
+        log = logging.getLogger(name)
+        saved.append((log, list(log.handlers), log.level, log.propagate))
+        for handler in list(log.handlers):
+            log.removeHandler(handler)
+    yield logging.getLogger(_LOGGER)
+    for log, handlers, level, propagate in saved:
+        for handler in list(log.handlers):
+            log.removeHandler(handler)
+            handler.close()
+        for handler in handlers:
+            log.addHandler(handler)
+        log.setLevel(level)
+        log.propagate = propagate
 
 
 @pytest.fixture
@@ -211,6 +225,7 @@ def load_canary(
             recorder.calls.append(("log", {"message": record.getMessage()}))
 
     canary_logger.addHandler(_LogRecorder())
+    logging.getLogger(f"{_LOGGER}.collections").addHandler(_LogRecorder())
 
     def _version(name: str) -> str:
         if name == "zarr":
@@ -270,16 +285,23 @@ def test_success_checks_in_ok_and_flushes_with_budget(
         "read canary started; dynamical-catalog dynamical-catalog-v, "
         "icechunk icechunk-v, zarr unknown, sentry-sdk sentry-sdk-v"
     )
-    assert messages[1] == "in_progress check-in check-in-id queued"
-    assert messages[2].startswith("read canary ok: 8 collections read in ")
+    assert messages[1] == (
+        f"in_progress check-in {_CHECK_IN_ID} queued; Modal function call {_FUNCTION_CALL_ID}"
+    )
+    summary = next(m for m in messages if m.startswith("read canary ok:"))
+    assert summary.startswith("read canary ok: 8 collections read in ")
     assert (
-        "(slowest collection-3 1.5s); queueing ok check-in check-in-id" in messages[2]
+        f"(slowest collection-3 1.5s); queueing ok check-in {_CHECK_IN_ID}" in summary
     )
     assert re.fullmatch(
-        r"ok check-in check-in-id: flush returned after \d+\.\ds \(budget 15s\)",
-        messages[3],
+        rf"ok check-in {_CHECK_IN_ID}: flush returned after \d+\.\ds \(budget 15s\); delivery not confirmed",
+        messages[-1],
     )
-    assert len(messages) == 4
+    assert len(messages) == 4 + 2 * len(_CATALOG)
+    for cid in _CATALOG:
+        assert recorder.index_of_log(
+            f"collection {cid} started"
+        ) < recorder.index_of_log(f"collection {cid} ok in")
     # Ordering is the point: the start line before Sentry is touched, and the
     # summary (evidence for Modal's logs) before the terminal check-in, so a
     # lost or hung flush cannot erase it.
@@ -324,10 +346,15 @@ def test_sentry_logging_integration_does_not_double_report_failures(
     canary.read_canary()
 
     ((_, init_kwargs),) = [c for c in recorder.calls if c[0] == "init"]
-    assert init_kwargs["enable_logs"] is True
+    assert init_kwargs["keep_alive"] is True
     (integration,) = init_kwargs["integrations"]
     assert isinstance(integration, _LoggingIntegration)
-    assert integration.kwargs == {"event_level": None}
+    assert integration.kwargs == {"event_level": None, "capture_sentry_logs": True}
+    assert ("ignore_logger", {"name": "read_canary.collections"}) in recorder.calls
+    assert (
+        "ignore_logger_for_sentry_logs",
+        {"name": "read_canary.collections"},
+    ) in recorder.calls
 
 
 def test_log_lines_reach_stdout_without_root_logging_config(
@@ -369,11 +396,72 @@ def test_terminal_checkin_reuses_in_progress_id_and_config(
 
     checkins = [kw for name, kw in recorder.calls if name == "capture_checkin"]
     assert checkins[0]["monitor_slug"] == "read-canary"
-    assert checkins[1]["check_in_id"] == "check-in-id"
+    assert checkins[0]["check_in_id"] == checkins[1]["check_in_id"] == _CHECK_IN_ID
     assert checkins[0]["monitor_config"] == checkins[1]["monitor_config"]
     config = checkins[0]["monitor_config"]
     assert config["schedule"] == {"type": "interval", "value": 10, "unit": "minute"}
     assert config["max_runtime"] == canary._TIMEOUT_SECONDS // 60 + 2
+    assert config["failure_issue_threshold"] == 1
+    assert config["recovery_threshold"] == 1
+    assert canary._TIMEOUT_SECONDS == 600
+
+
+def test_preemption_restart_reuses_id_but_next_invocation_does_not(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+
+    def preempted(_cid: str) -> float:
+        # Model Modal's interrupt as a BaseException; ordinary errors differ.
+        raise KeyboardInterrupt("container preempted")
+
+    monkeypatch.setattr(canary, "_check_collection", preempted)
+    with pytest.raises(KeyboardInterrupt, match="container preempted"):
+        canary.read_canary()
+    assert recorder.checkins() == ["in_progress"]
+
+    # A new container imports the module anew; no in-memory state can be used.
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_check_collection", lambda _cid: 0.1)
+    canary.read_canary()
+    monkeypatch.setattr(
+        sys.modules["modal"], "current_function_call_id", lambda: "fc-next-invocation"
+    )
+    canary.read_canary()
+    checkins = [kw for name, kw in recorder.calls if name == "capture_checkin"]
+    assert [c["status"] for c in checkins] == [
+        "in_progress",
+        "in_progress",
+        "ok",
+        "in_progress",
+        "ok",
+    ]
+    assert {c["check_in_id"] for c in checkins[:3]} == {_CHECK_IN_ID}
+    next_id = checkins[3]["check_in_id"]
+    assert next_id == checkins[4]["check_in_id"]
+    assert next_id != _CHECK_IN_ID
+    assert uuid.UUID(next_id).version == 5
+
+
+def test_local_calls_without_modal_identity_have_distinct_ids(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(sys.modules["modal"], "current_function_call_id", lambda: None)
+    monkeypatch.setattr(canary, "_check_collection", lambda _cid: 0.1)
+    canary.read_canary()
+    canary.read_canary()
+    ids = [
+        kw["check_in_id"] for name, kw in recorder.calls if name == "capture_checkin"
+    ]
+    assert ids[0] == ids[1]
+    assert ids[2] == ids[3]
+    assert ids[0] != ids[2]
+    assert all(uuid.UUID(cid).version == 4 for cid in ids)
 
 
 def test_read_failure_captures_error_checkin_and_raises(
@@ -401,10 +489,18 @@ def test_read_failure_captures_error_checkin_and_raises(
     (captured,) = recorder.exceptions()
     assert captured is excinfo.value  # captured as raised, so it carries a traceback
     assert "collection-5: ValueError('collection-5.var is inf')" in str(captured)
-    failure = recorder.messages()[2]
+    failure = next(
+        m for m in recorder.messages() if m.startswith("read canary failed after")
+    )
     assert failure.startswith("read canary failed after ")
-    assert "; queueing error check-in check-in-id: " in failure
+    assert f"; queueing error check-in {_CHECK_IN_ID}: " in failure
     assert "collection-5" in failure
+    assert recorder.index_of_log(
+        "collection collection-5 started"
+    ) < recorder.index_of_log("collection collection-5 failed after")
+    assert not any(
+        m.startswith("collection collection-5 ok") for m in recorder.messages()
+    )
     assert recorder.index_of_log("read canary failed") < recorder.index_of(
         "capture_checkin", status="error"
     )
@@ -436,6 +532,48 @@ def test_catalog_load_failure_closes_checkin_as_error(
     assert [f["timeout"] for f in recorder.flushes()] == [15]
     (captured,) = recorder.exceptions()
     assert isinstance(captured, ConnectionError)
+
+
+def test_progress_is_visible_while_another_collection_is_still_reading(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
+    canary = load_canary(_CATALOG)
+    reading = threading.Event()
+    release = threading.Event()
+    failed = threading.Event()
+
+    def fake_check(collection_id: str) -> float:
+        if collection_id == "slow":
+            reading.set()
+            assert release.wait(timeout=5)
+            return 0.1
+        assert reading.wait(timeout=5)
+        raise ValueError("broken store")
+
+    class _FailureSignal(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            if record.getMessage().startswith("collection broken failed"):
+                failed.set()
+
+    monkeypatch.setattr(canary, "_check_collection", fake_check)
+    logging.getLogger(f"{_LOGGER}.collections").addHandler(_FailureSignal())
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        result = executor.submit(canary._read_all, ["slow", "broken"])
+        try:
+            assert failed.wait(timeout=5)
+            assert "collection slow started" in recorder.messages()
+            assert not any(
+                m.startswith("collection slow ok") for m in recorder.messages()
+            )
+            assert not result.done()
+        finally:
+            release.set()
+        with pytest.raises(RuntimeError, match="broken store"):
+            result.result(timeout=5)
 
 
 def test_short_catalog_fails_before_reading(
