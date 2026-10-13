@@ -14,7 +14,7 @@ import icechunk
 import pytest
 
 import generate
-from catalog import CatalogItem, DatasetExample, DatasetNotebook
+from catalog import CatalogItem, DatasetExample, DatasetNotebook, UpstreamSource
 
 _S3_ID = "noaa-gfs-analysis"
 _GCS_ID = "test-gcs-virtual"
@@ -46,6 +46,7 @@ def _s3_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=virtual_prefixes,
         model_id="noaa-gfs",
+        source=UpstreamSource(href="https://example.com/source", title="Source"),  # type: ignore[arg-type]
         notebooks=(DatasetNotebook(slug=_S3_ID, title="Quickstart"),),
         **_ITEM_KWARGS,
     )
@@ -80,6 +81,7 @@ def _https_item(virtual_prefixes: tuple[str, ...] = ()) -> CatalogItem:
         icechunk_href=_HTTPS_HREF,
         virtual_chunk_container_prefixes=virtual_prefixes,
         model_id="google-weathernext2",
+        source=UpstreamSource(href="https://example.com/source", title="Source"),  # type: ignore[arg-type]
         environments=["staging", "test"],
         **_ITEM_KWARGS,
     )

@@ -29,6 +29,12 @@
       "title": "Validation report"
     },
     {
+      "rel": "via",
+      "href": "https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGHHL_07/summary",
+      "type": "text/html",
+      "title": "GPM IMERG Late Run (GPM_3IMERGHHL) at NASA GES DISC"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/nasa-imerg-analysis-late.ipynb",
       "type": "application/x-ipynb+json",
@@ -226,6 +232,23 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "NASA",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://gpm.nasa.gov/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Global"

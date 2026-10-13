@@ -29,6 +29,12 @@
       "title": "Validation report"
     },
     {
+      "rel": "via",
+      "href": "https://www.dwd.de/EN/ourservices/opendata/opendata.html",
+      "type": "text/html",
+      "title": "DWD Open Data"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day.ipynb",
       "type": "application/x-ipynb+json",
@@ -678,6 +684,23 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "Deutscher Wetterdienst (DWD)",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.dwd.de/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Europe"

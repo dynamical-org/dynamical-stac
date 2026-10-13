@@ -29,6 +29,12 @@
       "title": "Validation report"
     },
     {
+      "rel": "via",
+      "href": "https://www.chc.ucsb.edu/data/chirps3",
+      "type": "text/html",
+      "title": "CHIRPS v3 at the UCSB Climate Hazards Center"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/ucsb-chc-chirps-analysis.ipynb",
       "type": "application/x-ipynb+json",
@@ -204,6 +210,23 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "UCSB Climate Hazards Center",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.chc.ucsb.edu/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Global land, 60 degrees north to 60 degrees south"

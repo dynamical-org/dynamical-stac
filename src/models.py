@@ -12,13 +12,16 @@ import xarray as xr
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from catalog import (
+    DYNAMICAL_ORG,
     MODELS,
     AdditionalTerms,
     CatalogItem,
     DatasetExample,
     DatasetLicense,
     DatasetNotebook,
+    Provider,
     StorageScheme,
+    UpstreamSource,
     url_scheme,
 )
 
@@ -616,6 +619,10 @@ class CollectionInput(BaseModel):
     version: str = Field(min_length=1)
     summaries: dict[str, str] = Field(default_factory=dict)
     additional_terms: AdditionalTerms | None = None
+    producer: Provider
+    # None only when dynamical.org produced the data. See
+    # `CatalogItem._mirror_names_source`.
+    source: UpstreamSource | None = None
     model_id: str = Field(min_length=1)
     model_name: str = Field(min_length=1)
     description_summary: str = Field(min_length=1)
@@ -731,6 +738,8 @@ class CollectionInput(BaseModel):
             version=ds.attrs["dataset_version"],
             summaries={k: ds.attrs[k] for k in _SUMMARY_ATTRS if k in ds.attrs},
             additional_terms=item.additional_terms,
+            producer=model.producer,
+            source=item.source,
             model_id=item.model_id,
             model_name=model.name,
             description_summary=item.description_summary,
@@ -755,6 +764,28 @@ class CollectionInput(BaseModel):
             "client_kwargs": {"region_name": self.icechunk_region},
         }
 
+    def _providers(self) -> list[pystac.Provider]:
+        """The producer first, then dynamical.org as processor and host, last."""
+        host_roles = [pystac.ProviderRole.PROCESSOR, pystac.ProviderRole.HOST]
+        if self.producer == DYNAMICAL_ORG:
+            return [
+                pystac.Provider(
+                    name=DYNAMICAL_ORG.name,
+                    roles=[pystac.ProviderRole.PRODUCER, *host_roles],
+                    url=str(DYNAMICAL_ORG.url),
+                )
+            ]
+        return [
+            pystac.Provider(
+                name=self.producer.name,
+                roles=[pystac.ProviderRole.PRODUCER],
+                url=str(self.producer.url),
+            ),
+            pystac.Provider(
+                name=DYNAMICAL_ORG.name, roles=host_roles, url=str(DYNAMICAL_ORG.url)
+            ),
+        ]
+
     def to_pystac_collection(self) -> pystac.Collection:
         extent = pystac.Extent(
             spatial=pystac.SpatialExtent([list(self.bbox)]),
@@ -768,6 +799,7 @@ class CollectionInput(BaseModel):
             extent=extent,
         )
         collection.stac_extensions = list(STAC_EXTENSIONS)
+        collection.providers = self._providers()
         collection.extra_fields["attribution"] = self.attribution
         collection.extra_fields["version"] = self.version
         collection.extra_fields["model_id"] = self.model_id
@@ -923,6 +955,15 @@ class CollectionInput(BaseModel):
                 title="Validation report",
             )
         )
+        if self.source is not None:
+            collection.add_link(
+                pystac.Link(
+                    rel="via",
+                    target=str(self.source.href),
+                    media_type="text/html",
+                    title=self.source.title,
+                )
+            )
         for notebook in self.notebooks:
             collection.add_link(
                 pystac.Link(

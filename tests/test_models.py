@@ -9,11 +9,15 @@ import xarray as xr
 
 from catalog import (
     CATALOG_ITEMS,
+    DYNAMICAL_ORG,
+    MODELS,
+    NOAA_NCEP,
     AdditionalTerms,
     CatalogItem,
     DatasetExample,
     DatasetLicense,
     DatasetNotebook,
+    UpstreamSource,
 )
 from models import CollectionInput, CubeDimension, CubeVariable, _dim_entry
 
@@ -47,6 +51,7 @@ def _valid_input(**overrides: object) -> CollectionInput:
         "version": "v0.0.0",
         "model_id": "noaa-gfs",
         "model_name": "NOAA GFS",
+        "producer": NOAA_NCEP,
         "description_summary": "Test summary",
         "description_details": "### Section\n\ntest details",
         "description_model": "Test model description",
@@ -136,6 +141,7 @@ _TEST_ID = "noaa-gfs-analysis"
 _PROSE_KWARGS: dict[str, object] = {
     "environments": ["production", "staging", "test"],
     "model_id": "noaa-gfs",
+    "source": UpstreamSource(href="https://example.com/source", title="Source"),  # type: ignore[arg-type]
     "description_summary": "summary",
     "reformatter_url": "https://example.com/reformatter.py",
     "examples": (
@@ -543,3 +549,57 @@ def test_only_first_example_has_onboarding_prompt() -> None:
     examples = collection.extra_fields["examples"]
     assert len(examples[0]["variants"]) == 3
     assert len(examples[1]["variants"]) == 2
+
+
+def test_collection_lists_producer_then_dynamical_org_as_processor_and_host() -> None:
+    providers = _valid_input().to_pystac_collection().providers
+    assert providers is not None
+    assert [(p.name, p.roles, p.url) for p in providers] == [
+        ("NOAA NWS NCEP", ["producer"], "https://www.weather.gov/ncep/"),
+        ("dynamical.org", ["processor", "host"], "https://dynamical.org/"),
+    ]
+
+
+def test_mirror_collection_links_its_source_as_via() -> None:
+    source = UpstreamSource(href="https://example.org/source", title="Upstream")  # type: ignore[arg-type]
+    collection = _valid_input(source=source).to_pystac_collection()
+    via = [link for link in collection.links if link.rel == "via"]
+    assert [(link.href, link.media_type, link.title) for link in via] == [
+        ("https://example.org/source", "text/html", "Upstream")
+    ]
+
+
+def test_dynamical_org_produced_collection_is_official() -> None:
+    collection = _valid_input(producer=DYNAMICAL_ORG).to_pystac_collection()
+    providers = collection.providers
+    assert providers is not None
+    assert [(p.name, p.roles) for p in providers] == [
+        ("dynamical.org", ["producer", "processor", "host"])
+    ]
+    assert not [link for link in collection.links if link.rel == "via"]
+
+
+def test_catalog_item_rejects_mirror_without_source() -> None:
+    with pytest.raises(pydantic.ValidationError, match="must set source"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **{**_PROSE_KWARGS, "source": None},  # type: ignore[arg-type]
+        )
+
+
+def test_catalog_item_rejects_source_on_dynamical_org_produced_data() -> None:
+    with pytest.raises(pydantic.ValidationError, match="leave source unset"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **{**_PROSE_KWARGS, "model_id": "dynamical-test"},  # type: ignore[arg-type]
+        )
+
+
+def test_every_mirrored_catalog_item_names_its_source() -> None:
+    for item in CATALOG_ITEMS:
+        produced_here = MODELS[item.model_id].producer == DYNAMICAL_ORG
+        assert (item.source is None) == produced_here, item.id

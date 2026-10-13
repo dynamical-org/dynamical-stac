@@ -35,6 +35,12 @@
       "title": "Validation report"
     },
     {
+      "rel": "via",
+      "href": "https://www.ecmwf.int/en/forecasts/datasets/open-data",
+      "type": "text/html",
+      "title": "ECMWF Open Data"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-aifs-single-forecast.ipynb",
       "type": "application/x-ipynb+json",
@@ -642,6 +648,23 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "ECMWF",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.ecmwf.int/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Global"

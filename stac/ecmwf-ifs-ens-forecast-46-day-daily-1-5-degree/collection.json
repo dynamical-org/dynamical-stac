@@ -35,6 +35,12 @@
       "title": "Validation report"
     },
     {
+      "rel": "via",
+      "href": "https://ecds.ecmwf.int/",
+      "type": "text/html",
+      "title": "ECMWF Data Store (ECDS)"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-ifs-ens-forecast-46-day-1-5-degree.ipynb",
       "type": "application/x-ipynb+json",
@@ -1418,6 +1424,23 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "ECMWF",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.ecmwf.int/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Global"

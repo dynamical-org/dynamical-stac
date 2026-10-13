@@ -11,6 +11,12 @@
       "title": "dynamical.org STAC Catalog"
     },
     {
+      "rel": "icon",
+      "href": "https://assets.dynamical.org/identity/logo/icon/icon-padded-256-on-white.png",
+      "type": "image/png",
+      "title": "dynamical.org"
+    },
+    {
       "rel": "child",
       "href": "https://stac.dynamical.org/noaa-gfs-analysis/collection.json",
       "type": "application/json",

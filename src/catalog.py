@@ -103,6 +103,31 @@ class AdditionalTerms(BaseModel):
     title: str = Field(min_length=1)
 
 
+class Provider(BaseModel):
+    """An organization named in a collection's STAC ``providers``."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    name: str = Field(min_length=1)
+    url: HttpUrl
+
+
+# Processor and host of every collection, listed last in its providers.
+DYNAMICAL_ORG = Provider(name="dynamical.org", url="https://dynamical.org/")  # type: ignore[arg-type]
+
+NOAA_NCEP = Provider(name="NOAA NWS NCEP", url="https://www.weather.gov/ncep/")  # type: ignore[arg-type]
+ECMWF = Provider(name="ECMWF", url="https://www.ecmwf.int/")  # type: ignore[arg-type]
+
+
+class UpstreamSource(BaseModel):
+    """Where dynamical.org gets a dataset's data, rendered as its ``via`` link."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    href: HttpUrl
+    title: str = Field(min_length=1)
+
+
 class Model(BaseModel):
     """Model-level metadata shared by every CatalogItem with the same model_id."""
 
@@ -111,6 +136,8 @@ class Model(BaseModel):
     id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     description: str = Field(min_length=1)
+    # The organization that runs the model: the collection's `producer`.
+    producer: Provider
 
 
 class DatasetExample(BaseModel):
@@ -252,6 +279,7 @@ MODELS: dict[str, Model] = {
             "couples four separate models (atmosphere, ocean model, land/soil model, and sea ice) that "
             "work together to depict weather conditions."
         ),
+        producer=NOAA_NCEP,
     ),
     "noaa-gefs": Model(
         id="noaa-gefs",
@@ -262,6 +290,7 @@ MODELS: dict[str, Model] = {
             "forecast model. GEFS creates 31 separate forecasts (ensemble members) to describe the "
             "range of forecast uncertainty."
         ),
+        producer=NOAA_NCEP,
     ),
     "noaa-hrrr": Model(
         id="noaa-hrrr",
@@ -273,6 +302,7 @@ MODELS: dict[str, Model] = {
             "1-h period adding further detail to that provided by the hourly data assimilation from "
             "the 13km radar-enhanced Rapid Refresh."
         ),
+        producer=NOAA_NCEP,
     ),
     "noaa-mrms": Model(
         id="noaa-mrms",
@@ -284,6 +314,7 @@ MODELS: dict[str, Model] = {
             "focused on hail, wind, tornado, quantitative precipitation estimations, convection, "
             "icing, and turbulence."
         ),
+        producer=NOAA_NCEP,
     ),
     "ecmwf-aifs-single": Model(
         id="ecmwf-aifs-single",
@@ -295,6 +326,7 @@ MODELS: dict[str, Model] = {
             "on ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) "
             "analyses."
         ),
+        producer=ECMWF,
     ),
     "ecmwf-aifs-ens": Model(
         id="ecmwf-aifs-ens",
@@ -306,6 +338,7 @@ MODELS: dict[str, Model] = {
             "ECMWF's ERA5 re-analysis and ECMWF's operational numerical weather prediction (NWP) "
             "analyses."
         ),
+        producer=ECMWF,
     ),
     "ecmwf-ifs-ens": Model(
         id="ecmwf-ifs-ens",
@@ -319,6 +352,7 @@ MODELS: dict[str, Model] = {
             "assimilation system combines the latest weather observations with a recent forecast to "
             "obtain the best possible estimate of the current state of the Earth system."
         ),
+        producer=ECMWF,
     ),
     "google-weathernext2": Model(
         id="google-weathernext2",
@@ -329,6 +363,10 @@ MODELS: dict[str, Model] = {
             "a 0.25 degree grid, initialized four times daily with forecasts "
             "extending to 15 days."
         ),
+        producer=Provider(
+            name="Google DeepMind",
+            url="https://deepmind.google/",  # type: ignore[arg-type]
+        ),
     ),
     "dwd-icon-eu": Model(
         id="dwd-icon-eu",
@@ -337,6 +375,10 @@ MODELS: dict[str, Model] = {
             "ICON-EU is a regional weather forecast model operated by Deutscher Wetterdienst (DWD), "
             "Germany's national meteorological service. ICON-EU is a nested configuration of DWD's global "
             "ICON (Icosahedral Non-hydrostatic) model that provides high-resolution forecasts over Europe."
+        ),
+        producer=Provider(
+            name="Deutscher Wetterdienst (DWD)",
+            url="https://www.dwd.de/",  # type: ignore[arg-type]
         ),
     ),
     "nasa-imerg": Model(
@@ -350,6 +392,10 @@ MODELS: dict[str, Model] = {
             "record. IMERG intercalibrates, merges, and interpolates these inputs onto a 0.1 degree grid "
             "spanning the TRMM and GPM satellite eras."
         ),
+        producer=Provider(
+            name="NASA",
+            url="https://gpm.nasa.gov/",  # type: ignore[arg-type]
+        ),
     ),
     "ucsb-chc-chirps": Model(
         id="ucsb-chc-chirps",
@@ -358,6 +404,10 @@ MODELS: dict[str, Model] = {
             "The Climate Hazards Center Infrared Precipitation with Stations "
             "(CHIRPS) version 3 combines satellite estimates and station observations "
             "into a precipitation record over land."
+        ),
+        producer=Provider(
+            name="UCSB Climate Hazards Center",
+            url="https://www.chc.ucsb.edu/",  # type: ignore[arg-type]
         ),
     ),
     "eccc-hrdps": Model(
@@ -369,6 +419,10 @@ MODELS: dict[str, Model] = {
             "national meteorological service. Its continental domain covers Canada and the northern "
             "United States at a resolution that captures fine-scale weather features."
         ),
+        producer=Provider(
+            name="Environment and Climate Change Canada (ECCC)",
+            url="https://eccc-msc.github.io/open-data/readme_en/",  # type: ignore[arg-type]
+        ),
     ),
     "dynamical-test": Model(
         id="dynamical-test",
@@ -377,6 +431,7 @@ MODELS: dict[str, Model] = {
             "These are tiny synthetic datasets used to exercise dynamical-catalog's read "
             "paths against real generator output; they are not weather data."
         ),
+        producer=DYNAMICAL_ORG,
     ),
 }
 
@@ -411,6 +466,8 @@ class CatalogItem(BaseModel):
     # `_production_items_have_notebooks`.
     notebooks: tuple[DatasetNotebook, ...] = ()
     additional_terms: AdditionalTerms | None = None
+    # Required unless dynamical.org produced the data. See `_mirror_names_source`.
+    source: UpstreamSource | None = None
     # Required, explicit publication membership; environments never imply others.
     environments: tuple[str, ...] = Field(min_length=1)
 
@@ -589,6 +646,29 @@ class CatalogItem(BaseModel):
             )
         return self
 
+    @model_validator(mode="after")
+    def _mirror_names_source(self) -> CatalogItem:
+        """A dataset dynamical.org did not produce links the source it mirrors.
+
+        Its collection lists the model's producer and dynamical.org as host, so
+        it is a mirror and carries a ``via`` link to ``source``. A dataset
+        dynamical.org produced (the test fixtures) is its own source.
+        """
+        model = MODELS.get(self.model_id)
+        if model is None:
+            return self  # _model_id_is_registered reports it
+        if model.producer != DYNAMICAL_ORG and self.source is None:
+            raise ValueError(
+                f"CatalogItem {self.id!r} mirrors data produced by "
+                f"{model.producer.name}, so it must set source"
+            )
+        if model.producer == DYNAMICAL_ORG and self.source is not None:
+            raise ValueError(
+                f"CatalogItem {self.id!r} is produced by dynamical.org, so it "
+                f"has no upstream source; leave source unset"
+            )
+        return self
+
 
 ECMWF_TERMS = AdditionalTerms(
     href="https://apps.ecmwf.int/datasets/licences/general/",  # type: ignore[arg-type]
@@ -630,6 +710,57 @@ _ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
 )
 
 
+# Upstream sources, rendered as each collection's `via` link.
+_NODD_GFS = UpstreamSource(
+    href="https://registry.opendata.aws/noaa-gfs-bdp-pds/",  # type: ignore[arg-type]
+    title="NOAA GFS on NOAA Open Data Dissemination",
+)
+_NODD_GEFS = UpstreamSource(
+    href="https://registry.opendata.aws/noaa-gefs/",  # type: ignore[arg-type]
+    title="NOAA GEFS on NOAA Open Data Dissemination",
+)
+_NODD_HRRR = UpstreamSource(
+    href="https://registry.opendata.aws/noaa-hrrr-pds/",  # type: ignore[arg-type]
+    title="NOAA HRRR on NOAA Open Data Dissemination",
+)
+_NODD_MRMS = UpstreamSource(
+    href="https://registry.opendata.aws/noaa-mrms-pds/",  # type: ignore[arg-type]
+    title="NOAA MRMS on NOAA Open Data Dissemination",
+)
+_ECMWF_OPEN_DATA = UpstreamSource(
+    href="https://www.ecmwf.int/en/forecasts/datasets/open-data",  # type: ignore[arg-type]
+    title="ECMWF Open Data",
+)
+_ECMWF_DATA_STORE = UpstreamSource(
+    href="https://ecds.ecmwf.int/",  # type: ignore[arg-type]
+    title="ECMWF Data Store (ECDS)",
+)
+_WEATHERNEXT2 = UpstreamSource(
+    href="https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0",  # type: ignore[arg-type]
+    title="WeatherNext 2 experimental forecast dataset",
+)
+_DWD_OPEN_DATA = UpstreamSource(
+    href="https://www.dwd.de/EN/ourservices/opendata/opendata.html",  # type: ignore[arg-type]
+    title="DWD Open Data",
+)
+_IMERG_EARLY = UpstreamSource(
+    href="https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGHHE_07/summary",  # type: ignore[arg-type]
+    title="GPM IMERG Early Run (GPM_3IMERGHHE) at NASA GES DISC",
+)
+_IMERG_LATE = UpstreamSource(
+    href="https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGHHL_07/summary",  # type: ignore[arg-type]
+    title="GPM IMERG Late Run (GPM_3IMERGHHL) at NASA GES DISC",
+)
+_CHIRPS = UpstreamSource(
+    href="https://www.chc.ucsb.edu/data/chirps3",  # type: ignore[arg-type]
+    title="CHIRPS v3 at the UCSB Climate Hazards Center",
+)
+_ECCC_HRDPS = UpstreamSource(
+    href="https://eccc-msc.github.io/open-data/msc-data/nwp_hrdps/readme_hrdps-datamart_en/",  # type: ignore[arg-type]
+    title="HRDPS on ECCC MSC Open Data",
+)
+
+
 def _quickstart_notebook(slug: str) -> DatasetNotebook:
     """Build the default per-dataset ``{id}.ipynb`` notebook.
 
@@ -646,6 +777,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-analysis/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="noaa-gfs",
+        source=_NODD_GFS,
         description_summary=(
             "This analysis dataset is an archive of the model's best estimate "
             "of past weather. It is created by concatenating the first few "
@@ -668,6 +800,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-noaa-gfs/noaa-gfs-forecast/v0.2.7.icechunk/",
         icechunk_region="us-west-2",
         model_id="noaa-gfs",
+        source=_NODD_GFS,
         description_summary=(
             "This dataset is an archive of past and present GFS forecasts. "
             "Forecasts are identified by an initialization time (`init_time`) "
@@ -694,6 +827,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-gfs-bdp-pds/",),
         model_id="noaa-gfs",
+        source=_NODD_GFS,
         description_summary=(
             "This analysis dataset is an archive of the model's best estimate "
             "of past weather, optimized for spatial (map) access patterns. It "
@@ -730,6 +864,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-gfs-bdp-pds/",),
         model_id="noaa-gfs",
+        source=_NODD_GFS,
         description_summary=(
             "This dataset is an archive of past and present GFS forecasts, "
             "optimized for spatial (map) access "
@@ -766,6 +901,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-forecast-35-day/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="noaa-gefs",
+        source=_NODD_GEFS,
         description_summary=(
             "This dataset is an archive of past and present GEFS forecasts. "
             "Forecasts are identified by an initialization time (`init_time`) "
@@ -791,6 +927,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-noaa-gefs/noaa-gefs-analysis/v0.1.2.icechunk/",
         icechunk_region="us-west-2",
         model_id="noaa-gefs",
+        source=_NODD_GEFS,
         description_summary=(
             "This analysis dataset is an archive of the model's best estimate "
             "of past weather. It is created by concatenating the first few "
@@ -814,6 +951,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-gefs-pds/",),
         model_id="noaa-gefs",
+        source=_NODD_GEFS,
         description_summary=(
             "This analysis dataset is an archive of the model's best estimate "
             "of past weather, optimized for spatial (map) access patterns. It "
@@ -840,6 +978,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-gefs-pds/",),
         model_id="noaa-gefs",
+        source=_NODD_GEFS,
         description_summary=(
             "This dataset is an archive of past and present GEFS forecasts at "
             "0.25 degree resolution, optimized for spatial (map) access "
@@ -867,6 +1006,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-gefs-pds/",),
         model_id="noaa-gefs",
+        source=_NODD_GEFS,
         description_summary=(
             "This dataset is an archive of past and present GEFS forecasts at "
             "0.5 degree resolution, optimized for spatial (map) access "
@@ -905,6 +1045,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-gefs-pds/",),
         model_id="noaa-gefs",
+        source=_NODD_GEFS,
         description_summary=(
             "This dataset is an archive of past and present GEFS forecasts at "
             "0.5 degree resolution, optimized for spatial (map) access "
@@ -943,6 +1084,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",),
         model_id="noaa-hrrr",
+        source=_NODD_HRRR,
         description_summary=(
             "This dataset is an archive of past and present HRRR forecasts, "
             "optimized for spatial (map) access patterns. Forecasts are "
@@ -979,6 +1121,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-forecast-48-hour/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="noaa-hrrr",
+        source=_NODD_HRRR,
         description_summary=(
             "This dataset is an archive of past and present HRRR forecasts. "
             "Forecasts are identified by an initialization time (`init_time`) "
@@ -1008,6 +1151,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",),
         model_id="noaa-hrrr",
+        source=_NODD_HRRR,
         description_summary=(
             "This dataset is an archive of past and present HRRR forecasts, "
             "optimized for spatial (map) access patterns. Forecasts are "
@@ -1045,6 +1189,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-noaa-hrrr/noaa-hrrr-analysis/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="noaa-hrrr",
+        source=_NODD_HRRR,
         description_summary=(
             "This analysis dataset is an archive of the model's best estimate "
             "of past weather. It is created by concatenating the first hour "
@@ -1072,6 +1217,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-hrrr-bdp-pds/",),
         model_id="noaa-hrrr",
+        source=_NODD_HRRR,
         description_summary=(
             "This analysis dataset is an archive of the model's best estimate "
             "of past weather, optimized for spatial (map) access patterns. It "
@@ -1106,6 +1252,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-noaa-mrms/noaa-mrms-conus-analysis-hourly/v0.3.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="noaa-mrms",
+        source=_NODD_MRMS,
         description_summary=(
             "This analysis dataset is an archive of MRMS radar and "
             "multi-sensor precipitation and weather analyses over the "
@@ -1127,6 +1274,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-ecmwf-aifs-single/ecmwf-aifs-single-forecast/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="ecmwf-aifs-single",
+        source=_ECMWF_OPEN_DATA,
         description_summary=(
             "This dataset is an archive of past and present ECMWF AIFS Single "
             "forecasts. Forecasts are identified by an initialization time "
@@ -1158,6 +1306,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "s3://ecmwf-forecasts/",
         ),
         model_id="ecmwf-aifs-single",
+        source=_ECMWF_OPEN_DATA,
         description_summary=(
             "This dataset is an archive of past and present ECMWF AIFS Single "
             "forecasts, optimized for spatial (map) access patterns. Forecasts "
@@ -1199,6 +1348,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-ecmwf-aifs-ens/ecmwf-aifs-ens-forecast/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="ecmwf-aifs-ens",
+        source=_ECMWF_OPEN_DATA,
         description_summary=(
             "This dataset is an archive of past and present ECMWF AIFS ENS "
             "forecasts. Forecasts are identified by an initialization time "
@@ -1223,6 +1373,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-15-day-0-25-degree/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="ecmwf-ifs-ens",
+        source=_ECMWF_OPEN_DATA,
         description_summary=(
             "This dataset is an archive of past and present ECMWF IFS ENS "
             "forecasts. Forecasts are identified by an initialization time "
@@ -1250,6 +1401,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="ecmwf-ifs-ens",
+        source=_ECMWF_DATA_STORE,
         description_summary=(
             "This dataset is an archive of ECMWF IFS ENS sub-seasonal-range "
             "forecasts. Forecasts are identified by an initialization time "
@@ -1290,6 +1442,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="ecmwf-ifs-ens",
+        source=_ECMWF_DATA_STORE,
         description_summary=(
             "This dataset is an archive of ECMWF IFS ENS sub-seasonal-range "
             "forecasts. Forecasts are identified by an initialization time "
@@ -1328,6 +1481,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
         virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
         model_id="google-weathernext2",
+        source=_WEATHERNEXT2,
         description_summary=(
             "This dataset is the fixed 2022-2024 archive of Google "
             "WeatherNext 2 forecasts, optimized for spatial (map) access "
@@ -1362,6 +1516,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
         virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
         model_id="google-weathernext2",
+        source=_WEATHERNEXT2,
         description_summary=(
             "This dataset is the 2025-present archive of Google WeatherNext 2 "
             "forecasts, optimized for spatial (map) access patterns. Forecasts "
@@ -1399,6 +1554,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="dwd-icon-eu",
+        source=_DWD_OPEN_DATA,
         description_summary=(
             "This dataset is an archive of past and present ICON-EU forecasts. "
             "Forecasts are identified by an initialization time (`init_time`) "
@@ -1423,6 +1579,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-nasa-imerg/nasa-imerg-analysis-early/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="nasa-imerg",
+        source=_IMERG_EARLY,
         description_summary=(
             "This analysis dataset is an archive of global half-hourly "
             "precipitation estimates from NASA GPM IMERG, version 07, on a "
@@ -1447,6 +1604,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-nasa-imerg/nasa-imerg-analysis-late/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="nasa-imerg",
+        source=_IMERG_LATE,
         description_summary=(
             "This analysis dataset is an archive of global half-hourly "
             "precipitation estimates from NASA GPM IMERG, version 07, on a "
@@ -1471,6 +1629,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-ucsb-chc-chirps/ucsb-chc-chirps-analysis-final/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="ucsb-chc-chirps",
+        source=_CHIRPS,
         description_summary=(
             "Daily CHIRPS version 3 precipitation over land from 60 degrees south "
             "to 60 degrees north, at 0.05 degree resolution, from 1981 onward. "
@@ -1495,6 +1654,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-ucsb-chc-chirps/ucsb-chc-chirps-analysis-preliminary/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="ucsb-chc-chirps",
+        source=_CHIRPS,
         description_summary=(
             "Daily CHIRPS version 3 precipitation over land from 60 degrees south "
             "to 60 degrees north, at 0.05 degree resolution, from 2025 onward. "
@@ -1519,6 +1679,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-eccc-hrdps/eccc-hrdps-forecast/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         model_id="eccc-hrdps",
+        source=_ECCC_HRDPS,
         description_summary=(
             "This dataset is an archive of past and present HRDPS continental "
             "forecasts. Forecasts are identified by four daily initialization "

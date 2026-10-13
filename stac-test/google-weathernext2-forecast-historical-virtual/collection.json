@@ -29,6 +29,12 @@
       "title": "Validation report"
     },
     {
+      "rel": "via",
+      "href": "https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0",
+      "type": "text/html",
+      "title": "WeatherNext 2 experimental forecast dataset"
+    },
+    {
       "rel": "self",
       "href": "https://stac-test.dynamical.org/google-weathernext2-forecast-historical-virtual/collection.json",
       "type": "application/json",
@@ -490,6 +496,23 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "Google DeepMind",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://deepmind.google/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Global"
