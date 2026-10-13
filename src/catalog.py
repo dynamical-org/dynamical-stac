@@ -207,7 +207,7 @@ FRAGMENTS: dict[str, str] = {
     "nodd_source_rrfs": (
         "The source grib files this archive is constructed from are provided by "
         "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
-        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-rrfs/)."
+        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-rrfs-ops/)."
     ),
     "ecmwf_source": (
         "The source grib files this archive is constructed from are provided by "
@@ -316,9 +316,9 @@ MODELS: dict[str, Model] = {
             "The Rapid Refresh Forecast System (RRFS) is a National Oceanic and Atmospheric "
             "Administration (NOAA) National Centers for Environmental Prediction (NCEP) "
             "convection-allowing weather forecast model with a 3 km grid, built on the Unified "
-            "Forecast System. It is planned to replace several of NOAA's current regional models, "
-            "including the HRRR. RRFS is pre-operational and under development, so expect some "
-            "changes to model output."
+            "Forecast System. Together with its ensemble product system, REFS, it is planned to "
+            "replace NOAA's NAM, HiresW, HREF and SREF systems. RRFS is pre-operational and under "
+            "development, so expect some changes to model output."
         ),
     ),
     "noaa-refs": Model(
@@ -326,11 +326,13 @@ MODELS: dict[str, Model] = {
         name="NOAA REFS",
         description=(
             "The RRFS Ensemble Forecast System (REFS) is a National Oceanic and Atmospheric "
-            "Administration (NOAA) National Centers for Environmental Prediction (NCEP) "
-            "convection-allowing ensemble built from Rapid Refresh Forecast System (RRFS) runs. "
-            "NOAA publishes ensemble products from it on a 3 km grid, including means, spreads and "
-            "probabilities of exceeding thresholds. REFS is pre-operational and under development, "
-            "so expect some changes to model output."
+            "Administration (NOAA) National Centers for Environmental Prediction (NCEP) ensemble "
+            "product system. It combines the current and 6 hour old cycles of the deterministic and "
+            "ensemble Rapid Refresh Forecast System (RRFS) runs, plus two HRRR members over the "
+            "continental United States, into products on a 3 km grid, including means, spreads and "
+            "probabilities of exceeding thresholds. REFS is planned to replace the High-Resolution "
+            "Ensemble Forecast (HREF) system. It is pre-operational and under development, so "
+            "expect some changes to model output."
         ),
     ),
     "noaa-mrms": Model(
