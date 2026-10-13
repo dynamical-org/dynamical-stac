@@ -165,6 +165,17 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "producer",
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "3x4 grid over Colorado"

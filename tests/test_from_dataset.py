@@ -7,7 +7,13 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from catalog import AdditionalTerms, CatalogItem, DatasetExample, DatasetNotebook
+from catalog import (
+    AdditionalTerms,
+    CatalogItem,
+    DatasetExample,
+    DatasetNotebook,
+    UpstreamSource,
+)
 from models import CollectionInput, _dim_entry
 
 # Use a real id so ``CatalogItem.description_details`` can resolve the
@@ -29,6 +35,7 @@ def _catalog_item(
         icechunk_region=icechunk_region,  # type: ignore[arg-type]
         virtual_chunk_container_prefixes=virtual_chunk_container_prefixes,
         model_id="noaa-gfs",
+        source=UpstreamSource(href="https://example.com/source", title="Source"),  # type: ignore[arg-type]
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
         examples=(
@@ -285,6 +292,7 @@ def test_from_dataset_passes_additional_terms_through() -> None:
         icechunk_region="us-west-2",
         additional_terms=terms,
         model_id="noaa-gfs",
+        source=UpstreamSource(href="https://example.com/source", title="Source"),  # type: ignore[arg-type]
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
         examples=(

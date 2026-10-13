@@ -17,6 +17,10 @@ from environments import STAC_ENVIRONMENTS, stac_environment
 from models import CollectionInput
 
 CATALOG_TITLE = "dynamical.org STAC Catalog"
+# The registry and STAC Browser show it beside the catalog; stac-js rejects SVG.
+CATALOG_ICON_URL = (
+    "https://assets.dynamical.org/identity/logo/icon/icon-padded-256-on-white.png"
+)
 
 
 def _select_items(items: list[CatalogItem], *, environment: str) -> list[CatalogItem]:
@@ -153,6 +157,14 @@ def generate(
         id="dynamical-org",
         title=CATALOG_TITLE,
         description="Cloud-optimized weather and climate datasets from dynamical.org",
+    )
+    catalog.add_link(
+        pystac.Link(
+            rel="icon",
+            target=CATALOG_ICON_URL,
+            media_type="image/png",
+            title="dynamical.org",
+        )
     )
 
     items = _select_items(CATALOG_ITEMS, environment=environment)

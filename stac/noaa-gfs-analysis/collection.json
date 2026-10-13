@@ -29,6 +29,12 @@
       "title": "Validation report"
     },
     {
+      "rel": "via",
+      "href": "https://registry.opendata.aws/noaa-gfs-bdp-pds/",
+      "type": "text/html",
+      "title": "NOAA GFS on NOAA Open Data Dissemination"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-gfs-analysis.ipynb",
       "type": "application/x-ipynb+json",
@@ -738,6 +744,23 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "NOAA NWS NCEP",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.weather.gov/ncep/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Global"

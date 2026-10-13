@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from catalog import CatalogItem, DatasetExample, DatasetNotebook
+from catalog import CatalogItem, DatasetExample, DatasetNotebook, UpstreamSource
 from models import (
     Chunking,
     CollectionInput,
@@ -25,6 +25,7 @@ def _catalog_item() -> CatalogItem:
         icechunk_href=f"s3://test-bucket/{_TEST_ID}/v0.icechunk/",
         icechunk_region="us-west-2",
         model_id="noaa-gfs",
+        source=UpstreamSource(href="https://example.com/source", title="Source"),  # type: ignore[arg-type]
         description_summary="test summary",
         reformatter_url="https://example.com/reformatter.py",
         examples=(

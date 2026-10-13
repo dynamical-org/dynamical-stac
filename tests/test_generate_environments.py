@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import pathlib
 from collections.abc import Callable
 from typing import Any
@@ -165,4 +166,26 @@ def test_a_failure_while_swapping_restores_every_tree(
         "stac",
         "stac-staging",
         "stac-test",
+    ]
+
+
+@pytest.mark.parametrize(
+    "environment", [environment.name for environment in generate.STAC_ENVIRONMENTS]
+)
+def test_root_catalog_links_a_png_icon(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setattr(generate, "_select_items", lambda *_, **__: [])
+    generate.generate(tmp_path, environment=environment, loaded={})
+
+    publication = generate.stac_environment(environment)
+    root = json.loads((tmp_path / publication.root_filename).read_text())
+    icons = [link for link in root["links"] if link["rel"] == "icon"]
+    assert icons == [
+        {
+            "rel": "icon",
+            "href": generate.CATALOG_ICON_URL,
+            "type": "image/png",
+            "title": "dynamical.org",
+        }
     ]

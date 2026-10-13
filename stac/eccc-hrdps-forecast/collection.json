@@ -35,6 +35,12 @@
       "title": "Validation report"
     },
     {
+      "rel": "via",
+      "href": "https://eccc-msc.github.io/open-data/msc-data/nwp_hrdps/readme_hrdps-datamart_en/",
+      "type": "text/html",
+      "title": "HRDPS on ECCC MSC Open Data"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/eccc-hrdps-forecast.ipynb",
       "type": "application/x-ipynb+json",
@@ -635,6 +641,23 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "Environment and Climate Change Canada (ECCC)",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://eccc-msc.github.io/open-data/readme_en/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Canada"

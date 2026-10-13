@@ -29,6 +29,12 @@
       "title": "Validation report"
     },
     {
+      "rel": "via",
+      "href": "https://registry.opendata.aws/noaa-hrrr-pds/",
+      "type": "text/html",
+      "title": "NOAA HRRR on NOAA Open Data Dissemination"
+    },
+    {
       "rel": "example",
       "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-hrrr-forecast-48-hour-virtual.ipynb",
       "type": "application/x-ipynb+json",
@@ -3608,6 +3614,23 @@
     }
   },
   "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "NOAA NWS NCEP",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.weather.gov/ncep/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
   "summaries": {
     "spatial_domain": [
       "Continental United States"
