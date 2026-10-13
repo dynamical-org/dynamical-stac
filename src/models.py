@@ -24,6 +24,7 @@ from catalog import (
     UpstreamSource,
     url_scheme,
 )
+from sidecars import sidecar_links
 
 NOTEBOOKS_REPO_BASE = "https://github.com/dynamical-org/notebooks/blob/main"
 
@@ -50,6 +51,8 @@ LICENSE_URLS: dict[DatasetLicense, str] = {
 STAC_EXTENSIONS = [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
     "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
+    # Declares the `version` field each collection carries.
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json",
 ]
 
 _SUMMARY_ATTRS = (
@@ -981,6 +984,8 @@ class CollectionInput(BaseModel):
                     title=f"{notebook.title} (Colab)",
                 )
             )
+        for link in sidecar_links():
+            collection.add_link(link)
         return collection
 
 
