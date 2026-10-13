@@ -317,8 +317,9 @@ MODELS: dict[str, Model] = {
             "Administration (NOAA) National Centers for Environmental Prediction (NCEP) "
             "convection-allowing weather forecast model with a 3 km grid, built on the Unified "
             "Forecast System. Together with its ensemble product system, REFS, it is planned to "
-            "replace NOAA's NAM, HiresW, HREF and SREF systems. RRFS is pre-operational and under "
-            "development, so expect some changes to model output."
+            "replace NOAA's NAM, HiresW, HREF and SREF systems.\n\n"
+            "NOAA RRFS is pre-operational and under development, so expect changes to the model "
+            "data and to the structure of this dataset."
         ),
     ),
     "noaa-rrfs-ens": Model(
@@ -329,9 +330,9 @@ MODELS: dict[str, Model] = {
             "Atmospheric Administration (NOAA) National Centers for Environmental Prediction "
             "(NCEP) convection-allowing ensemble with a 3 km grid. Five members run with different "
             "initial conditions, lateral boundary conditions and model physics from the "
-            "deterministic RRFS forecast, to better cover the range of forecast possibilities. "
-            "RRFS ENS is pre-operational and under development, so expect some changes to model "
-            "output."
+            "deterministic RRFS forecast, to better cover the range of forecast possibilities.\n\n"
+            "NOAA RRFS ENS is pre-operational and under development, so expect changes to the "
+            "model data and to the structure of this dataset."
         ),
     ),
     "noaa-refs": Model(
@@ -344,8 +345,9 @@ MODELS: dict[str, Model] = {
             "ensemble Rapid Refresh Forecast System (RRFS) runs, plus two HRRR members over the "
             "continental United States, into products on a 3 km grid, including means, spreads and "
             "probabilities of exceeding thresholds. REFS is planned to replace the High-Resolution "
-            "Ensemble Forecast (HREF) system. It is pre-operational and under development, so "
-            "expect some changes to model output."
+            "Ensemble Forecast (HREF) system.\n\n"
+            "NOAA REFS is pre-operational and under development, so expect changes to the model "
+            "data and to the structure of this dataset."
         ),
     ),
     "noaa-mrms": Model(
