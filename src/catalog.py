@@ -321,6 +321,7 @@ MODELS: dict[str, Model] = {
             "NOAA RRFS is pre-operational and under development, so expect changes to the model "
             "data and to the structure of this dataset."
         ),
+        producer=NOAA_NCEP,
     ),
     "noaa-rrfs-ens": Model(
         id="noaa-rrfs-ens",
@@ -334,6 +335,7 @@ MODELS: dict[str, Model] = {
             "NOAA RRFS ENS is pre-operational and under development, so expect changes to the "
             "model data and to the structure of this dataset."
         ),
+        producer=NOAA_NCEP,
     ),
     "noaa-refs": Model(
         id="noaa-refs",
@@ -349,6 +351,7 @@ MODELS: dict[str, Model] = {
             "NOAA REFS is pre-operational and under development, so expect changes to the model "
             "data and to the structure of this dataset."
         ),
+        producer=NOAA_NCEP,
     ),
     "noaa-mrms": Model(
         id="noaa-mrms",
@@ -778,6 +781,10 @@ _NODD_HRRR = UpstreamSource(
 _NODD_MRMS = UpstreamSource(
     href="https://registry.opendata.aws/noaa-mrms-pds/",  # type: ignore[arg-type]
     title="NOAA MRMS on NOAA Open Data Dissemination",
+)
+_NODD_RRFS = UpstreamSource(
+    href="https://registry.opendata.aws/noaa-rrfs-ops/",  # type: ignore[arg-type]
+    title="NOAA RRFS and REFS on NOAA Open Data Dissemination",
 )
 _ECMWF_OPEN_DATA = UpstreamSource(
     href="https://www.ecmwf.int/en/forecasts/datasets/open-data",  # type: ignore[arg-type]
@@ -1305,6 +1312,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
         model_id="noaa-rrfs",
+        source=_NODD_RRFS,
         description_summary=(
             "This dataset is an archive of past and present RRFS forecasts, "
             "optimized for spatial (map) access patterns. Forecasts are "
@@ -1336,6 +1344,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
         model_id="noaa-rrfs",
+        source=_NODD_RRFS,
         description_summary=(
             "This dataset is an archive of past and present RRFS forecasts, "
             "optimized for spatial (map) access patterns. Forecasts are "
@@ -1376,6 +1385,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
         model_id="noaa-rrfs",
+        source=_NODD_RRFS,
         description_summary=(
             "This dataset is an archive of past and present RRFS forecasts, "
             "optimized for spatial (map) access patterns. Forecasts are "
@@ -1416,6 +1426,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
         model_id="noaa-rrfs-ens",
+        source=_NODD_RRFS,
         description_summary=(
             "This dataset is an archive of past and present RRFS ensemble "
             "forecasts, optimized for spatial (map) access patterns. "
@@ -1454,6 +1465,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
         model_id="noaa-refs",
+        source=_NODD_RRFS,
         description_summary=(
             "This dataset is an archive of past and present REFS ensemble "
             "products, optimized for spatial (map) access patterns. Forecasts "
@@ -1488,6 +1500,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
         model_id="noaa-refs",
+        source=_NODD_RRFS,
         description_summary=(
             "This dataset is an archive of past and present REFS ensemble "
             "products, optimized for spatial (map) access patterns. Forecasts "
