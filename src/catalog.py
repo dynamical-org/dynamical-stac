@@ -321,6 +321,19 @@ MODELS: dict[str, Model] = {
             "development, so expect some changes to model output."
         ),
     ),
+    "noaa-rrfs-ens": Model(
+        id="noaa-rrfs-ens",
+        name="NOAA RRFS ENS",
+        description=(
+            "The Rapid Refresh Forecast System ensemble (RRFS ENS) is a National Oceanic and "
+            "Atmospheric Administration (NOAA) National Centers for Environmental Prediction "
+            "(NCEP) convection-allowing ensemble with a 3 km grid. Five members run with different "
+            "initial conditions, lateral boundary conditions and model physics from the "
+            "deterministic RRFS forecast, to better cover the range of forecast possibilities. "
+            "RRFS ENS is pre-operational and under development, so expect some changes to model "
+            "output."
+        ),
+    ),
     "noaa-refs": Model(
         id="noaa-refs",
         name="NOAA REFS",
@@ -1301,8 +1314,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "projection, with spatial indexing along the `x` and `y` "
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
-            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.8.4`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs/forecast_sub_hourly_virtual/template_config.py",
         examples=(
@@ -1335,8 +1348,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "Variables on pressure levels, fixed heights above mean sea "
             "level and soil depths live in the `pressure_level`, "
             "`height_above_mean_sea_level` and `depth_below_ground` groups.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
-            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.8.4`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs/forecast_18_hour_virtual/template_config.py",
         examples=(
@@ -1375,8 +1388,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "Variables on pressure levels, fixed heights above mean sea "
             "level and soil depths live in the `pressure_level`, "
             "`height_above_mean_sea_level` and `depth_below_ground` groups.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
-            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.8.4`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs/forecast_84_hour_virtual/template_config.py",
         examples=(
@@ -1400,7 +1413,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         icechunk_href="s3://dynamical-noaa-rrfs-ens/noaa-rrfs-ens-forecast-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
-        model_id="noaa-rrfs",
+        model_id="noaa-rrfs-ens",
         description_summary=(
             "This dataset is an archive of past and present RRFS ensemble "
             "forecasts, optimized for spatial (map) access patterns. "
@@ -1414,8 +1427,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
             "Variables on pressure levels live in the `pressure_level` group.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
-            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.8.4`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs_ens/forecast_virtual/template_config.py",
         examples=(
@@ -1453,8 +1466,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "projection, with spatial indexing along the `x` and `y` "
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
-            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.8.4`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/refs/forecast_hourly_virtual/template_config.py",
         examples=(
@@ -1487,8 +1500,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "projection, with spatial indexing along the `x` and `y` "
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
-            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.8.4`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/refs/forecast_3_hourly_virtual/template_config.py",
         examples=(
