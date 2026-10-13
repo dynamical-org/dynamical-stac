@@ -1,0 +1,5146 @@
+{
+  "type": "Collection",
+  "id": "noaa-refs-forecast-hourly-virtual",
+  "stac_version": "1.1.0",
+  "description": "Ensemble weather forecast products from NOAA's RRFS Ensemble Forecast System (REFS).",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-refs-forecast-hourly-virtual/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-refs-forecast-hourly-virtual/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-rrfs-refs-forecast-virtual.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "RRFS and REFS forecasts, virtual (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-rrfs-refs-forecast-virtual.ipynb",
+      "type": "text/html",
+      "title": "RRFS and REFS forecasts, virtual (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-staging.dynamical.org/noaa-refs-forecast-hourly-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA REFS forecast, hourly, virtual"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "NOAA NWS NCEP REFS data processed by dynamical.org from NOAA Open Data Dissemination archives.",
+  "version": "0.1.0",
+  "model_id": "noaa-refs",
+  "model_name": "NOAA REFS",
+  "description_summary": "This dataset is an archive of past and present REFS ensemble products, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, and step forward hourly along the `lead_time` dimension from 1 hour out to 60 hours. A new forecast is initialized every 6 hours.\n\nEnsemble means and standard deviations are stored along the `statistic` dimension. Other products, such as probabilities of exceeding a threshold, are separate variables without it.\n\nThis dataset uses the native RRFS Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.\n\nNote: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-rrfs/).\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (6 hours) |\n| statistic | 1 |\n| lead_time | 1 (1 hour) |\n| y | 1059 (3177 km) |\n| x | 1799 (5397 km) |\n| **uncompressed** | 14.5 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-refs-forecast-hourly-virtual/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.",
+  "description_model": "The RRFS Ensemble Forecast System (REFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) convection-allowing ensemble built from Rapid Refresh Forecast System (RRFS) runs. NOAA publishes ensemble products from it on a 3 km grid, including means, spreads and probabilities of exceeding thresholds. REFS is pre-operational and under development, so expect some changes to model output.",
+  "examples": [
+    {
+      "title": "Temperature map",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-refs-forecast-hourly-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", statistic=\"mean\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-refs-forecast-hourly-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-rrfs-ops-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", statistic=\"mean\")",
+          "language": "python"
+        },
+        {
+          "label": "prompt",
+          "language": "text",
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-refs-forecast-hourly-virtual\nSTAC collection: https://stac-staging.dynamical.org/noaa-refs-forecast-hourly-virtual/collection.json"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2026-08-13T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        3600,
+        216000
+      ],
+      "unit": "seconds",
+      "size": 60
+    },
+    "statistic": {
+      "type": "other",
+      "extent": [
+        null,
+        null
+      ],
+      "unit": "1",
+      "size": 2
+    },
+    "x": {
+      "type": "spatial",
+      "extent": [
+        -2697520.142521929,
+        2696479.857478071
+      ],
+      "axis": "x",
+      "unit": "m",
+      "size": 1799
+    },
+    "y": {
+      "type": "spatial",
+      "extent": [
+        -1587306.152556665,
+        1586693.847443335
+      ],
+      "axis": "y",
+      "unit": "m",
+      "size": 1059
+    }
+  },
+  "cube:variables": {
+    "categorical_freezing_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Categorical freezing rain",
+      "short_name": "cfrzr",
+      "comment": "Indicates whether freezing rain is the dominant precipitation type."
+    },
+    "categorical_ice_pellets_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Categorical ice pellets",
+      "short_name": "cicep",
+      "comment": "Indicates whether ice pellets is the dominant precipitation type."
+    },
+    "categorical_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Categorical rain",
+      "short_name": "crain",
+      "comment": "Indicates whether rain is the dominant precipitation type."
+    },
+    "categorical_snow_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Categorical snow",
+      "short_name": "csnow",
+      "comment": "Indicates whether snow is the dominant precipitation type."
+    },
+    "composite_reflectivity": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "dBZ",
+      "long_name": "Maximum/Composite radar reflectivity",
+      "standard_name": "equivalent_reflectivity_factor",
+      "short_name": "refc",
+      "comment": "The mean slice is always missing; the probability-matched mean is provided as a separate variable. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
+    },
+    "convective_available_potential_energy_180_0mb": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective available potential energy",
+      "standard_name": "atmosphere_convective_available_potential_energy",
+      "short_name": "cape",
+      "comment": "The 180-0 mb in the name are pressure differences from the surface, not isobaric levels."
+    },
+    "convective_available_potential_energy_90_0mb": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective available potential energy",
+      "standard_name": "atmosphere_convective_available_potential_energy",
+      "short_name": "cape",
+      "comment": "The 90-0 mb in the name are pressure differences from the surface, not isobaric levels."
+    },
+    "convective_available_potential_energy_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective available potential energy",
+      "standard_name": "atmosphere_convective_available_potential_energy",
+      "short_name": "cape"
+    },
+    "convective_inhibition_180_0mb": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective inhibition",
+      "standard_name": "atmosphere_convective_inhibition",
+      "short_name": "cin",
+      "comment": "The 180-0 mb in the name are pressure differences from the surface, not isobaric levels. The mean is negative where there is inhibition and at or near zero where there is none."
+    },
+    "convective_inhibition_90_0mb": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective inhibition",
+      "standard_name": "atmosphere_convective_inhibition",
+      "short_name": "cin",
+      "comment": "The 90-0 mb in the name are pressure differences from the surface, not isobaric levels. The mean is negative where there is inhibition and at or near zero where there is none."
+    },
+    "convective_inhibition_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective inhibition",
+      "standard_name": "atmosphere_convective_inhibition",
+      "short_name": "cin",
+      "comment": "The mean is negative where there is inhibition and at or near zero where there is none."
+    },
+    "derived_radar_reflectivity_1000m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "dBZ",
+      "long_name": "Derived radar reflectivity",
+      "standard_name": "equivalent_reflectivity_factor",
+      "short_name": "refd",
+      "comment": "The mean slice is always missing; the probability-matched mean is provided as a separate variable. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d",
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_2m_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "dew_point_temperature_2m_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of 2 metre dewpoint temperature",
+      "short_name": "dew_point_temperature_2m_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "dew_point_temperature_500hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Dew point temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "dpt",
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_500hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "dew_point_temperature_500hpa_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of dew point temperature",
+      "short_name": "dew_point_temperature_500hpa_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "dew_point_temperature_700hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Dew point temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "dpt",
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_700hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "dew_point_temperature_700hpa_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of dew point temperature",
+      "short_name": "dew_point_temperature_700hpa_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "dew_point_temperature_850hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Dew point temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "dpt",
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_850hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "dew_point_temperature_850hpa_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of dew point temperature",
+      "short_name": "dew_point_temperature_850hpa_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "dew_point_temperature_925hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Dew point temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "dpt",
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_925hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "dew_point_temperature_925hpa_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of dew point temperature",
+      "short_name": "dew_point_temperature_925hpa_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "echo_top": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Echo top",
+      "short_name": "retop",
+      "comment": "The mean slice is always missing; the probability-matched mean is provided as a separate variable. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_1_hour_surface_above_0p254": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 1 hour total precipitation (surface) above 0.254 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_1_hour_surface_above_0p254",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Ensemble agreement scale probability of 1 hour total precipitation (surface) above 0.254 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_1_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 1 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_1_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Ensemble agreement scale probability of 1 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_1_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 1 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_1_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Ensemble agreement scale probability of 1 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_1_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 1 hour total precipitation (surface) above 6.35 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_1_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Ensemble agreement scale probability of 1 hour total precipitation (surface) above 6.35 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_snowfall_1_hour_surface_above_0p025": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 1 hour total snowfall (surface) above 0.025 m",
+      "short_name": "ensemble_agreement_scale_probability_of_total_snowfall_1_hour_surface_above_0p025",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Ensemble agreement scale probability of 1 hour total snowfall (surface) above 0.025 m."
+    },
+    "ensemble_agreement_scale_probability_of_total_snowfall_1_hour_surface_above_0p076": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 1 hour total snowfall (surface) above 0.076 m",
+      "short_name": "ensemble_agreement_scale_probability_of_total_snowfall_1_hour_surface_above_0p076",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Ensemble agreement scale probability of 1 hour total snowfall (surface) above 0.076 m."
+    },
+    "fog_liquid_water_content_0m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg kg-1",
+      "long_name": "Fog liquid water content",
+      "short_name": "fog_lwc",
+      "comment": "Fog liquid water is derived by the ensemble generator. Mean is weighted over members with positive fog liquid water. Standard deviation divides the weighted sum of squared deviations from that mean over all nonmissing members, including zero-fog members, by the positive-member weight sum before taking the square root. Both are zero when no member has fog."
+    },
+    "geopotential_height_0c_isotherm": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "geopotential_height_250hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "geopotential_height_500hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "geopotential_height_700hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "geopotential_height_850hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "geopotential_height_925hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "geopotential_height_cloud_base": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh",
+      "comment": "Mean and standard deviation use only members with a cloud base. When none contribute, the mean is the source's no-cloud height of about 20000 m and the standard deviation is zero, which does not indicate measured certainty."
+    },
+    "geopotential_height_cloud_ceiling": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh",
+      "comment": "Mean and standard deviation exclude capped members. A mean of 20000 m denotes no reported cloud ceiling; zero standard deviation can indicate no uncapped members as well as agreement."
+    },
+    "geopotential_height_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh",
+      "comment": "Standard deviation reflects differences in terrain height between member grids."
+    },
+    "high_cloud_cover": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "High cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "hcc"
+    },
+    "hourly_maximum_radar_reflectivity_1000m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "dBZ",
+      "long_name": "Hourly maximum of simulated reflectivity",
+      "standard_name": "equivalent_reflectivity_factor",
+      "short_name": "maxref",
+      "comment": "Maximum value over the preceding hour. The mean slice is always missing; the probability-matched mean is provided as a separate variable. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
+    },
+    "localized_probability_matched_mean_total_precipitation_1_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Localized probability-matched mean of total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "localized_probability_matched_mean_total_precipitation_1_hour_surface",
+      "comment": "Accumulated over the preceding 1 hour."
+    },
+    "low_cloud_cover": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Low cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "lcc"
+    },
+    "maximum_updraft_helicity_5000_2000m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m2 s-2",
+      "long_name": "Updraft Helicity",
+      "short_name": "uphl",
+      "comment": "Maximum value over the preceding hour. The mean slice is always missing; the probability-matched mean is provided as a separate variable."
+    },
+    "mean_probability_matched_mean_average_total_precipitation_1_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Average of the ensemble mean and probability-matched mean of total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "mean_probability_matched_mean_average_total_precipitation_1_hour_surface",
+      "comment": "Accumulated over the preceding 1 hour."
+    },
+    "medium_cloud_cover": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Medium cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "mcc"
+    },
+    "neighborhood_probability_of_composite_reflectivity_above_10": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 10 dBZ",
+      "short_name": "neighborhood_probability_of_composite_reflectivity_above_10",
+      "comment": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 10 dBZ."
+    },
+    "neighborhood_probability_of_composite_reflectivity_above_20": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 20 dBZ",
+      "short_name": "neighborhood_probability_of_composite_reflectivity_above_20",
+      "comment": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 20 dBZ."
+    },
+    "neighborhood_probability_of_composite_reflectivity_above_30": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 30 dBZ",
+      "short_name": "neighborhood_probability_of_composite_reflectivity_above_30",
+      "comment": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 30 dBZ."
+    },
+    "neighborhood_probability_of_composite_reflectivity_above_40": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 40 dBZ",
+      "short_name": "neighborhood_probability_of_composite_reflectivity_above_40",
+      "comment": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 40 dBZ."
+    },
+    "neighborhood_probability_of_composite_reflectivity_above_50": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 50 dBZ",
+      "short_name": "neighborhood_probability_of_composite_reflectivity_above_50",
+      "comment": "Neighborhood probability of maximum/composite radar reflectivity (entire atmosphere) above 50 dBZ."
+    },
+    "neighborhood_probability_of_derived_radar_reflectivity_1000m_above_30": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of derived radar reflectivity (1000 m above ground) above 30 dBZ",
+      "short_name": "neighborhood_probability_of_derived_radar_reflectivity_1000m_above_30",
+      "comment": "Neighborhood probability of derived radar reflectivity (1000 m above ground) above 30 dBZ."
+    },
+    "neighborhood_probability_of_derived_radar_reflectivity_1000m_above_40": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of derived radar reflectivity (1000 m above ground) above 40 dBZ",
+      "short_name": "neighborhood_probability_of_derived_radar_reflectivity_1000m_above_40",
+      "comment": "Neighborhood probability of derived radar reflectivity (1000 m above ground) above 40 dBZ."
+    },
+    "neighborhood_probability_of_derived_radar_reflectivity_1000m_above_50": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of derived radar reflectivity (1000 m above ground) above 50 dBZ",
+      "short_name": "neighborhood_probability_of_derived_radar_reflectivity_1000m_above_50",
+      "comment": "Neighborhood probability of derived radar reflectivity (1000 m above ground) above 50 dBZ."
+    },
+    "neighborhood_probability_of_echo_top_above_10668": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of echo top (entire atmosphere) above 10668 m",
+      "short_name": "neighborhood_probability_of_echo_top_above_10668",
+      "comment": "Neighborhood probability of echo top (entire atmosphere) above 10668 m."
+    },
+    "neighborhood_probability_of_echo_top_above_12192": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of echo top (entire atmosphere) above 12192 m",
+      "short_name": "neighborhood_probability_of_echo_top_above_12192",
+      "comment": "Neighborhood probability of echo top (entire atmosphere) above 12192 m."
+    },
+    "neighborhood_probability_of_echo_top_above_15240": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of echo top (entire atmosphere) above 15240 m",
+      "short_name": "neighborhood_probability_of_echo_top_above_15240",
+      "comment": "Neighborhood probability of echo top (entire atmosphere) above 15240 m."
+    },
+    "neighborhood_probability_of_echo_top_above_6096": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of echo top (entire atmosphere) above 6096 m",
+      "short_name": "neighborhood_probability_of_echo_top_above_6096",
+      "comment": "Neighborhood probability of echo top (entire atmosphere) above 6096 m."
+    },
+    "neighborhood_probability_of_echo_top_above_9144": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of echo top (entire atmosphere) above 9144 m",
+      "short_name": "neighborhood_probability_of_echo_top_above_9144",
+      "comment": "Neighborhood probability of echo top (entire atmosphere) above 9144 m."
+    },
+    "neighborhood_probability_of_freezing_rain_1_hour_surface_above_0p254": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour freezing rain (surface) above 0.254 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_1_hour_surface_above_0p254",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour freezing rain (surface) above 0.254 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_1_hour_surface_above_2p54": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour freezing rain (surface) above 2.54 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_1_hour_surface_above_2p54",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour freezing rain (surface) above 2.54 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_1_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour freezing rain (surface) above 6.35 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_1_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour freezing rain (surface) above 6.35 kg m-2."
+    },
+    "neighborhood_probability_of_hourly_maximum_radar_reflectivity_1000m_above_40": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of hourly maximum of simulated reflectivity (1000 m above ground) above 40 dBZ",
+      "short_name": "neighborhood_probability_of_hourly_maximum_radar_reflectivity_1000m_above_40",
+      "comment": "Neighborhood probability of hourly maximum of simulated reflectivity (1000 m above ground) above 40 dBZ. Maximum value over the preceding hour."
+    },
+    "neighborhood_probability_of_hourly_maximum_radar_reflectivity_1000m_above_50": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of hourly maximum of simulated reflectivity (1000 m above ground) above 50 dBZ",
+      "short_name": "neighborhood_probability_of_hourly_maximum_radar_reflectivity_1000m_above_50",
+      "comment": "Neighborhood probability of hourly maximum of simulated reflectivity (1000 m above ground) above 50 dBZ. Maximum value over the preceding hour."
+    },
+    "neighborhood_probability_of_maximum_updraft_helicity_5000_2000m_above_150": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of updraft helicity (5000-2000 m above ground) above 150 m2 s-2",
+      "short_name": "neighborhood_probability_of_maximum_updraft_helicity_5000_2000m_above_150",
+      "comment": "Neighborhood probability of updraft helicity (5000-2000 m above ground) above 150 m2 s-2. Maximum value over the preceding hour."
+    },
+    "neighborhood_probability_of_maximum_updraft_helicity_5000_2000m_above_25": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of updraft helicity (5000-2000 m above ground) above 25 m2 s-2",
+      "short_name": "neighborhood_probability_of_maximum_updraft_helicity_5000_2000m_above_25",
+      "comment": "Neighborhood probability of updraft helicity (5000-2000 m above ground) above 25 m2 s-2. Maximum value over the preceding hour."
+    },
+    "neighborhood_probability_of_maximum_updraft_helicity_5000_2000m_above_75": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of updraft helicity (5000-2000 m above ground) above 75 m2 s-2",
+      "short_name": "neighborhood_probability_of_maximum_updraft_helicity_5000_2000m_above_75",
+      "comment": "Neighborhood probability of updraft helicity (5000-2000 m above ground) above 75 m2 s-2. Maximum value over the preceding hour."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_1_hour_flash_flood_guidance_1_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour precipitation above the 1 hour flash flood guidance depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_1_hour_flash_flood_guidance_1_hour_surface",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour precipitation above the 1 hour flash flood guidance depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_total_precipitation_1_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_1_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_1_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_1_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_1_hour_surface_above_50p8": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour total precipitation (surface) above 50.8 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_1_hour_surface_above_50p8",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour total precipitation (surface) above 50.8 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_1_hour_surface_above_76p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour total precipitation (surface) above 76.2 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_1_hour_surface_above_76p2",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour total precipitation (surface) above 76.2 kg m-2."
+    },
+    "neighborhood_probability_of_total_snowfall_1_hour_surface_above_0p025": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour total snowfall (surface) above 0.025 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_1_hour_surface_above_0p025",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour total snowfall (surface) above 0.025 m."
+    },
+    "neighborhood_probability_of_total_snowfall_1_hour_surface_above_0p076": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 1 hour total snowfall (surface) above 0.076 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_1_hour_surface_above_0p076",
+      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour total snowfall (surface) above 0.076 m."
+    },
+    "neighborhood_probability_of_wind_speed_10m_above_10p3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 10.3 m s-1",
+      "short_name": "neighborhood_probability_of_wind_speed_10m_above_10p3",
+      "comment": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 10.3 m s-1."
+    },
+    "neighborhood_probability_of_wind_speed_10m_above_15p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 15.4 m s-1",
+      "short_name": "neighborhood_probability_of_wind_speed_10m_above_15p4",
+      "comment": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 15.4 m s-1."
+    },
+    "neighborhood_probability_of_wind_speed_10m_above_18p01": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 18.01 m s-1",
+      "short_name": "neighborhood_probability_of_wind_speed_10m_above_18p01",
+      "comment": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 18.01 m s-1."
+    },
+    "neighborhood_probability_of_wind_speed_10m_above_20p6": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 20.6 m s-1",
+      "short_name": "neighborhood_probability_of_wind_speed_10m_above_20p6",
+      "comment": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 20.6 m s-1."
+    },
+    "neighborhood_probability_of_wind_speed_10m_above_25p72": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 25.72 m s-1",
+      "short_name": "neighborhood_probability_of_wind_speed_10m_above_25p72",
+      "comment": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 25.72 m s-1."
+    },
+    "neighborhood_probability_of_wind_speed_10m_above_30p9": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 30.9 m s-1",
+      "short_name": "neighborhood_probability_of_wind_speed_10m_above_30p9",
+      "comment": "Neighborhood probability of 10 metre wind speed (10 m above ground) above 30.9 m s-1."
+    },
+    "precipitable_water_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Precipitable water",
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "short_name": "pwat"
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "probability_matched_mean_composite_reflectivity": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "dBZ",
+      "long_name": "Probability-matched mean of maximum/composite radar reflectivity",
+      "standard_name": "equivalent_reflectivity_factor",
+      "short_name": "probability_matched_mean_composite_reflectivity",
+      "comment": "The probability-matched mean retains member no-echo floors at -20, -10 or 0 dBZ. A value of 0 dBZ can also be a valid reflectivity; other negative dBZ values can be valid."
+    },
+    "probability_matched_mean_derived_radar_reflectivity_1000m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "dBZ",
+      "long_name": "Probability-matched mean of derived radar reflectivity",
+      "standard_name": "equivalent_reflectivity_factor",
+      "short_name": "probability_matched_mean_derived_radar_reflectivity_1000m",
+      "comment": "The probability-matched mean retains member no-echo floors at -20, -10 or 0 dBZ. A value of 0 dBZ can also be a valid reflectivity; other negative dBZ values can be valid."
+    },
+    "probability_matched_mean_echo_top": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Probability-matched mean of echo top",
+      "short_name": "probability_matched_mean_echo_top",
+      "comment": "Negative values indicate no echo. Mask values < 0."
+    },
+    "probability_matched_mean_geopotential_height_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Probability-matched mean of geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "probability_matched_mean_geopotential_height_surface"
+    },
+    "probability_matched_mean_hourly_maximum_radar_reflectivity_1000m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "dBZ",
+      "long_name": "Probability-matched mean of hourly maximum of simulated reflectivity",
+      "standard_name": "equivalent_reflectivity_factor",
+      "short_name": "probability_matched_mean_hourly_maximum_radar_reflectivity_1000m",
+      "comment": "Maximum value over the preceding hour. A value of 0 dBZ can mean no echo or a valid reflectivity at the source's lowest reported value."
+    },
+    "probability_matched_mean_maximum_updraft_helicity_5000_2000m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m2 s-2",
+      "long_name": "Probability-matched mean of updraft helicity",
+      "short_name": "probability_matched_mean_maximum_updraft_helicity_5000_2000m",
+      "comment": "Maximum value over the preceding hour."
+    },
+    "probability_matched_mean_total_precipitation_1_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Probability-matched mean of total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "probability_matched_mean_total_precipitation_1_hour_surface",
+      "comment": "Accumulated over the preceding 1 hour."
+    },
+    "probability_of_categorical_freezing_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of categorical freezing rain (surface)",
+      "short_name": "probability_of_categorical_freezing_rain_surface",
+      "comment": "Percentage of members diagnosing freezing rain."
+    },
+    "probability_of_categorical_ice_pellets_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of categorical ice pellets (surface)",
+      "short_name": "probability_of_categorical_ice_pellets_surface",
+      "comment": "Percentage of members diagnosing ice pellets."
+    },
+    "probability_of_categorical_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of categorical rain (surface)",
+      "short_name": "probability_of_categorical_rain_surface",
+      "comment": "Percentage of members diagnosing rain."
+    },
+    "probability_of_categorical_snow_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of categorical snow (surface)",
+      "short_name": "probability_of_categorical_snow_surface",
+      "comment": "Percentage of members diagnosing snow."
+    },
+    "probability_of_clear_air_turbulence_175hpa_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (175 mb) at least 1 and below 2",
+      "short_name": "probability_of_clear_air_turbulence_175hpa_at_least_1_below_2",
+      "comment": "Probability of clear air turbulence (175 mb) at least 1 and below 2. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_175hpa_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (175 mb) at least 2 and below 3",
+      "short_name": "probability_of_clear_air_turbulence_175hpa_at_least_2_below_3",
+      "comment": "Probability of clear air turbulence (175 mb) at least 2 and below 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_175hpa_at_least_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (175 mb) at least 3",
+      "short_name": "probability_of_clear_air_turbulence_175hpa_at_least_3",
+      "comment": "Probability of clear air turbulence (175 mb) at least 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_200hpa_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (200 mb) at least 1 and below 2",
+      "short_name": "probability_of_clear_air_turbulence_200hpa_at_least_1_below_2",
+      "comment": "Probability of clear air turbulence (200 mb) at least 1 and below 2. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_200hpa_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (200 mb) at least 2 and below 3",
+      "short_name": "probability_of_clear_air_turbulence_200hpa_at_least_2_below_3",
+      "comment": "Probability of clear air turbulence (200 mb) at least 2 and below 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_200hpa_at_least_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (200 mb) at least 3",
+      "short_name": "probability_of_clear_air_turbulence_200hpa_at_least_3",
+      "comment": "Probability of clear air turbulence (200 mb) at least 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_225hpa_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (225 mb) at least 1 and below 2",
+      "short_name": "probability_of_clear_air_turbulence_225hpa_at_least_1_below_2",
+      "comment": "Probability of clear air turbulence (225 mb) at least 1 and below 2. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_225hpa_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (225 mb) at least 2 and below 3",
+      "short_name": "probability_of_clear_air_turbulence_225hpa_at_least_2_below_3",
+      "comment": "Probability of clear air turbulence (225 mb) at least 2 and below 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_225hpa_at_least_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (225 mb) at least 3",
+      "short_name": "probability_of_clear_air_turbulence_225hpa_at_least_3",
+      "comment": "Probability of clear air turbulence (225 mb) at least 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_275hpa_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (275 mb) at least 1 and below 2",
+      "short_name": "probability_of_clear_air_turbulence_275hpa_at_least_1_below_2",
+      "comment": "Probability of clear air turbulence (275 mb) at least 1 and below 2. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_275hpa_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (275 mb) at least 2 and below 3",
+      "short_name": "probability_of_clear_air_turbulence_275hpa_at_least_2_below_3",
+      "comment": "Probability of clear air turbulence (275 mb) at least 2 and below 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_275hpa_at_least_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (275 mb) at least 3",
+      "short_name": "probability_of_clear_air_turbulence_275hpa_at_least_3",
+      "comment": "Probability of clear air turbulence (275 mb) at least 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_300hpa_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (300 mb) at least 1 and below 2",
+      "short_name": "probability_of_clear_air_turbulence_300hpa_at_least_1_below_2",
+      "comment": "Probability of clear air turbulence (300 mb) at least 1 and below 2. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_300hpa_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (300 mb) at least 2 and below 3",
+      "short_name": "probability_of_clear_air_turbulence_300hpa_at_least_2_below_3",
+      "comment": "Probability of clear air turbulence (300 mb) at least 2 and below 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_300hpa_at_least_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (300 mb) at least 3",
+      "short_name": "probability_of_clear_air_turbulence_300hpa_at_least_3",
+      "comment": "Probability of clear air turbulence (300 mb) at least 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_350hpa_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (350 mb) at least 1 and below 2",
+      "short_name": "probability_of_clear_air_turbulence_350hpa_at_least_1_below_2",
+      "comment": "Probability of clear air turbulence (350 mb) at least 1 and below 2. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_350hpa_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (350 mb) at least 2 and below 3",
+      "short_name": "probability_of_clear_air_turbulence_350hpa_at_least_2_below_3",
+      "comment": "Probability of clear air turbulence (350 mb) at least 2 and below 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_350hpa_at_least_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (350 mb) at least 3",
+      "short_name": "probability_of_clear_air_turbulence_350hpa_at_least_3",
+      "comment": "Probability of clear air turbulence (350 mb) at least 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_425hpa_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (425 mb) at least 1 and below 2",
+      "short_name": "probability_of_clear_air_turbulence_425hpa_at_least_1_below_2",
+      "comment": "Probability of clear air turbulence (425 mb) at least 1 and below 2. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_425hpa_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (425 mb) at least 2 and below 3",
+      "short_name": "probability_of_clear_air_turbulence_425hpa_at_least_2_below_3",
+      "comment": "Probability of clear air turbulence (425 mb) at least 2 and below 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_425hpa_at_least_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (425 mb) at least 3",
+      "short_name": "probability_of_clear_air_turbulence_425hpa_at_least_3",
+      "comment": "Probability of clear air turbulence (425 mb) at least 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_450hpa_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (450 mb) at least 1 and below 2",
+      "short_name": "probability_of_clear_air_turbulence_450hpa_at_least_1_below_2",
+      "comment": "Probability of clear air turbulence (450 mb) at least 1 and below 2. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_450hpa_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (450 mb) at least 2 and below 3",
+      "short_name": "probability_of_clear_air_turbulence_450hpa_at_least_2_below_3",
+      "comment": "Probability of clear air turbulence (450 mb) at least 2 and below 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_450hpa_at_least_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (450 mb) at least 3",
+      "short_name": "probability_of_clear_air_turbulence_450hpa_at_least_3",
+      "comment": "Probability of clear air turbulence (450 mb) at least 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_525hpa_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (525 mb) at least 1 and below 2",
+      "short_name": "probability_of_clear_air_turbulence_525hpa_at_least_1_below_2",
+      "comment": "Probability of clear air turbulence (525 mb) at least 1 and below 2. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_525hpa_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (525 mb) at least 2 and below 3",
+      "short_name": "probability_of_clear_air_turbulence_525hpa_at_least_2_below_3",
+      "comment": "Probability of clear air turbulence (525 mb) at least 2 and below 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_clear_air_turbulence_525hpa_at_least_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of clear air turbulence (525 mb) at least 3",
+      "short_name": "probability_of_clear_air_turbulence_525hpa_at_least_3",
+      "comment": "Probability of clear air turbulence (525 mb) at least 3. The generator defines categories from its Ellrod-based turbulence index: 0 at most 4; 1 above 4 through 8; 2 above 8 through 12; 3 above 12. Higher categories indicate stronger diagnosed turbulence."
+    },
+    "probability_of_convective_available_potential_energy_90_0mb_above_1000": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of convective available potential energy (90-0 mb above ground) above 1000 J kg-1",
+      "short_name": "probability_of_convective_available_potential_energy_90_0mb_above_1000",
+      "comment": "Probability of convective available potential energy (90-0 mb above ground) above 1000 J kg-1. The 90-0 mb in the name are pressure differences from the surface, not isobaric levels."
+    },
+    "probability_of_convective_available_potential_energy_90_0mb_above_1500": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of convective available potential energy (90-0 mb above ground) above 1500 J kg-1",
+      "short_name": "probability_of_convective_available_potential_energy_90_0mb_above_1500",
+      "comment": "Probability of convective available potential energy (90-0 mb above ground) above 1500 J kg-1. The 90-0 mb in the name are pressure differences from the surface, not isobaric levels."
+    },
+    "probability_of_convective_available_potential_energy_90_0mb_above_2000": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of convective available potential energy (90-0 mb above ground) above 2000 J kg-1",
+      "short_name": "probability_of_convective_available_potential_energy_90_0mb_above_2000",
+      "comment": "Probability of convective available potential energy (90-0 mb above ground) above 2000 J kg-1. The 90-0 mb in the name are pressure differences from the surface, not isobaric levels."
+    },
+    "probability_of_convective_available_potential_energy_90_0mb_above_3000": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of convective available potential energy (90-0 mb above ground) above 3000 J kg-1",
+      "short_name": "probability_of_convective_available_potential_energy_90_0mb_above_3000",
+      "comment": "Probability of convective available potential energy (90-0 mb above ground) above 3000 J kg-1. The 90-0 mb in the name are pressure differences from the surface, not isobaric levels."
+    },
+    "probability_of_convective_available_potential_energy_90_0mb_above_500": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of convective available potential energy (90-0 mb above ground) above 500 J kg-1",
+      "short_name": "probability_of_convective_available_potential_energy_90_0mb_above_500",
+      "comment": "Probability of convective available potential energy (90-0 mb above ground) above 500 J kg-1. The 90-0 mb in the name are pressure differences from the surface, not isobaric levels."
+    },
+    "probability_of_convective_inhibition_90_0mb_below_minus_100": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of convective inhibition (90-0 mb above ground) below -100 J kg-1",
+      "short_name": "probability_of_convective_inhibition_90_0mb_below_minus_100",
+      "comment": "Probability of convective inhibition (90-0 mb above ground) below -100 J kg-1. The 90-0 mb in the name are pressure differences from the surface, not isobaric levels. Convective inhibition is negative where there is inhibition and at or near zero where there is none."
+    },
+    "probability_of_convective_inhibition_90_0mb_below_minus_400": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of convective inhibition (90-0 mb above ground) below -400 J kg-1",
+      "short_name": "probability_of_convective_inhibition_90_0mb_below_minus_400",
+      "comment": "Probability of convective inhibition (90-0 mb above ground) below -400 J kg-1. The 90-0 mb in the name are pressure differences from the surface, not isobaric levels. Convective inhibition is negative where there is inhibition and at or near zero where there is none."
+    },
+    "probability_of_convective_inhibition_90_0mb_below_minus_50": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of convective inhibition (90-0 mb above ground) below -50 J kg-1",
+      "short_name": "probability_of_convective_inhibition_90_0mb_below_minus_50",
+      "comment": "Probability of convective inhibition (90-0 mb above ground) below -50 J kg-1. The 90-0 mb in the name are pressure differences from the surface, not isobaric levels. Convective inhibition is negative where there is inhibition and at or near zero where there is none."
+    },
+    "probability_of_dew_point_temperature_2m_above_283p15": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 2 metre dewpoint temperature (2 m above ground) above 283.15 K",
+      "short_name": "probability_of_dew_point_temperature_2m_above_283p15",
+      "comment": "Probability of 2 metre dewpoint temperature (2 m above ground) above 283.15 K."
+    },
+    "probability_of_dew_point_temperature_2m_above_285p93": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 2 metre dewpoint temperature (2 m above ground) above 285.93 K",
+      "short_name": "probability_of_dew_point_temperature_2m_above_285p93",
+      "comment": "Probability of 2 metre dewpoint temperature (2 m above ground) above 285.93 K."
+    },
+    "probability_of_dew_point_temperature_2m_above_288p71": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 2 metre dewpoint temperature (2 m above ground) above 288.71 K",
+      "short_name": "probability_of_dew_point_temperature_2m_above_288p71",
+      "comment": "Probability of 2 metre dewpoint temperature (2 m above ground) above 288.71 K."
+    },
+    "probability_of_dew_point_temperature_2m_above_291p48": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 2 metre dewpoint temperature (2 m above ground) above 291.48 K",
+      "short_name": "probability_of_dew_point_temperature_2m_above_291p48",
+      "comment": "Probability of 2 metre dewpoint temperature (2 m above ground) above 291.48 K."
+    },
+    "probability_of_dew_point_temperature_2m_above_294p26": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 2 metre dewpoint temperature (2 m above ground) above 294.26 K",
+      "short_name": "probability_of_dew_point_temperature_2m_above_294p26",
+      "comment": "Probability of 2 metre dewpoint temperature (2 m above ground) above 294.26 K."
+    },
+    "probability_of_flight_category_surface_at_least_1_below_2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of flight category (surface) at least 1 and below 2",
+      "short_name": "probability_of_flight_category_surface_at_least_1_below_2",
+      "comment": "Probability of flight category (surface) at least 1 and below 2. Flight categories are 1 = LIFR (low instrument flight rules), 2 = IFR (instrument flight rules), 3 = MVFR (marginal visual flight rules), and 4 = VFR (visual flight rules). Lower categories indicate greater restriction."
+    },
+    "probability_of_flight_category_surface_at_least_2_below_3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of flight category (surface) at least 2 and below 3",
+      "short_name": "probability_of_flight_category_surface_at_least_2_below_3",
+      "comment": "Probability of flight category (surface) at least 2 and below 3. Flight categories are 1 = LIFR (low instrument flight rules), 2 = IFR (instrument flight rules), 3 = MVFR (marginal visual flight rules), and 4 = VFR (visual flight rules). Lower categories indicate greater restriction."
+    },
+    "probability_of_flight_category_surface_at_least_3_below_4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of flight category (surface) at least 3 and below 4",
+      "short_name": "probability_of_flight_category_surface_at_least_3_below_4",
+      "comment": "Probability of flight category (surface) at least 3 and below 4. Flight categories are 1 = LIFR (low instrument flight rules), 2 = IFR (instrument flight rules), 3 = MVFR (marginal visual flight rules), and 4 = VFR (visual flight rules). Lower categories indicate greater restriction."
+    },
+    "probability_of_flight_category_surface_at_least_4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of flight category (surface) at least 4",
+      "short_name": "probability_of_flight_category_surface_at_least_4",
+      "comment": "Probability of flight category (surface) at least 4. Flight categories are 1 = LIFR (low instrument flight rules), 2 = IFR (instrument flight rules), 3 = MVFR (marginal visual flight rules), and 4 = VFR (visual flight rules). Lower categories indicate greater restriction."
+    },
+    "probability_of_fog_liquid_water_content_0m_above_0p016": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of fog liquid water content (0 m above ground) above 0.016 g kg-1",
+      "short_name": "probability_of_fog_liquid_water_content_0m_above_0p016",
+      "comment": "Probability of fog liquid water content (0 m above ground) above 0.016 g kg-1."
+    },
+    "probability_of_fog_liquid_water_content_0m_above_0p036": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of fog liquid water content (0 m above ground) above 0.036 g kg-1",
+      "short_name": "probability_of_fog_liquid_water_content_0m_above_0p036",
+      "comment": "Probability of fog liquid water content (0 m above ground) above 0.036 g kg-1."
+    },
+    "probability_of_fog_liquid_water_content_0m_above_0p103": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of fog liquid water content (0 m above ground) above 0.103 g kg-1",
+      "short_name": "probability_of_fog_liquid_water_content_0m_above_0p103",
+      "comment": "Probability of fog liquid water content (0 m above ground) above 0.103 g kg-1."
+    },
+    "probability_of_geopotential_height_cloud_ceiling_below_1372": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of geopotential height (cloud ceiling) below 1372 m",
+      "short_name": "probability_of_geopotential_height_cloud_ceiling_below_1372",
+      "comment": "Probability of geopotential height (cloud ceiling) below 1372 m."
+    },
+    "probability_of_geopotential_height_cloud_ceiling_below_152p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of geopotential height (cloud ceiling) below 152.4 m",
+      "short_name": "probability_of_geopotential_height_cloud_ceiling_below_152p4",
+      "comment": "Probability of geopotential height (cloud ceiling) below 152.4 m."
+    },
+    "probability_of_geopotential_height_cloud_ceiling_below_1830": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of geopotential height (cloud ceiling) below 1830 m",
+      "short_name": "probability_of_geopotential_height_cloud_ceiling_below_1830",
+      "comment": "Probability of geopotential height (cloud ceiling) below 1830 m."
+    },
+    "probability_of_geopotential_height_cloud_ceiling_below_305": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of geopotential height (cloud ceiling) below 305 m",
+      "short_name": "probability_of_geopotential_height_cloud_ceiling_below_305",
+      "comment": "Probability of geopotential height (cloud ceiling) below 305 m."
+    },
+    "probability_of_geopotential_height_cloud_ceiling_below_3050": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of geopotential height (cloud ceiling) below 3050 m",
+      "short_name": "probability_of_geopotential_height_cloud_ceiling_below_3050",
+      "comment": "Probability of geopotential height (cloud ceiling) below 3050 m."
+    },
+    "probability_of_geopotential_height_cloud_ceiling_below_610": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of geopotential height (cloud ceiling) below 610 m",
+      "short_name": "probability_of_geopotential_height_cloud_ceiling_below_610",
+      "comment": "Probability of geopotential height (cloud ceiling) below 610 m."
+    },
+    "probability_of_geopotential_height_cloud_ceiling_below_915": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of geopotential height (cloud ceiling) below 915 m",
+      "short_name": "probability_of_geopotential_height_cloud_ceiling_below_915",
+      "comment": "Probability of geopotential height (cloud ceiling) below 915 m."
+    },
+    "probability_of_icing_1000hpa_at_least_1": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of icing (1000 mb) at least 1",
+      "short_name": "probability_of_icing_1000hpa_at_least_1",
+      "comment": "Probability of icing (1000 mb) at least 1."
+    },
+    "probability_of_icing_400hpa_at_least_1": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of icing (400 mb) at least 1",
+      "short_name": "probability_of_icing_400hpa_at_least_1",
+      "comment": "Probability of icing (400 mb) at least 1."
+    },
+    "probability_of_icing_500hpa_at_least_1": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of icing (500 mb) at least 1",
+      "short_name": "probability_of_icing_500hpa_at_least_1",
+      "comment": "Probability of icing (500 mb) at least 1."
+    },
+    "probability_of_icing_575hpa_at_least_1": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of icing (575 mb) at least 1",
+      "short_name": "probability_of_icing_575hpa_at_least_1",
+      "comment": "Probability of icing (575 mb) at least 1."
+    },
+    "probability_of_icing_650hpa_at_least_1": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of icing (650 mb) at least 1",
+      "short_name": "probability_of_icing_650hpa_at_least_1",
+      "comment": "Probability of icing (650 mb) at least 1."
+    },
+    "probability_of_icing_725hpa_at_least_1": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of icing (725 mb) at least 1",
+      "short_name": "probability_of_icing_725hpa_at_least_1",
+      "comment": "Probability of icing (725 mb) at least 1."
+    },
+    "probability_of_icing_800hpa_at_least_1": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of icing (800 mb) at least 1",
+      "short_name": "probability_of_icing_800hpa_at_least_1",
+      "comment": "Probability of icing (800 mb) at least 1."
+    },
+    "probability_of_icing_900hpa_at_least_1": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of icing (900 mb) at least 1",
+      "short_name": "probability_of_icing_900hpa_at_least_1",
+      "comment": "Probability of icing (900 mb) at least 1."
+    },
+    "probability_of_lightning_atmosphere_above_0p08": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of lightning (entire atmosphere) above 0.08",
+      "short_name": "probability_of_lightning_atmosphere_above_0p08",
+      "comment": "Probability of lightning (entire atmosphere) above 0.08."
+    },
+    "probability_of_maximum_upward_vertical_velocity_100_1000mb_above_1": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of maximum upward vertical velocity (100-1000 mb) above 1 m s-1",
+      "short_name": "probability_of_maximum_upward_vertical_velocity_100_1000mb_above_1",
+      "comment": "Probability of maximum upward vertical velocity (100-1000 mb) above 1 m s-1. Maximum value over the preceding hour."
+    },
+    "probability_of_maximum_upward_vertical_velocity_100_1000mb_above_10": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of maximum upward vertical velocity (100-1000 mb) above 10 m s-1",
+      "short_name": "probability_of_maximum_upward_vertical_velocity_100_1000mb_above_10",
+      "comment": "Probability of maximum upward vertical velocity (100-1000 mb) above 10 m s-1. Maximum value over the preceding hour."
+    },
+    "probability_of_maximum_upward_vertical_velocity_100_1000mb_above_20": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of maximum upward vertical velocity (100-1000 mb) above 20 m s-1",
+      "short_name": "probability_of_maximum_upward_vertical_velocity_100_1000mb_above_20",
+      "comment": "Probability of maximum upward vertical velocity (100-1000 mb) above 20 m s-1. Maximum value over the preceding hour."
+    },
+    "probability_of_precipitable_water_atmosphere_above_25": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of precipitable water (entire atmosphere) above 25 kg m-2",
+      "short_name": "probability_of_precipitable_water_atmosphere_above_25",
+      "comment": "Probability of precipitable water (entire atmosphere) above 25 kg m-2."
+    },
+    "probability_of_precipitable_water_atmosphere_above_37p5": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of precipitable water (entire atmosphere) above 37.5 kg m-2",
+      "short_name": "probability_of_precipitable_water_atmosphere_above_37p5",
+      "comment": "Probability of precipitable water (entire atmosphere) above 37.5 kg m-2."
+    },
+    "probability_of_precipitable_water_atmosphere_above_50": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of precipitable water (entire atmosphere) above 50 kg m-2",
+      "short_name": "probability_of_precipitable_water_atmosphere_above_50",
+      "comment": "Probability of precipitable water (entire atmosphere) above 50 kg m-2."
+    },
+    "probability_of_storm_relative_helicity_3000_0m_above_100": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of storm relative helicity (3000-0 m above ground) above 100 m2 s-2",
+      "short_name": "probability_of_storm_relative_helicity_3000_0m_above_100",
+      "comment": "Probability of storm relative helicity (3000-0 m above ground) above 100 m2 s-2."
+    },
+    "probability_of_storm_relative_helicity_3000_0m_above_200": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of storm relative helicity (3000-0 m above ground) above 200 m2 s-2",
+      "short_name": "probability_of_storm_relative_helicity_3000_0m_above_200",
+      "comment": "Probability of storm relative helicity (3000-0 m above ground) above 200 m2 s-2."
+    },
+    "probability_of_storm_relative_helicity_3000_0m_above_400": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of storm relative helicity (3000-0 m above ground) above 400 m2 s-2",
+      "short_name": "probability_of_storm_relative_helicity_3000_0m_above_400",
+      "comment": "Probability of storm relative helicity (3000-0 m above ground) above 400 m2 s-2."
+    },
+    "probability_of_temperature_2m_below_273p15": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 2 metre temperature (2 m above ground) below 273.15 K",
+      "short_name": "probability_of_temperature_2m_below_273p15",
+      "comment": "Probability of 2 metre temperature (2 m above ground) below 273.15 K."
+    },
+    "probability_of_vertical_wind_shear_0_6000m_above_10p3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of vertical wind shear (0-6000 m above ground) above 10.3 m s-1",
+      "short_name": "probability_of_vertical_wind_shear_0_6000m_above_10p3",
+      "comment": "Probability of vertical wind shear (0-6000 m above ground) above 10.3 m s-1."
+    },
+    "probability_of_vertical_wind_shear_0_6000m_above_15p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of vertical wind shear (0-6000 m above ground) above 15.4 m s-1",
+      "short_name": "probability_of_vertical_wind_shear_0_6000m_above_15p4",
+      "comment": "Probability of vertical wind shear (0-6000 m above ground) above 15.4 m s-1."
+    },
+    "probability_of_vertical_wind_shear_0_6000m_above_20p6": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of vertical wind shear (0-6000 m above ground) above 20.6 m s-1",
+      "short_name": "probability_of_vertical_wind_shear_0_6000m_above_20p6",
+      "comment": "Probability of vertical wind shear (0-6000 m above ground) above 20.6 m s-1."
+    },
+    "probability_of_vertical_wind_shear_0_6000m_above_25p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of vertical wind shear (0-6000 m above ground) above 25.7 m s-1",
+      "short_name": "probability_of_vertical_wind_shear_0_6000m_above_25p7",
+      "comment": "Probability of vertical wind shear (0-6000 m above ground) above 25.7 m s-1."
+    },
+    "probability_of_vertical_wind_shear_0_609m_above_10p3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of vertical wind shear (0-609 m above ground) above 10.3 m s-1",
+      "short_name": "probability_of_vertical_wind_shear_0_609m_above_10p3",
+      "comment": "Probability of vertical wind shear (0-609 m above ground) above 10.3 m s-1."
+    },
+    "probability_of_vertical_wind_shear_0_609m_above_20": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of vertical wind shear (0-609 m above ground) above 20 m s-1",
+      "short_name": "probability_of_vertical_wind_shear_0_609m_above_20",
+      "comment": "Probability of vertical wind shear (0-609 m above ground) above 20 m s-1."
+    },
+    "probability_of_visibility_surface_below_1600": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of visibility (surface) below 1600 m",
+      "short_name": "probability_of_visibility_surface_below_1600",
+      "comment": "Probability of visibility (surface) below 1600 m."
+    },
+    "probability_of_visibility_surface_below_3200": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of visibility (surface) below 3200 m",
+      "short_name": "probability_of_visibility_surface_below_3200",
+      "comment": "Probability of visibility (surface) below 3200 m."
+    },
+    "probability_of_visibility_surface_below_400": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of visibility (surface) below 400 m",
+      "short_name": "probability_of_visibility_surface_below_400",
+      "comment": "Probability of visibility (surface) below 400 m."
+    },
+    "probability_of_visibility_surface_below_4829": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of visibility (surface) below 4829 m",
+      "short_name": "probability_of_visibility_surface_below_4829",
+      "comment": "Probability of visibility (surface) below 4829 m."
+    },
+    "probability_of_visibility_surface_below_6400": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of visibility (surface) below 6400 m",
+      "short_name": "probability_of_visibility_surface_below_6400",
+      "comment": "Probability of visibility (surface) below 6400 m."
+    },
+    "probability_of_visibility_surface_below_800": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of visibility (surface) below 800 m",
+      "short_name": "probability_of_visibility_surface_below_800",
+      "comment": "Probability of visibility (surface) below 800 m."
+    },
+    "probability_of_visibility_surface_below_8049": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of visibility (surface) below 8049 m",
+      "short_name": "probability_of_visibility_surface_below_8049",
+      "comment": "Probability of visibility (surface) below 8049 m."
+    },
+    "probability_of_wind_speed_10m_at_least_9_and_relative_humidity_2m_at_most_20": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 10 m wind speed at least 9 m s-1 and 2 m relative humidity at most 20 percent",
+      "short_name": "probability_of_wind_speed_10m_at_least_9_and_relative_humidity_2m_at_most_20",
+      "comment": "Probability of 10 m wind speed at least 9 m s-1 and 2 m relative humidity at most 20 percent."
+    },
+    "probability_of_wind_speed_250hpa_above_10p3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (250 mb) above 10.3 m s-1",
+      "short_name": "probability_of_wind_speed_250hpa_above_10p3",
+      "comment": "Probability of wind speed (250 mb) above 10.3 m s-1."
+    },
+    "probability_of_wind_speed_250hpa_above_20p6": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (250 mb) above 20.6 m s-1",
+      "short_name": "probability_of_wind_speed_250hpa_above_20p6",
+      "comment": "Probability of wind speed (250 mb) above 20.6 m s-1."
+    },
+    "probability_of_wind_speed_250hpa_above_30p9": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (250 mb) above 30.9 m s-1",
+      "short_name": "probability_of_wind_speed_250hpa_above_30p9",
+      "comment": "Probability of wind speed (250 mb) above 30.9 m s-1."
+    },
+    "probability_of_wind_speed_250hpa_above_41p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (250 mb) above 41.2 m s-1",
+      "short_name": "probability_of_wind_speed_250hpa_above_41p2",
+      "comment": "Probability of wind speed (250 mb) above 41.2 m s-1."
+    },
+    "probability_of_wind_speed_250hpa_above_51p5": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (250 mb) above 51.5 m s-1",
+      "short_name": "probability_of_wind_speed_250hpa_above_51p5",
+      "comment": "Probability of wind speed (250 mb) above 51.5 m s-1."
+    },
+    "probability_of_wind_speed_550hpa_above_10p3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (550 mb) above 10.3 m s-1",
+      "short_name": "probability_of_wind_speed_550hpa_above_10p3",
+      "comment": "Probability of wind speed (550 mb) above 10.3 m s-1."
+    },
+    "probability_of_wind_speed_550hpa_above_20p6": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (550 mb) above 20.6 m s-1",
+      "short_name": "probability_of_wind_speed_550hpa_above_20p6",
+      "comment": "Probability of wind speed (550 mb) above 20.6 m s-1."
+    },
+    "probability_of_wind_speed_550hpa_above_30p9": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (550 mb) above 30.9 m s-1",
+      "short_name": "probability_of_wind_speed_550hpa_above_30p9",
+      "comment": "Probability of wind speed (550 mb) above 30.9 m s-1."
+    },
+    "probability_of_wind_speed_550hpa_above_41p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (550 mb) above 41.2 m s-1",
+      "short_name": "probability_of_wind_speed_550hpa_above_41p2",
+      "comment": "Probability of wind speed (550 mb) above 41.2 m s-1."
+    },
+    "probability_of_wind_speed_550hpa_above_51p5": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (550 mb) above 51.5 m s-1",
+      "short_name": "probability_of_wind_speed_550hpa_above_51p5",
+      "comment": "Probability of wind speed (550 mb) above 51.5 m s-1."
+    },
+    "probability_of_wind_speed_80m_above_10p3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 80 metre wind speed (80 m above ground) above 10.3 m s-1",
+      "short_name": "probability_of_wind_speed_80m_above_10p3",
+      "comment": "Probability of 80 metre wind speed (80 m above ground) above 10.3 m s-1."
+    },
+    "probability_of_wind_speed_80m_above_15p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 80 metre wind speed (80 m above ground) above 15.4 m s-1",
+      "short_name": "probability_of_wind_speed_80m_above_15p4",
+      "comment": "Probability of 80 metre wind speed (80 m above ground) above 15.4 m s-1."
+    },
+    "probability_of_wind_speed_80m_above_20p6": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of 80 metre wind speed (80 m above ground) above 20.6 m s-1",
+      "short_name": "probability_of_wind_speed_80m_above_20p6",
+      "comment": "Probability of 80 metre wind speed (80 m above ground) above 20.6 m s-1."
+    },
+    "probability_of_wind_speed_850_300mb_below_5": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (850-300 mb) below 5 m s-1",
+      "short_name": "probability_of_wind_speed_850_300mb_below_5",
+      "comment": "Probability of wind speed (850-300 mb) below 5 m s-1."
+    },
+    "probability_of_wind_speed_850hpa_above_10p3": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (850 mb) above 10.3 m s-1",
+      "short_name": "probability_of_wind_speed_850hpa_above_10p3",
+      "comment": "Probability of wind speed (850 mb) above 10.3 m s-1."
+    },
+    "probability_of_wind_speed_850hpa_above_20p6": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (850 mb) above 20.6 m s-1",
+      "short_name": "probability_of_wind_speed_850hpa_above_20p6",
+      "comment": "Probability of wind speed (850 mb) above 20.6 m s-1."
+    },
+    "probability_of_wind_speed_850hpa_above_30p9": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (850 mb) above 30.9 m s-1",
+      "short_name": "probability_of_wind_speed_850hpa_above_30p9",
+      "comment": "Probability of wind speed (850 mb) above 30.9 m s-1."
+    },
+    "probability_of_wind_speed_850hpa_above_41p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (850 mb) above 41.2 m s-1",
+      "short_name": "probability_of_wind_speed_850hpa_above_41p2",
+      "comment": "Probability of wind speed (850 mb) above 41.2 m s-1."
+    },
+    "probability_of_wind_speed_850hpa_above_51p5": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Probability of wind speed (850 mb) above 51.5 m s-1",
+      "short_name": "probability_of_wind_speed_850hpa_above_51p5",
+      "comment": "Probability of wind speed (850 mb) above 51.5 m s-1."
+    },
+    "relative_humidity_700hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "r"
+    },
+    "snowfall_water_equivalent_1_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Snowfall water equivalent",
+      "standard_name": "snowfall_amount",
+      "short_name": "sf",
+      "comment": "Accumulated over the preceding 1 hour."
+    },
+    "soil_temperature_0m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Soil temperature",
+      "standard_name": "soil_temperature",
+      "short_name": "sot",
+      "comment": "Over water, absent member soil values enter the statistics as raw zero before Celsius conversion, while some members may contribute nonzero values. Means and standard deviations there are not soil temperature quantities. These cells are not marked; use a land mask. The standard_deviation slice is not populated; read soil_temperature_0m_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "soil_temperature_0m_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of soil temperature",
+      "short_name": "soil_temperature_0m_standard_deviation",
+      "comment": "Over water, absent member soil values enter the statistics as raw zero before Celsius conversion, while some members may contribute nonzero values. Means and standard deviations there are not soil temperature quantities. These cells are not marked; use a land mask. NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "storm_relative_helicity_3000_0m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m2 s-2",
+      "long_name": "Storm relative helicity",
+      "short_name": "hlcy"
+    },
+    "temperature_250hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t",
+      "comment": "The standard_deviation slice is not populated; read temperature_250hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "temperature_250hpa_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of temperature",
+      "short_name": "temperature_250hpa_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t",
+      "comment": "The standard_deviation slice is not populated; read temperature_2m_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "temperature_2m_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of 2 metre temperature",
+      "short_name": "temperature_2m_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "temperature_500hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t",
+      "comment": "The standard_deviation slice is not populated; read temperature_500hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "temperature_500hpa_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of temperature",
+      "short_name": "temperature_500hpa_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "temperature_700hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t",
+      "comment": "The standard_deviation slice is not populated; read temperature_700hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "temperature_700hpa_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of temperature",
+      "short_name": "temperature_700hpa_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "temperature_850hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t",
+      "comment": "The standard_deviation slice is not populated; read temperature_850hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "temperature_850hpa_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of temperature",
+      "short_name": "temperature_850hpa_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "temperature_925hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t",
+      "comment": "The standard_deviation slice is not populated; read temperature_925hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "temperature_925hpa_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of temperature",
+      "short_name": "temperature_925hpa_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "temperature_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Skin temperature",
+      "standard_name": "surface_temperature",
+      "short_name": "skt",
+      "comment": "The standard_deviation slice is not populated; read temperature_surface_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+    },
+    "temperature_surface_standard_deviation": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "K",
+      "long_name": "Standard deviation of skin temperature",
+      "short_name": "temperature_surface_standard_deviation",
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
+    },
+    "total_precipitation_1_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "tp",
+      "comment": "Accumulated over the preceding 1 hour."
+    },
+    "total_snowfall_1_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Total snowfall",
+      "standard_name": "thickness_of_snowfall_amount",
+      "short_name": "asnow",
+      "comment": "Accumulated over the preceding 1 hour."
+    },
+    "vertical_velocity_geometric_700_500mb": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Vertical velocity (geometric)",
+      "standard_name": "upward_air_velocity",
+      "short_name": "dzdt",
+      "comment": "Vertical velocity in a layer defined by pressure differences above ground, rather than an isobaric layer."
+    },
+    "vertical_velocity_geometric_700hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Vertical velocity (geometric)",
+      "standard_name": "upward_air_velocity",
+      "short_name": "dzdt"
+    },
+    "vertical_wind_shear_0_6000m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Vertical wind shear",
+      "short_name": "vws",
+      "comment": "Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
+    },
+    "vertical_wind_shear_0_609m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Vertical wind shear",
+      "short_name": "vws",
+      "comment": "Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
+    },
+    "visibility_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Visibility",
+      "standard_name": "visibility_in_air",
+      "short_name": "vis",
+      "comment": "Mean and standard deviation exclude members capped at the no-event visibility limit. A large mean can represent the cap when no uncapped member remains; the corresponding zero standard deviation does not imply agreement."
+    },
+    "volumetric_soil_moisture_0m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Volumetric soil moisture content",
+      "standard_name": "volume_fraction_of_condensed_water_in_soil",
+      "short_name": "soilw",
+      "comment": "Over water, absent member soil values enter the statistics as zero, while some members may contribute nonzero values. Means and standard deviations there are not soil moisture quantities. These cells are not marked; use a land mask."
+    },
+    "wind_speed_10m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "10si",
+      "comment": "Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
+    },
+    "wind_speed_250hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "ws",
+      "comment": "Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
+    },
+    "wind_speed_550hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "ws",
+      "comment": "Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
+    },
+    "wind_speed_80m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "80 metre wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "80si",
+      "comment": "Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
+    },
+    "wind_speed_850hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "ws",
+      "comment": "Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
+    },
+    "wind_speed_925hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "ws",
+      "comment": "Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "x_wind",
+      "short_name": "10u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_250hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_500hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_550hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_700hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_850hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_925hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "y_wind",
+      "short_name": "10v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_250hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_500hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_550hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_700hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_850hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_925hpa": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float64",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "1 hour",
+        "y": "3177 km",
+        "x": "5397 km"
+      },
+      "uncompressed_size_bytes": 15241128,
+      "uncompressed_size": "14.5 MiB"
+    }
+  },
+  "title": "NOAA REFS forecast, hourly, virtual",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -134.09547424316406,
+          21.13812255859375,
+          -60.91719436645508,
+          52.61565399169922
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-08-13T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "summaries": {
+    "spatial_domain": [
+      "Continental United States"
+    ],
+    "spatial_resolution": [
+      "3 km"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2026-08-13 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 1-60 hours ahead"
+    ],
+    "forecast_resolution": [
+      "Hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-noaa-refs/noaa-refs-forecast-hourly-virtual/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "s3://noaa-rrfs-ops-pds/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-noaa-refs.s3.us-west-2.amazonaws.com/noaa-refs-forecast-hourly-virtual/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "s3://noaa-rrfs-ops-pds/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

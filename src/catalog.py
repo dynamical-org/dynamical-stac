@@ -204,6 +204,11 @@ FRAGMENTS: dict[str, str] = {
         "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-hrrr-pds/). "
         "Operational data is additionally accessed from [NOAA NOMADS](https://nomads.ncep.noaa.gov/)."
     ),
+    "nodd_source_rrfs": (
+        "The source grib files this archive is constructed from are provided by "
+        "[NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) "
+        "and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-rrfs/)."
+    ),
     "ecmwf_source": (
         "The source grib files this archive is constructed from are provided by "
         "[ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data) "
@@ -303,6 +308,30 @@ MODELS: dict[str, Model] = {
             "the 13km radar-enhanced Rapid Refresh."
         ),
         producer=NOAA_NCEP,
+    ),
+    "noaa-rrfs": Model(
+        id="noaa-rrfs",
+        name="NOAA RRFS",
+        description=(
+            "The Rapid Refresh Forecast System (RRFS) is a National Oceanic and Atmospheric "
+            "Administration (NOAA) National Centers for Environmental Prediction (NCEP) "
+            "convection-allowing weather forecast model with a 3 km grid, built on the Unified "
+            "Forecast System. It is planned to replace several of NOAA's current regional models, "
+            "including the HRRR. RRFS is pre-operational and under development, so expect some "
+            "changes to model output."
+        ),
+    ),
+    "noaa-refs": Model(
+        id="noaa-refs",
+        name="NOAA REFS",
+        description=(
+            "The RRFS Ensemble Forecast System (REFS) is a National Oceanic and Atmospheric "
+            "Administration (NOAA) National Centers for Environmental Prediction (NCEP) "
+            "convection-allowing ensemble built from Rapid Refresh Forecast System (RRFS) runs. "
+            "NOAA publishes ensemble products from it on a 3 km grid, including means, spreads and "
+            "probabilities of exceeding thresholds. REFS is pre-operational and under development, "
+            "so expect some changes to model output."
+        ),
     ),
     "noaa-mrms": Model(
         id="noaa-mrms",
@@ -701,6 +730,12 @@ _GEFS_VIRTUAL_NOTEBOOK = DatasetNotebook(
 _GFS_VIRTUAL_NOTEBOOK = DatasetNotebook(
     slug="noaa-gfs-forecast-analysis-virtual",
     title="GFS forecast and analysis, virtual",
+)
+
+# One notebook covers the RRFS and REFS virtual datasets.
+_RRFS_REFS_VIRTUAL_NOTEBOOK = DatasetNotebook(
+    slug="noaa-rrfs-refs-forecast-virtual",
+    title="RRFS and REFS forecasts, virtual",
 )
 
 # One notebook covers the 46 day daily and 6 hourly datasets.
@@ -1245,6 +1280,223 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis-virtual"),),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-rrfs-forecast-sub-hourly-virtual",
+        icechunk_href="s3://dynamical-noaa-rrfs/noaa-rrfs-forecast-sub-hourly-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
+        model_id="noaa-rrfs",
+        description_summary=(
+            "This dataset is an archive of past and present RRFS forecasts, "
+            "optimized for spatial (map) access patterns. Forecasts are "
+            "identified by an initialization time (`init_time`) denoting the "
+            "start time of the model run, and step forward every 15 minutes "
+            "along the `lead_time` dimension from 15 minutes out to 18 hours. "
+            "A new forecast is initialized every hour.\n\n"
+            "This dataset uses the native RRFS Lambert Conformal Conic "
+            "projection, with spatial indexing along the `x` and `y` "
+            "dimensions. The example notebook shows how to use the embedded "
+            "spatial reference to select geographic areas of interest.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs/forecast_sub_hourly_virtual/template_config.py",
+        examples=(
+            _example(
+                "Reflectivity map",
+                'ds = dynamical_catalog.open("noaa-rrfs-forecast-sub-hourly-virtual", chunks=None)\n'
+                'ds["composite_reflectivity"].sel(init_time="2026-09-16T12", lead_time="2h15min")',
+            ),
+        ),
+        notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-rrfs-forecast-18-hour-virtual",
+        icechunk_href="s3://dynamical-noaa-rrfs/noaa-rrfs-forecast-18-hour-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
+        model_id="noaa-rrfs",
+        description_summary=(
+            "This dataset is an archive of past and present RRFS forecasts, "
+            "optimized for spatial (map) access patterns. Forecasts are "
+            "identified by an initialization time (`init_time`) denoting the "
+            "start time of the model run, and step forward hourly along the "
+            "`lead_time` dimension out to 18 hours. A new forecast is "
+            "initialized every 3 hours.\n\n"
+            "This dataset uses the native RRFS Lambert Conformal Conic "
+            "projection, with spatial indexing along the `x` and `y` "
+            "dimensions. The example notebook shows how to use the embedded "
+            "spatial reference to select geographic areas of interest.\n\n"
+            "Variables on pressure levels, fixed heights above mean sea "
+            "level and soil depths live in the `pressure_level`, "
+            "`height_above_mean_sea_level` and `depth_below_ground` groups.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs/forecast_18_hour_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-rrfs-forecast-18-hour-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-09-16T12", lead_time="12h")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level,\n"
+                "# height_above_mean_sea_level and depth_below_ground groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-rrfs-forecast-18-hour-virtual", group="pressure_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["temperature"].sel(init_time="2026-09-16T12", lead_time="12h", pressure_level=500)',
+            ),
+        ),
+        notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-rrfs-forecast-84-hour-virtual",
+        icechunk_href="s3://dynamical-noaa-rrfs/noaa-rrfs-forecast-84-hour-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
+        model_id="noaa-rrfs",
+        description_summary=(
+            "This dataset is an archive of past and present RRFS forecasts, "
+            "optimized for spatial (map) access patterns. Forecasts are "
+            "identified by an initialization time (`init_time`) denoting the "
+            "start time of the model run, and step forward hourly along the "
+            "`lead_time` dimension out to 84 hours. A new forecast is "
+            "initialized every 6 hours.\n\n"
+            "This dataset uses the native RRFS Lambert Conformal Conic "
+            "projection, with spatial indexing along the `x` and `y` "
+            "dimensions. The example notebook shows how to use the embedded "
+            "spatial reference to select geographic areas of interest.\n\n"
+            "Variables on pressure levels, fixed heights above mean sea "
+            "level and soil depths live in the `pressure_level`, "
+            "`height_above_mean_sea_level` and `depth_below_ground` groups.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs/forecast_84_hour_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-rrfs-forecast-84-hour-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-09-16T12", lead_time="12h")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level,\n"
+                "# height_above_mean_sea_level and depth_below_ground groups\n"
+                'ds_pressure = dynamical_catalog.open("noaa-rrfs-forecast-84-hour-virtual", group="pressure_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["temperature"].sel(init_time="2026-09-16T12", lead_time="12h", pressure_level=500)',
+            ),
+        ),
+        notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-rrfs-ens-forecast-virtual",
+        icechunk_href="s3://dynamical-noaa-rrfs-ens/noaa-rrfs-ens-forecast-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
+        model_id="noaa-rrfs",
+        description_summary=(
+            "This dataset is an archive of past and present RRFS ensemble "
+            "forecasts, optimized for spatial (map) access patterns. "
+            "Forecasts are identified by an initialization time (`init_time`) "
+            "denoting the start time of the model run, and step forward hourly "
+            "along the `lead_time` dimension out to 60 hours. Each forecast "
+            "has six members along the `ensemble_member` dimension. A new "
+            "forecast is initialized every 6 hours.\n\n"
+            "This dataset uses the native RRFS Lambert Conformal Conic "
+            "projection, with spatial indexing along the `x` and `y` "
+            "dimensions. The example notebook shows how to use the embedded "
+            "spatial reference to select geographic areas of interest.\n\n"
+            "Variables on pressure levels live in the `pressure_level` group.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs_ens/forecast_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-rrfs-ens-forecast-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-09-16T12", lead_time="24h", ensemble_member=0)\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
+                'ds_pressure = dynamical_catalog.open("noaa-rrfs-ens-forecast-virtual", group="pressure_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["temperature"].sel(init_time="2026-09-16T12", lead_time="24h", pressure_level=500).mean("ensemble_member")',
+            ),
+        ),
+        notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-refs-forecast-hourly-virtual",
+        icechunk_href="s3://dynamical-noaa-refs/noaa-refs-forecast-hourly-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
+        model_id="noaa-refs",
+        description_summary=(
+            "This dataset is an archive of past and present REFS ensemble "
+            "products, optimized for spatial (map) access patterns. Forecasts "
+            "are identified by an initialization time (`init_time`) denoting "
+            "the start time of the model run, and step forward hourly along "
+            "the `lead_time` dimension from 1 hour out to 60 hours. A new "
+            "forecast is initialized every 6 hours.\n\n"
+            "Ensemble means and standard deviations are stored along the "
+            "`statistic` dimension. Other products, such as probabilities of "
+            "exceeding a threshold, are separate variables without it.\n\n"
+            "This dataset uses the native RRFS Lambert Conformal Conic "
+            "projection, with spatial indexing along the `x` and `y` "
+            "dimensions. The example notebook shows how to use the embedded "
+            "spatial reference to select geographic areas of interest.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/refs/forecast_hourly_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-refs-forecast-hourly-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-09-16T12", lead_time="24h", statistic="mean")',
+            ),
+        ),
+        notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-refs-forecast-3-hourly-virtual",
+        icechunk_href="s3://dynamical-noaa-refs/noaa-refs-forecast-3-hourly-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-rrfs-ops-pds/",),
+        model_id="noaa-refs",
+        description_summary=(
+            "This dataset is an archive of past and present REFS ensemble "
+            "products, optimized for spatial (map) access patterns. Forecasts "
+            "are identified by an initialization time (`init_time`) denoting "
+            "the start time of the model run, and step forward every 3 hours "
+            "along the `lead_time` dimension from 3 hours out to 60 hours. A "
+            "new forecast is initialized every 6 hours.\n\n"
+            "Ensemble means and standard deviations are stored along the "
+            "`statistic` dimension. Other products, such as probabilities of "
+            "exceeding a threshold, are separate variables without it.\n\n"
+            "This dataset uses the native RRFS Lambert Conformal Conic "
+            "projection, with spatial indexing along the `x` and `y` "
+            "dimensions. The example notebook shows how to use the embedded "
+            "spatial reference to select geographic areas of interest.\n\n"
+            "Note: `dynamical-catalog>=0.8.0` with `gribberish>=1.8.1` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.1`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/refs/forecast_3_hourly_virtual/template_config.py",
+        examples=(
+            _example(
+                "Precipitation map",
+                'ds = dynamical_catalog.open("noaa-refs-forecast-3-hourly-virtual", chunks=None)\n'
+                'ds["total_precipitation_3_hour_surface"].sel(init_time="2026-09-16T12", lead_time="24h", statistic="mean")',
+            ),
+        ),
+        notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
         environments=["production", "staging", "test", "0.4.0-0.5.0", "0.7.0-0.8.0"],
