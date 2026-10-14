@@ -41,7 +41,7 @@ import modal
 
 image = modal.Image.debian_slim(python_version="3.12").pip_install(
     "dynamical-catalog>=1.0.0",
-    "sentry-sdk>=2.20",
+    "sentry-sdk>=2.72.0",
 )
 
 app = modal.App("dynamical-read-canary")
@@ -191,6 +191,7 @@ def read_canary() -> None:
         dsn=os.environ.get("SENTRY_DSN"),
         environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
         enable_logs=True,
+        keep_alive=True,
         integrations=[LoggingIntegration(event_level=None)],
     )
     monitor_config = {
