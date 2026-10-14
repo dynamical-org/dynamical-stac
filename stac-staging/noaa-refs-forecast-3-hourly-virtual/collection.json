@@ -47,18 +47,6 @@
       "title": "RRFS and REFS forecasts, virtual (Colab)"
     },
     {
-      "rel": "describedby",
-      "href": "./README.md",
-      "type": "text/markdown",
-      "title": "README"
-    },
-    {
-      "rel": "agents",
-      "href": "./AGENTS.md",
-      "type": "text/markdown",
-      "title": "Notes for agents"
-    },
-    {
       "rel": "self",
       "href": "https://stac-staging.dynamical.org/noaa-refs-forecast-3-hourly-virtual/collection.json",
       "type": "application/json",
@@ -73,8 +61,7 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
-    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
   ],
   "attribution": "NOAA NWS NCEP REFS data processed by dynamical.org from NOAA Open Data Dissemination archives.",
   "version": "0.1.0",
@@ -2335,7 +2322,6 @@
       "uncompressed_size": "14.5 MiB"
     }
   },
-  "updated": "2026-10-14T15:11:58Z",
   "title": "NOAA REFS forecast, 3 hourly, virtual",
   "extent": {
     "spatial": {

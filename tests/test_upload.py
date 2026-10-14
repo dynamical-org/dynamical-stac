@@ -20,12 +20,10 @@ def stac_tree(tmp_path: pathlib.Path) -> pathlib.Path:
     (tmp_path / "noaa-gfs-analysis").mkdir()
     (tmp_path / "noaa-gfs-analysis" / "collection.json").write_text("{}")
     (tmp_path / "readme.txt").write_text("not json")
-    (tmp_path / "README.md").write_text("# Catalog")
-    (tmp_path / "noaa-gfs-analysis" / "AGENTS.md").write_text("# Agents")
     return tmp_path
 
 
-def test_upload_only_sends_json_and_markdown_files(
+def test_upload_only_sends_json_files(
     stac_tree: pathlib.Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -40,9 +38,7 @@ def test_upload_only_sends_json_and_markdown_files(
     uploaded_keys = [call.args[2] for call in client.upload_file.call_args_list]
     assert set(uploaded_keys) == {
         "catalog.json",
-        "README.md",
         "noaa-gfs-analysis/collection.json",
-        "noaa-gfs-analysis/AGENTS.md",
     }
 
 
@@ -59,13 +55,10 @@ def test_upload_sets_bucket_and_content_type(
     upload(stac_tree)
 
     for call in client.upload_file.call_args_list:
-        _local, bucket, key = call.args
+        _local, bucket, _key = call.args
         extra: dict[str, Any] = call.kwargs["ExtraArgs"]
         assert bucket == upload_module._BUCKET
-        if key.endswith(".md"):
-            assert extra == {"ContentType": "text/markdown; charset=utf-8"}
-        else:
-            assert extra == {"ContentType": "application/json"}
+        assert extra == {"ContentType": "application/json"}
 
 
 def test_upload_passes_r2_creds_to_boto(
@@ -92,7 +85,7 @@ def test_upload_passes_r2_creds_to_boto(
     assert seen_kwargs["aws_secret_access_key"] == _FAKE_SECRET
 
 
-def test_upload_sends_sidecars_then_collections_then_root_catalogs(
+def test_upload_sends_collections_before_root_catalogs(
     stac_tree: pathlib.Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -116,12 +109,8 @@ def test_upload_sends_sidecars_then_collections_then_root_catalogs(
         "zzz-last-alphabetically/collection.json",
     }
     root_keys = {"catalog.json", "catalog_0.4.0-0.5.0.json", "catalog_0.7.0-0.8.0.json"}
-    sidecar_keys = {"README.md", "noaa-gfs-analysis/AGENTS.md"}
-    assert len(uploaded_keys) == len(collection_keys | root_keys | sidecar_keys)
-    assert set(uploaded_keys) == collection_keys | root_keys | sidecar_keys
-    assert max(uploaded_keys.index(key) for key in sidecar_keys) < min(
-        uploaded_keys.index(key) for key in collection_keys
-    )
+    assert len(uploaded_keys) == len(collection_keys | root_keys)
+    assert set(uploaded_keys) == collection_keys | root_keys
     assert max(uploaded_keys.index(key) for key in collection_keys) < min(
         uploaded_keys.index(key) for key in root_keys
     )

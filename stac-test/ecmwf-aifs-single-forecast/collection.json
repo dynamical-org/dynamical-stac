@@ -65,18 +65,6 @@
       "title": "Heating degree days: GFS vs AIFS (Colab)"
     },
     {
-      "rel": "describedby",
-      "href": "./README.md",
-      "type": "text/markdown",
-      "title": "README"
-    },
-    {
-      "rel": "agents",
-      "href": "./AGENTS.md",
-      "type": "text/markdown",
-      "title": "Notes for agents"
-    },
-    {
       "rel": "self",
       "href": "https://stac-test.dynamical.org/ecmwf-aifs-single-forecast/collection.json",
       "type": "application/json",
@@ -91,8 +79,7 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
-    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
   ],
   "attribution": "ECMWF AIFS Single forecast data processed by dynamical.org from ECMWF Open Data.",
   "version": "0.1.0",
@@ -639,7 +626,6 @@
       "uncompressed_size": "242.3 MiB"
     }
   },
-  "updated": "2026-10-13T21:22:28Z",
   "title": "ECMWF AIFS Single forecast",
   "extent": {
     "spatial": {

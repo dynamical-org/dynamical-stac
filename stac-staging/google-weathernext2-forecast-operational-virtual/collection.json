@@ -35,18 +35,6 @@
       "title": "WeatherNext 2 experimental forecast dataset"
     },
     {
-      "rel": "describedby",
-      "href": "./README.md",
-      "type": "text/markdown",
-      "title": "README"
-    },
-    {
-      "rel": "agents",
-      "href": "./AGENTS.md",
-      "type": "text/markdown",
-      "title": "Notes for agents"
-    },
-    {
       "rel": "self",
       "href": "https://stac-staging.dynamical.org/google-weathernext2-forecast-operational-virtual/collection.json",
       "type": "application/json",
@@ -61,8 +49,7 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
-    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
   ],
   "attribution": "Google requires this attribution: \u00a9 2025 DeepMind Technologies Limited's machine learning models used to create the experimental data made available at https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0 under CC BY 4.0 licence terms. This data is intended for experimental modelling only and is not intended, validated, or approved for real world use. Use of the third-party materials referred to in the Acknowledgements section may be governed by separate terms and conditions or license provisions. Your use of the third-party materials is subject to any such terms and you should check that you can comply with any applicable restrictions or terms and conditions before use.",
   "version": "0.1.0",
@@ -488,7 +475,6 @@
       "uncompressed_size": "4.0 MiB"
     }
   },
-  "updated": "2026-10-13T21:22:28Z",
   "title": "Google WeatherNext 2 operational forecast, virtual",
   "extent": {
     "spatial": {

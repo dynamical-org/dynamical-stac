@@ -29,18 +29,6 @@
       "title": "Validation report"
     },
     {
-      "rel": "describedby",
-      "href": "./README.md",
-      "type": "text/markdown",
-      "title": "README"
-    },
-    {
-      "rel": "agents",
-      "href": "./AGENTS.md",
-      "type": "text/markdown",
-      "title": "Notes for agents"
-    },
-    {
       "rel": "self",
       "href": "https://stac-test.dynamical.org/test-azure-virtual/collection.json",
       "type": "application/json",
@@ -55,8 +43,7 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
-    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
   ],
   "attribution": "dynamical.org",
   "version": "0.1.0",
@@ -156,7 +143,6 @@
       "uncompressed_size": "96.0 B"
     }
   },
-  "updated": "2026-10-13T21:22:28Z",
   "title": "Test Azure virtual",
   "extent": {
     "spatial": {
