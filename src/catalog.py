@@ -1903,7 +1903,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("nasa-imerg-analysis-late"),),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.5.0", "0.7.0-0.8.0"],
         id="ucsb-chc-chirps-analysis-final",
         icechunk_href="s3://dynamical-ucsb-chc-chirps/ucsb-chc-chirps-analysis-final/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1918,17 +1918,14 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Precipitation at a place and time",
-                "import os\n"
-                'os.environ["DYNAMICAL_STAC_CATALOG_URL"] = "https://stac-staging.dynamical.org/catalog.json"\n\n'
                 'ds = dynamical_catalog.open("ucsb-chc-chirps-analysis-final", chunks=None)\n'
                 'ds["precipitation_surface"].sel(time="2025-01-01", latitude=-3, longitude=-60, method="nearest")',
-                min_version="1.0.0",
             ),
         ),
         notebooks=(_CHIRPS_PRELIMINARY_FINAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.4.0-0.5.0", "0.7.0-0.8.0"],
         id="ucsb-chc-chirps-analysis-preliminary",
         icechunk_href="s3://dynamical-ucsb-chc-chirps/ucsb-chc-chirps-analysis-preliminary/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1943,11 +1940,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         examples=(
             _example(
                 "Precipitation at a place and time",
-                "import os\n"
-                'os.environ["DYNAMICAL_STAC_CATALOG_URL"] = "https://stac-staging.dynamical.org/catalog.json"\n\n'
                 'ds = dynamical_catalog.open("ucsb-chc-chirps-analysis-preliminary", chunks=None)\n'
                 'ds["precipitation_surface"].sel(time="2025-01-01", latitude=-3, longitude=-60, method="nearest")',
-                min_version="1.0.0",
             ),
         ),
         notebooks=(_CHIRPS_PRELIMINARY_FINAL_NOTEBOOK,),

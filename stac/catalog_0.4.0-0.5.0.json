@@ -108,6 +108,18 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/ucsb-chc-chirps-analysis-final/collection.json",
+      "type": "application/json",
+      "title": "UCSB CHC CHIRPS analysis, final"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/ucsb-chc-chirps-analysis-preliminary/collection.json",
+      "type": "application/json",
+      "title": "UCSB CHC CHIRPS analysis, preliminary"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/eccc-hrdps-forecast/collection.json",
       "type": "application/json",
       "title": "ECCC HRDPS forecast"

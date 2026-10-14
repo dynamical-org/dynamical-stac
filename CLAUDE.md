@@ -172,8 +172,8 @@ collection in its selected environment, including 0.4.0 (no open-only exception)
 Add the appropriate range name explicitly to each supported production item's
 `environments` list. The legacy environments must be subsets of production;
 staging-only and fixture datasets must not be included. The 0.4.0–0.5.0 root
-contains the 16 materialized production collections. The 0.7.0–0.8.0 root adds
-the nine S3-backed virtual collections, for 25 of the 26 production
+contains the 18 materialized production collections. The 0.7.0–0.8.0 root adds
+the nine S3-backed virtual collections, for 27 of the 28 production
 collections. Both exclude `ecmwf-aifs-single-forecast-virtual`, whose `gs://`
 virtual chunk container is unsupported by these clients. Adding a new
 production dataset does not add it to either legacy root automatically.
