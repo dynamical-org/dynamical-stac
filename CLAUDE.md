@@ -171,7 +171,9 @@ compatibility matrix installs each supported client and opens and reads every
 collection in its selected environment, including 0.4.0 (no open-only exception).
 
 Add the appropriate range name explicitly to each supported production item's
-`environments` list. The legacy environments must be subsets of production;
+`environments` list. Items published to every environment use
+`ALL_STAC_ENVIRONMENTS`, so a new environment includes them; confirm its
+clients can read them when adding one. The legacy environments must be subsets of production;
 staging-only and fixture datasets must not be included. The 0.4.0–0.5.0 root
 contains the 18 materialized production collections. The 0.7.0–0.8.0 root adds
 the nine S3-backed virtual collections, for 27 of the 28 production
