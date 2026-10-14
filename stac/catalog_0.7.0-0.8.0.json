@@ -108,6 +108,42 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-rrfs-forecast-sub-hourly-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA RRFS forecast, sub-hourly, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-rrfs-forecast-18-hour-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA RRFS forecast, 18 hour, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-rrfs-forecast-84-hour-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA RRFS forecast, 84 hour, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-rrfs-ens-forecast-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA RRFS ENS forecast, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-refs-forecast-hourly-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA REFS forecast, hourly, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/noaa-refs-forecast-3-hourly-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA REFS forecast, 3 hourly, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/noaa-mrms-conus-analysis-hourly/collection.json",
       "type": "application/json",
       "title": "NOAA MRMS CONUS analysis, hourly"

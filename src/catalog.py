@@ -1309,7 +1309,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis-virtual"),),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-rrfs-forecast-sub-hourly-virtual",
         icechunk_href="s3://dynamical-noaa-rrfs/noaa-rrfs-forecast-sub-hourly-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1340,7 +1340,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-rrfs-forecast-18-hour-virtual",
         icechunk_href="s3://dynamical-noaa-rrfs/noaa-rrfs-forecast-18-hour-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1380,7 +1380,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-rrfs-forecast-84-hour-virtual",
         icechunk_href="s3://dynamical-noaa-rrfs/noaa-rrfs-forecast-84-hour-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1420,7 +1420,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-rrfs-ens-forecast-virtual",
         icechunk_href="s3://dynamical-noaa-rrfs-ens/noaa-rrfs-ens-forecast-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1460,7 +1460,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-refs-forecast-hourly-virtual",
         icechunk_href="s3://dynamical-noaa-refs/noaa-refs-forecast-hourly-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1494,7 +1494,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0"],
         id="noaa-refs-forecast-3-hourly-virtual",
         icechunk_href="s3://dynamical-noaa-refs/noaa-refs-forecast-3-hourly-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",

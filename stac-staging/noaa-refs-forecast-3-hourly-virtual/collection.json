@@ -81,13 +81,13 @@
         },
         {
           "label": "pystac",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-refs-forecast-3-hourly-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-rrfs-ops-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"total_precipitation_3_hour_surface\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", statistic=\"mean\")",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-refs-forecast-3-hourly-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-rrfs-ops-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"total_precipitation_3_hour_surface\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", statistic=\"mean\")",
           "language": "python"
         },
         {
           "label": "prompt",
           "language": "text",
-          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-refs-forecast-3-hourly-virtual\nSTAC collection: https://stac-staging.dynamical.org/noaa-refs-forecast-3-hourly-virtual/collection.json"
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-refs-forecast-3-hourly-virtual\nSTAC collection: https://stac.dynamical.org/noaa-refs-forecast-3-hourly-virtual/collection.json"
         }
       ]
     }
