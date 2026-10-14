@@ -76,7 +76,7 @@
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-rrfs-forecast-sub-hourly-virtual\", chunks=None)\nds[\"composite_reflectivity\"].sel(init_time=\"2026-09-16T12\", lead_time=\"2h15min\")",
+          "code": "import dynamical_catalog  # dynamical-catalog>=1.0.1\n\nds = dynamical_catalog.open(\"noaa-rrfs-forecast-sub-hourly-virtual\", chunks=None)\nds[\"composite_reflectivity\"].sel(init_time=\"2026-09-16T12\", lead_time=\"2h15min\")",
           "language": "python"
         },
         {

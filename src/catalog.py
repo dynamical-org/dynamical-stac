@@ -19,8 +19,9 @@ REFORMATTERS_ROOT = (
 REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 
 # Prepended to every example snippet so users see the required package version.
-# `_example` takes a higher floor for datasets whose storage the 0.8.0 reader
-# can't open (gs://, az:// and https:// repositories need 1.0.0).
+# `_example` takes a higher floor for datasets the 0.8.0 reader can't open
+# (gs://, az:// and https:// repositories need 1.0.0; sources that need
+# gribberish>=1.8.4 need 1.0.1).
 _DEFAULT_MIN_DYNAMICAL_CATALOG = "0.8.0"
 
 
@@ -1335,6 +1336,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Reflectivity map",
                 'ds = dynamical_catalog.open("noaa-rrfs-forecast-sub-hourly-virtual", chunks=None)\n'
                 'ds["composite_reflectivity"].sel(init_time="2026-09-16T12", lead_time="2h15min")',
+                min_version="1.0.1",  # gribberish>=1.8.4
             ),
         ),
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
@@ -1375,6 +1377,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_pressure = dynamical_catalog.open("noaa-rrfs-forecast-18-hour-virtual", group="pressure_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["temperature"].sel(init_time="2026-09-16T12", lead_time="12h", pressure_level=500)',
+                min_version="1.0.1",  # gribberish>=1.8.4
             ),
         ),
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
@@ -1415,6 +1418,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_pressure = dynamical_catalog.open("noaa-rrfs-forecast-84-hour-virtual", group="pressure_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["temperature"].sel(init_time="2026-09-16T12", lead_time="12h", pressure_level=500)',
+                min_version="1.0.1",  # gribberish>=1.8.4
             ),
         ),
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
@@ -1455,6 +1459,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds_pressure = dynamical_catalog.open("noaa-rrfs-ens-forecast-virtual", group="pressure_level", chunks=None)\n'
                 "\n"
                 'ds_pressure["temperature"].sel(init_time="2026-09-16T12", lead_time="24h", pressure_level=500).mean("ensemble_member")',
+                min_version="1.0.1",  # gribberish>=1.8.4
             ),
         ),
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
@@ -1489,6 +1494,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Temperature map",
                 'ds = dynamical_catalog.open("noaa-refs-forecast-hourly-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2026-09-16T12", lead_time="24h", statistic="mean")',
+                min_version="1.0.1",  # gribberish>=1.8.4
             ),
         ),
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),
@@ -1523,6 +1529,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Precipitation map",
                 'ds = dynamical_catalog.open("noaa-refs-forecast-3-hourly-virtual", chunks=None)\n'
                 'ds["total_precipitation_3_hour_surface"].sel(init_time="2026-09-16T12", lead_time="24h", statistic="mean")',
+                min_version="1.0.1",  # gribberish>=1.8.4
             ),
         ),
         notebooks=(_RRFS_REFS_VIRTUAL_NOTEBOOK,),

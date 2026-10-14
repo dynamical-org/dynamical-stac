@@ -76,7 +76,7 @@
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-rrfs-ens-forecast-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", ensemble_member=0)\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = dynamical_catalog.open(\"noaa-rrfs-ens-forecast-virtual\", group=\"pressure_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", pressure_level=500).mean(\"ensemble_member\")",
+          "code": "import dynamical_catalog  # dynamical-catalog>=1.0.1\n\nds = dynamical_catalog.open(\"noaa-rrfs-ens-forecast-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", ensemble_member=0)\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = dynamical_catalog.open(\"noaa-rrfs-ens-forecast-virtual\", group=\"pressure_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", pressure_level=500).mean(\"ensemble_member\")",
           "language": "python"
         },
         {
