@@ -26,6 +26,7 @@ from environments import (
         ("0.8.0", "catalog_0.7.0-0.8.0.json"),
         ("0.8.1", "catalog.json"),
         ("0.10.0", "catalog.json"),
+        ("1.0.0", "catalog_1.0.0-1.0.0.json"),
         ("1.0.1", "catalog.json"),
     ],
 )
@@ -51,7 +52,7 @@ def test_invalid_version_bounds_are_rejected(minimum: str, maximum: str) -> None
         ClientVersionRange(min_version=minimum, max_version=maximum)
 
 
-@pytest.mark.parametrize("name", ["0.4.0-0.5.0", "0.7.0-0.8.0"])
+@pytest.mark.parametrize("name", ["0.4.0-0.5.0", "0.7.0-0.8.0", "1.0.0-1.0.0"])
 def test_legacy_membership_is_explicit_and_production_only(name: str) -> None:
     environment = stac_environment(name)
     assert environment.description
@@ -115,7 +116,7 @@ def test_duplicate_environment_outputs_are_rejected() -> None:
         _check_environments((PRODUCTION, PRODUCTION))
 
 
-@pytest.mark.parametrize("name", ["0.4.0-0.5.0", "0.7.0-0.8.0"])
+@pytest.mark.parametrize("name", ["0.4.0-0.5.0", "0.7.0-0.8.0", "1.0.0-1.0.0"])
 def test_committed_legacy_root_links_exactly_its_explicit_items(name: str) -> None:
     environment = stac_environment(name)
     repo_root = pathlib.Path(__file__).parents[1]
