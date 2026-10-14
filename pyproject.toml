@@ -5,7 +5,7 @@ description = "STAC catalog generation for dynamical.org"
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.43.67",
-    "gribberish==1.8.0",
+    "gribberish==1.8.1",
     "icechunk>=2.1.2",
     "packaging>=26.1",
     "pandas>=3.0.5",
