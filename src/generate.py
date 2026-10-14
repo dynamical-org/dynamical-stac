@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import concurrent.futures
-import datetime as dt
 import json
 import os
 import pathlib
 import tempfile
-from typing import Any
 
 import gribberish.zarr  # noqa: F401 -- registers the GribberishCodec used by virtual datasets
 import icechunk
@@ -15,15 +13,8 @@ import xarray as xr
 import zarr
 
 from catalog import CATALOG_ITEMS, CatalogItem, url_scheme
-from environments import STAC_ENVIRONMENTS, StacEnvironment, stac_environment
+from environments import STAC_ENVIRONMENTS, stac_environment
 from models import CollectionInput
-from sidecars import (
-    CATALOG_AGENTS,
-    CATALOG_README,
-    collection_agents,
-    collection_readme,
-    sidecar_links,
-)
 
 CATALOG_TITLE = "dynamical.org STAC Catalog"
 # The registry and STAC Browser show it beside the catalog; stac-js rejects SVG.
@@ -135,70 +126,6 @@ def _set_self_link_titles(catalog: pystac.Catalog) -> None:
 Loaded = dict[str, tuple[xr.Dataset, dict[str, xr.Dataset]]]
 
 
-def _updated(document: dict[str, Any], committed: pathlib.Path, now: str) -> str:
-    """The committed file's `updated` if nothing else in `document` changed, else `now`.
-
-    Portolan mirrors record their last sync from the source in `updated`. A
-    regeneration syncs something only when the metadata it writes differs, so an
-    unchanged file keeps its stamp and the committed trees stay reproducible.
-    """
-    try:
-        previous = json.loads(committed.read_text())
-    except FileNotFoundError:
-        return now
-    stamp = previous.pop("updated", None)
-    return stamp if stamp is not None and previous == document else now
-
-
-def _root_document(
-    catalog: pystac.Catalog, publication: StacEnvironment, root_href: str
-) -> dict[str, Any]:
-    root = catalog.to_dict()
-    if publication.client_versions is not None:
-        # Versioned roots are served from their own filename.
-        for link in root["links"]:
-            if link["rel"] == "self":
-                link["href"] = f"{root_href}/{publication.root_filename}"
-    return root
-
-
-def _stamp_updated(
-    catalog: pystac.Catalog,
-    publication: StacEnvironment,
-    root_href: str,
-    previous_dir: pathlib.Path,
-    now: str,
-) -> None:
-    """Set `updated` on each collection, and on the root as the latest of them."""
-    stamps = []
-    for child in catalog.get_children():
-        stamp = _updated(
-            child.to_dict(), previous_dir / child.id / "collection.json", now
-        )
-        child.extra_fields["updated"] = stamp
-        stamps.append(stamp)
-    own = _updated(
-        _root_document(catalog, publication, root_href),
-        previous_dir / publication.root_filename,
-        now,
-    )
-    # One RFC 3339 format throughout, so the latest sorts last.
-    catalog.extra_fields["updated"] = max([own, *stamps])
-
-
-def _write_sidecars(
-    catalog: pystac.Catalog, output_dir: pathlib.Path, *, collections: bool
-) -> None:
-    (output_dir / "README.md").write_text(CATALOG_README)
-    (output_dir / "AGENTS.md").write_text(CATALOG_AGENTS)
-    if not collections:
-        return
-    for child in catalog.get_children():
-        assert isinstance(child, pystac.Collection)
-        (output_dir / child.id / "README.md").write_text(collection_readme(child))
-        (output_dir / child.id / "AGENTS.md").write_text(collection_agents(child))
-
-
 def _load_datasets(items: list[CatalogItem]) -> Loaded:
     """Open every item's store, keyed by item id."""
 
@@ -221,20 +148,11 @@ def generate(
     root_href: str | None = None,
     environment: str = "production",
     loaded: Loaded | None = None,
-    *,
-    previous_dir: pathlib.Path | None = None,
-    now: dt.datetime | None = None,
 ) -> None:
-    """Write one environment's catalog, optionally reusing loaded stores.
-
-    `updated` stamps come from the files in `previous_dir` (default
-    `output_dir`) where nothing else changed, and are `now` elsewhere.
-    """
+    """Write one environment's catalog, optionally reusing loaded stores."""
     publication = stac_environment(environment)
     if root_href is None:
         root_href = os.environ.get("STAC_ROOT_HREF", publication.root_href)
-    if now is None:
-        now = dt.datetime.now(dt.UTC)
     catalog = pystac.Catalog(
         id="dynamical-org",
         title=CATALOG_TITLE,
@@ -248,8 +166,6 @@ def generate(
             title="dynamical.org",
         )
     )
-    for link in sidecar_links():
-        catalog.add_link(link)
 
     items = _select_items(CATALOG_ITEMS, environment=environment)
     if loaded is None:
@@ -262,13 +178,6 @@ def generate(
 
     catalog.normalize_hrefs(root_href)
     _set_self_link_titles(catalog)
-    _stamp_updated(
-        catalog,
-        publication,
-        root_href,
-        output_dir if previous_dir is None else previous_dir,
-        now.astimezone(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    )
     catalog.validate_all()
     if publication.client_versions is None:
         catalog.save(
@@ -278,18 +187,15 @@ def generate(
     else:
         # Versioned environments publish an additional root only. Their child
         # links reuse canonical production collections; never rewrite the leaves.
+        root = catalog.to_dict()
+        for link in root["links"]:
+            if link["rel"] == "self":
+                link["href"] = f"{root_href}/{publication.root_filename}"
         output_dir.mkdir(parents=True, exist_ok=True)
-        (output_dir / publication.root_filename).write_text(
-            json.dumps(_root_document(catalog, publication, root_href), indent=2)
-        )
-    _write_sidecars(
-        catalog, output_dir, collections=publication.client_versions is None
-    )
+        (output_dir / publication.root_filename).write_text(json.dumps(root, indent=2))
 
 
-def generate_environments(
-    parent_dir: pathlib.Path, previous_parent: pathlib.Path | None = None
-) -> None:
+def generate_environments(parent_dir: pathlib.Path) -> None:
     """Write every environment's tree under `parent_dir`, opening each store once.
 
     Catalogs are built beside their destination and swapped in only once all of
@@ -298,13 +204,8 @@ def generate_environments(
     A failure during the swap itself is rolled back (`_swap_in`); a killed
     process is not, and `git checkout` is the recovery for that. The caller's
     STAC_* environment is ignored: publications use `STAC_ENVIRONMENTS`.
-    Unchanged files keep the `updated` stamps of the trees under
-    `previous_parent` (default `parent_dir`); every other stamp is one shared now.
     """
     loaded = _load_datasets(CATALOG_ITEMS)
-    now = dt.datetime.now(dt.UTC)
-    if previous_parent is None:
-        previous_parent = parent_dir
     with tempfile.TemporaryDirectory(dir=parent_dir, prefix=".stac-build-") as build:
         for environment in STAC_ENVIRONMENTS:
             generate(
@@ -312,8 +213,6 @@ def generate_environments(
                 root_href=environment.root_href,
                 environment=environment.name,
                 loaded=loaded,
-                previous_dir=previous_parent / environment.directory,
-                now=now,
             )
         _swap_in(
             pathlib.Path(build),

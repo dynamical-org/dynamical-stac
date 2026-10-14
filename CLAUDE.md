@@ -46,13 +46,6 @@ under `src/`, then `git add stac/ stac-staging/ stac-test/` before
 committing.** Skipping this step ships a stale catalog and breaks
 `test_stac_drift.py` in CI.
 
-Each catalog and collection carries a top-level `updated` (the Portolan mirror
-sync time). Regeneration keeps a file's committed stamp when nothing else in it
-changed and stamps the current UTC time otherwise; a root takes the latest of its
-own stamp and its collections'. A `README.md` and `AGENTS.md`, rendered from the
-JSON beside them (`src/sidecars.py`), sit next to every `catalog.json` and
-`collection.json`, and the drift test compares them too.
-
 The trees describe the catalogs we publish, not everything in the buckets:
 uploads never delete, so a collection removed from an environment stays in R2,
 unlinked, until someone deletes it.

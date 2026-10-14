@@ -40,10 +40,6 @@ markers = [
     "integration: slow network-dependent integration tests (reads from public R2 buckets)",
 ]
 
-[tool.ruff]
-# Generated trees: their AGENTS.md copy each collection's example code verbatim.
-extend-exclude = ["stac", "stac-staging", "stac-test"]
-
 [tool.ruff.lint]
 select = [
     "UP",    # pyupgrade
