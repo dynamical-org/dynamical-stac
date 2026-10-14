@@ -1910,9 +1910,9 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="ucsb-chc-chirps",
         source=_CHIRPS,
         description_summary=(
-            "Daily CHIRPS version 3 precipitation over land from 60 degrees south "
-            "to 60 degrees north, at 0.05 degree resolution, from 1981 onward. "
-            "This is the final product, using the reanalysis-based daily distribution (final/rnl)."
+            "This is the final CHIRPS product. It begins in 1981 and is released "
+            "monthly, usually two to three weeks after "
+            "the month ends."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ucsb_chc/chirps/template_config.py",
         examples=(
@@ -1932,9 +1932,9 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="ucsb-chc-chirps",
         source=_CHIRPS,
         description_summary=(
-            "Daily CHIRPS version 3 precipitation over land from 60 degrees south "
-            "to 60 degrees north, at 0.05 degree resolution, from 2025 onward. "
-            "This is the preliminary product, using the satellite-based daily distribution (prelim/sat)."
+            "This preliminary product is the lowest latency CHIRPS data. It begins "
+            "in 2025 and has a handful-of-days latency, updating about two days "
+            "after each five-day period ends."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ucsb_chc/chirps/template_config.py",
         examples=(
