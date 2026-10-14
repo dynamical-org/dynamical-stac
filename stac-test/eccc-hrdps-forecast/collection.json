@@ -53,6 +53,18 @@
       "title": "Quickstart (Colab)"
     },
     {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "README"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "Notes for agents"
+    },
+    {
       "rel": "self",
       "href": "https://stac-test.dynamical.org/eccc-hrdps-forecast/collection.json",
       "type": "application/json",
@@ -67,7 +79,8 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
   ],
   "attribution": "ECCC HRDPS data processed by dynamical.org from Environment and Climate Change Canada, used under the ECCC Data Servers End-use Licence version 2.1 (https://eccc-msc.github.io/open-data/licence/readme_en/).",
   "version": "0.1.0",
@@ -619,6 +632,7 @@
       "uncompressed_size": "612.5 MiB"
     }
   },
+  "updated": "2026-10-13T21:22:28Z",
   "title": "ECCC HRDPS forecast",
   "extent": {
     "spatial": {

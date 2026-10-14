@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import datetime as dt
 import json
 import pathlib
 from collections.abc import Callable
 from typing import Any
 
+import pystac
 import pytest
 
 import generate
@@ -190,3 +192,121 @@ def test_root_catalog_links_a_png_icon(
             "title": "dynamical.org",
         }
     ]
+
+
+def test_updated_keeps_the_committed_stamp_when_nothing_else_changed(
+    tmp_path: pathlib.Path,
+) -> None:
+    committed = tmp_path / "collection.json"
+    committed.write_text(json.dumps({"id": "x", "updated": "2026-01-01T00:00:00Z"}))
+
+    assert generate._updated({"id": "x"}, committed, "2026-10-13T00:00:00Z") == (
+        "2026-01-01T00:00:00Z"
+    )
+
+
+@pytest.mark.parametrize(
+    "committed_json",
+    [
+        None,
+        {"id": "x"},
+        {"id": "y", "updated": "2026-01-01T00:00:00Z"},
+    ],
+    ids=["new-file", "never-stamped", "changed"],
+)
+def test_updated_stamps_now_for_new_or_changed_metadata(
+    tmp_path: pathlib.Path, committed_json: dict[str, str] | None
+) -> None:
+    committed = tmp_path / "collection.json"
+    if committed_json is not None:
+        committed.write_text(json.dumps(committed_json))
+
+    assert generate._updated({"id": "x"}, committed, "2026-10-13T00:00:00Z") == (
+        "2026-10-13T00:00:00Z"
+    )
+
+
+def _empty_root(
+    output_dir: pathlib.Path, environment: str, now: dt.datetime
+) -> dict[str, Any]:
+    generate.generate(output_dir, environment=environment, loaded={}, now=now)
+    publication = generate.stac_environment(environment)
+    return json.loads((output_dir / publication.root_filename).read_text())
+
+
+@pytest.mark.parametrize(
+    "environment", [environment.name for environment in generate.STAC_ENVIRONMENTS]
+)
+def test_regenerating_an_unchanged_root_keeps_its_updated_stamp(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setattr(generate, "_select_items", lambda *_, **__: [])
+    first = dt.datetime(2026, 10, 1, 12, 30, tzinfo=dt.UTC)
+
+    assert _empty_root(tmp_path, environment, first)["updated"] == (
+        "2026-10-01T12:30:00Z"
+    )
+    later = first + dt.timedelta(days=3)
+    assert _empty_root(tmp_path, environment, later)["updated"] == (
+        "2026-10-01T12:30:00Z"
+    )
+
+
+def test_root_updated_is_the_latest_collection_stamp(tmp_path: pathlib.Path) -> None:
+    catalog = pystac.Catalog(id="root", description="d")
+    for collection_id in ("a", "b"):
+        collection = pystac.Collection(
+            id=collection_id,
+            description="d",
+            extent=pystac.Extent(
+                pystac.SpatialExtent([[0.0, 0.0, 1.0, 1.0]]),
+                pystac.TemporalExtent([[dt.datetime(2020, 1, 1, tzinfo=dt.UTC), None]]),
+            ),
+        )
+        catalog.add_child(collection)
+    catalog.normalize_hrefs("https://stac.example")
+    a = catalog.get_child("a")
+    assert a is not None
+    (tmp_path / "a").mkdir()
+    (tmp_path / "a" / "collection.json").write_text(
+        json.dumps({**a.to_dict(), "updated": "2026-03-01T00:00:00Z"})
+    )
+    (tmp_path / "catalog.json").write_text(
+        json.dumps({**catalog.to_dict(), "updated": "2026-01-01T00:00:00Z"})
+    )
+
+    generate._stamp_updated(
+        catalog,
+        generate.stac_environment("production"),
+        "https://stac.example",
+        tmp_path,
+        "2026-10-13T00:00:00Z",
+    )
+
+    b = catalog.get_child("b")
+    assert b is not None
+    assert a.extra_fields["updated"] == "2026-03-01T00:00:00Z"
+    assert b.extra_fields["updated"] == "2026-10-13T00:00:00Z"
+    assert catalog.extra_fields["updated"] == "2026-10-13T00:00:00Z"
+
+
+@pytest.mark.parametrize(
+    "environment", [environment.name for environment in generate.STAC_ENVIRONMENTS]
+)
+def test_root_catalog_links_its_sidecars(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, environment: str
+) -> None:
+    monkeypatch.setattr(generate, "_select_items", lambda *_, **__: [])
+    root = _empty_root(tmp_path, environment, dt.datetime.now(dt.UTC))
+
+    sidecars = [
+        (link["rel"], link["href"], link["type"])
+        for link in root["links"]
+        if link["rel"] in {"describedby", "agents"}
+    ]
+    assert sidecars == [
+        ("describedby", "./README.md", "text/markdown"),
+        ("agents", "./AGENTS.md", "text/markdown"),
+    ]
+    assert (tmp_path / "README.md").read_text().startswith("# ")
+    assert (tmp_path / "AGENTS.md").read_text().startswith("# ")

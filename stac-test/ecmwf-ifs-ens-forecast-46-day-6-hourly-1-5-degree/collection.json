@@ -53,6 +53,18 @@
       "title": "ECMWF IFS ENS 46 day, daily and 6 hourly (Colab)"
     },
     {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "README"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "Notes for agents"
+    },
+    {
       "rel": "self",
       "href": "https://stac-test.dynamical.org/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/collection.json",
       "type": "application/json",
@@ -67,7 +79,8 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
   ],
   "attribution": "ECMWF IFS ENS sub-seasonal-range forecast data processed by dynamical.org from the ECMWF Data Store.",
   "version": "0.1.0",
@@ -342,6 +355,7 @@
       "uncompressed_size": "1.1 GiB"
     }
   },
+  "updated": "2026-10-13T21:22:28Z",
   "title": "ECMWF IFS ENS forecast, 46 day, 6 hourly, 1.5 degree",
   "extent": {
     "spatial": {
