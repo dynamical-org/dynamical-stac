@@ -47,6 +47,18 @@
       "title": "RRFS and REFS forecasts, virtual (Colab)"
     },
     {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "README"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "Notes for agents"
+    },
+    {
       "rel": "self",
       "href": "https://stac-staging.dynamical.org/noaa-refs-forecast-hourly-virtual/collection.json",
       "type": "application/json",
@@ -61,7 +73,8 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
   ],
   "attribution": "NOAA NWS NCEP REFS data processed by dynamical.org from NOAA Open Data Dissemination archives.",
   "version": "0.1.0",
@@ -899,7 +912,7 @@
       "long_name": "Geopotential height",
       "standard_name": "geopotential_height",
       "short_name": "gh",
-      "comment": "Mean and standard deviation use only members with a cloud base. When none contribute, the mean is the source's no-cloud height of about 20000 m and the standard deviation is zero, which does not indicate measured certainty."
+      "comment": "Mean and standard deviation use only members with a cloud base. When none contribute, the mean holds the source's no-cloud value and the standard deviation is zero, which does not indicate measured certainty."
     },
     "geopotential_height_cloud_ceiling": {
       "dimensions": [
@@ -3472,7 +3485,7 @@
       "unit": "percent",
       "long_name": "Probability of vertical wind shear (0-609 m above ground) above 10.3 m s-1",
       "short_name": "probability_of_vertical_wind_shear_0_609m_above_10p3",
-      "comment": "Probability of vertical wind shear (0-609 m above ground) above 10.3 m s-1."
+      "comment": "Probability of vertical wind shear (0-609 m above ground) above 10.3 m s-1. Over terrain above roughly 1500 to 1800 m the source does not compute the shear and writes 0."
     },
     "probability_of_vertical_wind_shear_0_609m_above_20": {
       "dimensions": [
@@ -3491,7 +3504,7 @@
       "unit": "percent",
       "long_name": "Probability of vertical wind shear (0-609 m above ground) above 20 m s-1",
       "short_name": "probability_of_vertical_wind_shear_0_609m_above_20",
-      "comment": "Probability of vertical wind shear (0-609 m above ground) above 20 m s-1."
+      "comment": "Probability of vertical wind shear (0-609 m above ground) above 20 m s-1. Over terrain above roughly 1500 to 1800 m the source does not compute the shear and writes 0."
     },
     "probability_of_visibility_surface_below_1600": {
       "dimensions": [
@@ -4545,7 +4558,7 @@
       "unit": "m s-1",
       "long_name": "Vertical wind shear",
       "short_name": "vws",
-      "comment": "Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
+      "comment": "Over terrain above roughly 1500 to 1800 m the source does not compute the shear and writes 0. Mean is the weighted mean of member speeds. Standard deviation is sqrt(var(u) + var(v)), the vector spread including variation in direction, rather than the standard deviation of speed."
     },
     "visibility_surface": {
       "dimensions": [
@@ -5059,6 +5072,7 @@
       "uncompressed_size": "14.5 MiB"
     }
   },
+  "updated": "2026-10-14T15:11:58Z",
   "title": "NOAA REFS forecast, hourly, virtual",
   "extent": {
     "spatial": {

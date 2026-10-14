@@ -17,6 +17,18 @@
       "title": "dynamical.org"
     },
     {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "README"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "Notes for agents"
+    },
+    {
       "rel": "child",
       "href": "https://stac.dynamical.org/noaa-gfs-analysis/collection.json",
       "type": "application/json",
@@ -179,5 +191,6 @@
       "title": "dynamical.org STAC Catalog"
     }
   ],
+  "updated": "2026-10-13T21:22:28Z",
   "title": "dynamical.org STAC Catalog"
 }

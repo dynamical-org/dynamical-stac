@@ -16,7 +16,7 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 @pytest.fixture(scope="module")
 def generated(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
     parent_dir = tmp_path_factory.mktemp("environments")
-    generate_environments(parent_dir)
+    generate_environments(parent_dir, previous_parent=REPO_ROOT)
     return parent_dir
 
 
@@ -32,10 +32,10 @@ def test_committed_stac_matches_generated(
     generated_dir = generated / environment_directory
 
     committed_files = {
-        p.relative_to(committed_dir) for p in committed_dir.rglob("*.json")
+        p.relative_to(committed_dir) for p in committed_dir.rglob("*") if p.is_file()
     }
     generated_files = {
-        p.relative_to(generated_dir) for p in generated_dir.rglob("*.json")
+        p.relative_to(generated_dir) for p in generated_dir.rglob("*") if p.is_file()
     }
 
     missing = generated_files - committed_files
@@ -49,9 +49,13 @@ def test_committed_stac_matches_generated(
 
     mismatches: list[str] = []
     for rel in sorted(committed_files):
-        committed = json.loads((committed_dir / rel).read_text())
-        generated_json = json.loads((generated_dir / rel).read_text())
-        if committed != generated_json:
+        committed = (committed_dir / rel).read_text()
+        generated_text = (generated_dir / rel).read_text()
+        if rel.suffix == ".json":
+            same = json.loads(committed) == json.loads(generated_text)
+        else:
+            same = committed == generated_text
+        if not same:
             mismatches.append(str(rel))
 
     assert not mismatches, (
