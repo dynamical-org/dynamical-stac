@@ -67,7 +67,7 @@
   "version": "0.1.0",
   "model_id": "noaa-rrfs",
   "model_name": "NOAA RRFS",
-  "description_summary": "This dataset is an archive of past and present RRFS forecasts, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, and step forward every 15 minutes along the `lead_time` dimension.\n\nThis dataset uses the native RRFS Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.\n\nNote: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) is required.",
+  "description_summary": "This dataset is an archive of past and present RRFS forecasts, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, and step forward every 15 minutes along the `lead_time` dimension.\n\nThis dataset uses the native RRFS Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.\n\nNote: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required.",
   "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-rrfs-ops/).\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (1 hour) |\n| lead_time | 1 (15 minutes) |\n| y | 1059 (3177 km) |\n| x | 1799 (5397 km) |\n| **uncompressed** | 14.5 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-rrfs-forecast-sub-hourly-virtual/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.",
   "description_model": "The Rapid Refresh Forecast System (RRFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) convection-allowing weather forecast model with a 3 km grid, built on the Unified Forecast System. The RRFS ensemble (RRFS ENS) adds five perturbed members to this deterministic forecast, and REFS combines both with HRRR into ensemble products.\n\nNOAA RRFS is pre-operational, so expect changes to the model data and to the structure of this dataset.",
   "examples": [
@@ -76,18 +76,18 @@
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-rrfs-forecast-sub-hourly-virtual\", chunks=None)\nds[\"composite_reflectivity\"].sel(init_time=\"2026-09-16T12\", lead_time=\"2h15min\")",
+          "code": "import dynamical_catalog  # dynamical-catalog>=1.0.1\n\nds = dynamical_catalog.open(\"noaa-rrfs-forecast-sub-hourly-virtual\", chunks=None)\nds[\"composite_reflectivity\"].sel(init_time=\"2026-09-16T12\", lead_time=\"2h15min\")",
           "language": "python"
         },
         {
           "label": "pystac",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-rrfs-forecast-sub-hourly-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-rrfs-ops-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"composite_reflectivity\"].sel(init_time=\"2026-09-16T12\", lead_time=\"2h15min\")",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-rrfs-forecast-sub-hourly-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-rrfs-ops-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"composite_reflectivity\"].sel(init_time=\"2026-09-16T12\", lead_time=\"2h15min\")",
           "language": "python"
         },
         {
           "label": "prompt",
           "language": "text",
-          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-rrfs-forecast-sub-hourly-virtual\nSTAC collection: https://stac-staging.dynamical.org/noaa-rrfs-forecast-sub-hourly-virtual/collection.json"
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-rrfs-forecast-sub-hourly-virtual\nSTAC collection: https://stac.dynamical.org/noaa-rrfs-forecast-sub-hourly-virtual/collection.json"
         }
       ]
     }

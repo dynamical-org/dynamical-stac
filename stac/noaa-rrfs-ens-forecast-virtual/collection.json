@@ -1,0 +1,1625 @@
+{
+  "type": "Collection",
+  "id": "noaa-rrfs-ens-forecast-virtual",
+  "stac_version": "1.1.0",
+  "description": "Ensemble weather forecasts from the Rapid Refresh Forecast System (RRFS) operated by NOAA NWS NCEP.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-rrfs-ens-forecast-virtual/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-rrfs-ens-forecast-virtual/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "via",
+      "href": "https://registry.opendata.aws/noaa-rrfs-ops/",
+      "type": "text/html",
+      "title": "NOAA RRFS and REFS on NOAA Open Data Dissemination"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-rrfs-refs-forecast-virtual.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "RRFS and REFS forecasts, virtual (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-rrfs-refs-forecast-virtual.ipynb",
+      "type": "text/html",
+      "title": "RRFS and REFS forecasts, virtual (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac.dynamical.org/noaa-rrfs-ens-forecast-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA RRFS ENS forecast, virtual"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "NOAA NWS NCEP RRFS ensemble data processed by dynamical.org from NOAA Open Data Dissemination archives.",
+  "version": "0.1.0",
+  "model_id": "noaa-rrfs-ens",
+  "model_name": "NOAA RRFS ENS",
+  "description_summary": "This dataset is an archive of past and present RRFS ensemble forecasts, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, and step forward hourly along the `lead_time` dimension out to 60 hours. Each forecast has six members along the `ensemble_member` dimension: member 0 is the deterministic RRFS forecast and members 1 to 5 are perturbed.\n\nThis dataset uses the native RRFS Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.\n\nVariables on pressure levels live in the `pressure_level` group.\n\nNote: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-rrfs-ops/).\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (6 hours) |\n| ensemble_member | 1 |\n| lead_time | 1 (1 hour) |\n| y | 1059 (3177 km) |\n| x | 1799 (5397 km) |\n| **uncompressed** | 14.5 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-rrfs-ens-forecast-virtual/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.",
+  "description_model": "The Rapid Refresh Forecast System ensemble (RRFS ENS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) convection-allowing ensemble with a 3 km grid. Five members run with different initial conditions, lateral boundary conditions and model physics from the deterministic RRFS forecast, to better cover the range of forecast possibilities. REFS combines these members with the deterministic RRFS and HRRR into ensemble products.\n\nNOAA RRFS ENS is pre-operational, so expect changes to the model data and to the structure of this dataset.",
+  "examples": [
+    {
+      "title": "Temperature map",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=1.0.1\n\nds = dynamical_catalog.open(\"noaa-rrfs-ens-forecast-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", ensemble_member=0)\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = dynamical_catalog.open(\"noaa-rrfs-ens-forecast-virtual\", group=\"pressure_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", pressure_level=500).mean(\"ensemble_member\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-rrfs-ens-forecast-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-rrfs-ops-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", ensemble_member=0)\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\n\nds_pressure[\"temperature\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", pressure_level=500).mean(\"ensemble_member\")",
+          "language": "python"
+        },
+        {
+          "label": "prompt",
+          "language": "text",
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-rrfs-ens-forecast-virtual\nSTAC collection: https://stac.dynamical.org/noaa-rrfs-ens-forecast-virtual/collection.json"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "ensemble_member": {
+      "type": "other",
+      "extent": [
+        0,
+        5
+      ],
+      "unit": "1",
+      "size": 6
+    },
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2026-09-10T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        216000
+      ],
+      "unit": "seconds",
+      "size": 61
+    },
+    "x": {
+      "type": "spatial",
+      "extent": [
+        -2697520.142521929,
+        2696479.857478071
+      ],
+      "axis": "x",
+      "unit": "m",
+      "size": 1799
+    },
+    "y": {
+      "type": "spatial",
+      "extent": [
+        -1587306.152556665,
+        1586693.847443335
+      ],
+      "axis": "y",
+      "unit": "m",
+      "size": 1059
+    },
+    "pressure_level": {
+      "type": "other",
+      "extent": [
+        250.0,
+        1000.0
+      ],
+      "unit": "hPa",
+      "size": 14
+    }
+  },
+  "cube:variables": {
+    "categorical_freezing_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Categorical freezing rain",
+      "short_name": "cfrzr",
+      "comment": "0=no; 1=yes"
+    },
+    "categorical_ice_pellets_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Categorical ice pellets",
+      "short_name": "cicep",
+      "comment": "0=no; 1=yes"
+    },
+    "categorical_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Categorical rain",
+      "short_name": "crain",
+      "comment": "0=no; 1=yes"
+    },
+    "categorical_snow_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Categorical snow",
+      "short_name": "csnow",
+      "comment": "0=no; 1=yes"
+    },
+    "cloud_ceiling_height": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Ceiling",
+      "short_name": "ceil",
+      "comment": "Height above mean sea level, not above ground. NaN where no cloud ceiling was detected."
+    },
+    "composite_reflectivity": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "dBZ",
+      "long_name": "Maximum/Composite radar reflectivity",
+      "standard_name": "equivalent_reflectivity_factor",
+      "short_name": "refc",
+      "comment": "No echo is stored as -20 dBZ in the deterministic run and some ensemble members, and as 0 dBZ in other members. A value of 0 dBZ can also be valid reflectivity."
+    },
+    "convective_available_potential_energy_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective available potential energy",
+      "standard_name": "atmosphere_convective_available_potential_energy",
+      "short_name": "cape"
+    },
+    "convective_inhibition_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective inhibition",
+      "standard_name": "atmosphere_convective_inhibition",
+      "short_name": "cin",
+      "comment": "Negative where there is inhibition and at or near zero where there is none."
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
+    "downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf",
+      "comment": "Averaged over the preceding hour."
+    },
+    "echo_top": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Echo top",
+      "short_name": "retop",
+      "comment": "NaN where no radar echo was detected."
+    },
+    "freezing_rain_run_total_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Freezing Rain",
+      "short_name": "frzr",
+      "comment": "Accumulated from the forecast initialization time to this step."
+    },
+    "freezing_rain_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Freezing Rain",
+      "short_name": "frzr",
+      "comment": "Accumulated over the preceding hour."
+    },
+    "geopotential_height_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "high_cloud_cover": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "High cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "hcc"
+    },
+    "instantaneous_downward_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface downward short-wave radiation flux",
+      "standard_name": "surface_downwelling_shortwave_flux_in_air",
+      "short_name": "sdswrf"
+    },
+    "instantaneous_total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
+    },
+    "low_cloud_cover": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Low cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "lcc"
+    },
+    "maximum_downward_vertical_velocity_100_1000mb": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Maximum downward vertical velocity",
+      "short_name": "maxdvv",
+      "comment": "In the 100-1000 hPa isobaric layer. Maximum value over the preceding hour."
+    },
+    "maximum_lightning_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "1",
+      "long_name": "Lightning",
+      "short_name": "ltng",
+      "comment": "Maximum value over the preceding hour."
+    },
+    "maximum_relative_humidity_2m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Time-maximum 2 metre relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "max_2r",
+      "comment": "Maximum value over the preceding hour."
+    },
+    "maximum_updraft_helicity_3000_0m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m2 s-2",
+      "long_name": "Updraft Helicity",
+      "short_name": "uphl",
+      "comment": "Maximum value over the preceding hour."
+    },
+    "maximum_updraft_helicity_5000_2000m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m2 s-2",
+      "long_name": "Updraft Helicity",
+      "short_name": "uphl",
+      "comment": "Maximum value over the preceding hour."
+    },
+    "maximum_upward_vertical_velocity_100_1000mb": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Maximum upward vertical velocity",
+      "standard_name": "upward_air_velocity",
+      "short_name": "maxuvv",
+      "comment": "In the 100-1000 hPa isobaric layer. Maximum value over the preceding hour."
+    },
+    "maximum_wind_speed_10m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Time-maximum 10 metre wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "max_10si",
+      "comment": "Maximum value over the preceding hour."
+    },
+    "medium_cloud_cover": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Medium cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "mcc"
+    },
+    "minimum_relative_humidity_2m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Time-minimum 2 metre relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "min_2r",
+      "comment": "Minimum value over the preceding hour."
+    },
+    "minimum_updraft_helicity_3000_0m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m2 s-2",
+      "long_name": "Minimum updraft helicity",
+      "short_name": "mnuphl",
+      "comment": "Minimum value over the preceding hour."
+    },
+    "minimum_updraft_helicity_5000_2000m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m2 s-2",
+      "long_name": "Minimum updraft helicity",
+      "short_name": "mnuphl",
+      "comment": "Minimum value over the preceding hour."
+    },
+    "percent_frozen_precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Percent frozen precipitation",
+      "short_name": "cpofp",
+      "comment": "NaN where precipitation is absent or too light to diagnose a frozen fraction."
+    },
+    "precipitable_water_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Precipitable water",
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "short_name": "pwat"
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "relative_humidity_2m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "2 metre relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "2r"
+    },
+    "storm_relative_helicity_1000_0m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m2 s-2",
+      "long_name": "Storm relative helicity",
+      "short_name": "hlcy"
+    },
+    "storm_relative_helicity_3000_0m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m2 s-2",
+      "long_name": "Storm relative helicity",
+      "short_name": "hlcy"
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc",
+      "comment": "Averaged over the preceding hour."
+    },
+    "total_cloud_cover_boundary_layer": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Boundary layer cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "tcc"
+    },
+    "total_precipitation_run_total_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "tp",
+      "comment": "Accumulated from the forecast initialization time to this step."
+    },
+    "total_precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "tp",
+      "comment": "Accumulated over the preceding hour."
+    },
+    "total_snowfall_run_total_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Total snowfall",
+      "standard_name": "thickness_of_snowfall_amount",
+      "short_name": "asnow",
+      "comment": "Accumulated from the forecast initialization time to this step."
+    },
+    "vertical_u_component_shear_0_6000m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Vertical u-component shear",
+      "short_name": "vucsh",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "vertical_v_component_shear_0_6000m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Vertical v-component shear",
+      "short_name": "vvcsh",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "visibility_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Visibility",
+      "standard_name": "visibility_in_air",
+      "short_name": "vis"
+    },
+    "wind_gust_surface": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "Wind speed (gust)",
+      "standard_name": "wind_speed_of_gust",
+      "short_name": "gust"
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "x_wind",
+      "short_name": "10u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_160m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_320m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_u_80m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "80 metre U wind component",
+      "standard_name": "x_wind",
+      "short_name": "80u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "y_wind",
+      "short_name": "10v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_160m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_320m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "wind_v_80m": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m s-1",
+      "long_name": "80 metre V wind component",
+      "standard_name": "y_wind",
+      "short_name": "80v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    },
+    "pressure_level/absolute_vorticity": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799,
+        1
+      ],
+      "unit": "s-1",
+      "long_name": "Absolute vorticity",
+      "standard_name": "atmosphere_upward_absolute_vorticity",
+      "short_name": "absv"
+    },
+    "pressure_level/dew_point_temperature": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799,
+        1
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Dew point temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "dpt"
+    },
+    "pressure_level/geopotential_height": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799,
+        1
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "pressure_level/relative_humidity": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799,
+        1
+      ],
+      "unit": "percent",
+      "long_name": "Relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "r"
+    },
+    "pressure_level/specific_humidity": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799,
+        1
+      ],
+      "unit": "1",
+      "long_name": "Specific humidity",
+      "standard_name": "specific_humidity",
+      "short_name": "q"
+    },
+    "pressure_level/temperature": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799,
+        1
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "Temperature",
+      "standard_name": "air_temperature",
+      "short_name": "t"
+    },
+    "pressure_level/wind_u": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799,
+        1
+      ],
+      "unit": "m s-1",
+      "long_name": "U component of wind",
+      "standard_name": "x_wind",
+      "short_name": "u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "pressure_level/wind_v": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x",
+        "pressure_level"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799,
+        1
+      ],
+      "unit": "m s-1",
+      "long_name": "V component of wind",
+      "standard_name": "y_wind",
+      "short_name": "v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float64",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "ensemble_member",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "1 hour",
+        "y": "3177 km",
+        "x": "5397 km"
+      },
+      "uncompressed_size_bytes": 15241128,
+      "uncompressed_size": "14.5 MiB"
+    }
+  },
+  "title": "NOAA RRFS ENS forecast, virtual",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -134.09547424316406,
+          21.13812255859375,
+          -60.91719436645508,
+          52.61565399169922
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-09-10T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "NOAA NWS NCEP",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.weather.gov/ncep/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
+  "summaries": {
+    "spatial_domain": [
+      "Continental United States"
+    ],
+    "spatial_resolution": [
+      "3 km"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2026-09-10 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-60 hours ahead"
+    ],
+    "forecast_resolution": [
+      "Hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-noaa-rrfs-ens/noaa-rrfs-ens-forecast-virtual/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "s3://noaa-rrfs-ops-pds/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-noaa-rrfs-ens.s3.us-west-2.amazonaws.com/noaa-rrfs-ens-forecast-virtual/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "s3://noaa-rrfs-ops-pds/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}
