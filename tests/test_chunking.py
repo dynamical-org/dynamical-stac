@@ -162,6 +162,48 @@ def test_build_chunking_raises_on_non_uniform_variables() -> None:
         _build_chunking(ds)
 
 
+def _statistic_dataset(
+    statistic_chunk: int = 1, other_chunks: tuple[int, ...] = (1, 2, 2)
+) -> xr.Dataset:
+    """One variable with a ``statistic`` dimension and one without it."""
+    ds = _chunked_dataset(chunks=(1, 2, 2), shards=None)
+    with_statistic = ds["var0"].expand_dims(
+        statistic=["mean", "standard_deviation"], axis=1
+    )
+    with_statistic.encoding = {
+        "chunks": (1, statistic_chunk, 2, 2),
+        "shards": None,
+        "dtype": "float32",
+    }
+    without_statistic = ds["var0"].copy()
+    without_statistic.encoding = {
+        "chunks": other_chunks,
+        "shards": None,
+        "dtype": "float32",
+    }
+    return xr.Dataset(
+        {"with_statistic": with_statistic, "without_statistic": without_statistic}
+    )
+
+
+def test_build_chunking_allows_unit_chunked_dims_missing_from_some_variables() -> None:
+    chunking = _build_chunking(_statistic_dataset())
+    assert isinstance(chunking, Chunking)
+    assert chunking.chunk.dimensions == ["time", "statistic", "latitude", "longitude"]
+    assert chunking.chunk.shape == [1, 1, 2, 2]
+    assert chunking.shard is None
+
+
+def test_build_chunking_raises_when_missing_dim_is_not_unit_chunked() -> None:
+    with pytest.raises(ValueError, match="non-uniform chunk/shard"):
+        _build_chunking(_statistic_dataset(statistic_chunk=2))
+
+
+def test_build_chunking_raises_when_shared_dims_differ() -> None:
+    with pytest.raises(ValueError, match="non-uniform chunk/shard"):
+        _build_chunking(_statistic_dataset(other_chunks=(2, 2, 2)))
+
+
 def test_from_dataset_populates_variable_chunks_and_collection_chunking() -> None:
     result = CollectionInput.from_dataset(_catalog_item(), _chunked_dataset())
     variable = result.cube_variables["var0"]

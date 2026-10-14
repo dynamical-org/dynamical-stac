@@ -249,9 +249,11 @@ class Chunking(BaseModel):
     """Collection-level chunk + shard summary, shared by all data variables.
 
     Emitted only when every data variable shares one
-    ``(dims, chunks, shards, dtype)`` signature (the case for all current
-    datasets); :func:`_build_chunking` raises otherwise so non-uniform stores
-    fail loudly at generation time rather than shipping a misleading summary.
+    ``(dims, chunks, shards, dtype)`` signature, apart from dimensions chunked
+    one element at a time that only some variables carry (e.g. a ``statistic``
+    dimension on some of an ensemble-products dataset's variables);
+    :func:`_build_chunking` raises otherwise so non-uniform stores fail loudly
+    at generation time rather than shipping a misleading summary.
 
     ``shard`` is ``None`` for chunked-but-unsharded stores (e.g. virtual
     datasets whose chunks each reference a single source GRIB message); the
@@ -482,15 +484,34 @@ def _chunk_grid(
     )
 
 
+_Signature = tuple[tuple[str, ...], tuple[int, ...], tuple[int, ...] | None, str]
+
+
+def _drop_dims(signature: _Signature, drop: set[str]) -> _Signature | None:
+    """``signature`` without the dimensions in ``drop``, or ``None`` if any of
+    them is chunked (or sharded) more than one element at a time."""
+    dims, chunks, shards, dtype = signature
+    keep = [i for i, dim in enumerate(dims) if dim not in drop]
+    dropped = [i for i, dim in enumerate(dims) if dim in drop]
+    if any(chunks[i] != 1 or (shards is not None and shards[i] != 1) for i in dropped):
+        return None
+    return (
+        tuple(dims[i] for i in keep),
+        tuple(chunks[i] for i in keep),
+        tuple(shards[i] for i in keep) if shards is not None else None,
+        dtype,
+    )
+
+
 def _build_chunking(ds: xr.Dataset) -> Chunking | None:
     """Collection-level chunk/shard summary, or ``None`` if encoding lacks it.
 
     Raises if data variables don't all share one ``(dims, chunks, shards,
     dtype)`` signature, so a non-uniform store can't ship a misleading summary.
+    A variable may lack a dimension the others carry when that dimension is
+    chunked one element at a time; the summary then lists it.
     """
-    signatures: dict[
-        str, tuple[tuple[str, ...], tuple[int, ...], tuple[int, ...], str]
-    ] = {}
+    signatures: dict[str, _Signature] = {}
     for name in ds.data_vars:
         da = ds[name]
         chunks = da.encoding.get("chunks")
@@ -505,13 +526,17 @@ def _build_chunking(ds: xr.Dataset) -> Chunking | None:
         )
     if not signatures:
         return None
-    if len(set(signatures.values())) > 1:
+    full = max(signatures.values(), key=lambda signature: len(signature[0]))
+    if any(
+        signature != _drop_dims(full, set(full[0]) - set(signature[0]))
+        for signature in signatures.values()
+    ):
         raise ValueError(
             f"Data variables have non-uniform chunk/shard signatures, so a "
             f"single collection-level chunking summary would be misleading: "
             f"{signatures}"
         )
-    dims_t, chunks, shards, dtype = next(iter(signatures.values()))
+    dims_t, chunks, shards, dtype = full
     dims = list(dims_t)
     itemsize = np.dtype(dtype).itemsize
     return Chunking(

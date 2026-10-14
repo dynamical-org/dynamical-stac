@@ -1,0 +1,2432 @@
+{
+  "type": "Collection",
+  "id": "noaa-refs-forecast-3-hourly-virtual",
+  "stac_version": "1.1.0",
+  "description": "Ensemble weather forecast products from NOAA's RRFS Ensemble Forecast System (REFS).",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-refs-forecast-3-hourly-virtual/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-refs-forecast-3-hourly-virtual/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "via",
+      "href": "https://registry.opendata.aws/noaa-rrfs-ops/",
+      "type": "text/html",
+      "title": "NOAA RRFS and REFS on NOAA Open Data Dissemination"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-rrfs-refs-forecast-virtual.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "RRFS and REFS forecasts, virtual (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-rrfs-refs-forecast-virtual.ipynb",
+      "type": "text/html",
+      "title": "RRFS and REFS forecasts, virtual (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-test.dynamical.org/noaa-refs-forecast-3-hourly-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA REFS forecast, 3 hourly, virtual"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "NOAA NWS NCEP REFS data processed by dynamical.org from NOAA Open Data Dissemination archives.",
+  "version": "0.1.0",
+  "model_id": "noaa-refs",
+  "model_name": "NOAA REFS",
+  "description_summary": "This dataset is an archive of past and present REFS ensemble products, optimized for spatial (map) access patterns. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run, and step forward every 3 hours along the `lead_time` dimension from 3 hours out to 60 hours.\n\nEnsemble means and standard deviations are stored along the `statistic` dimension. Other products, such as probabilities of exceeding a threshold, are separate variables.\n\nThis dataset uses the native RRFS Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.\n\nNote: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) is required.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by [NOAA Open Data Dissemination (NODD)](https://www.noaa.gov/information-technology/open-data-dissemination) and accessed from the [AWS Open Data Registry](https://registry.opendata.aws/noaa-rrfs-ops/).\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| init_time | 1 (6 hours) |\n| statistic | 1 |\n| lead_time | 1 (3 hours) |\n| y | 1059 (3177 km) |\n| x | 1799 (5397 km) |\n| **uncompressed** | 14.5 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-refs-forecast-3-hourly-virtual/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.",
+  "description_model": "The RRFS Ensemble Forecast System (REFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) ensemble product system. It produces ensemble products on a 3 km grid, including means, spreads and probabilities of exceeding thresholds, from the current and 6 hour old cycles of the deterministic Rapid Refresh Forecast System (RRFS) and its ensemble (RRFS ENS), plus two HRRR members over the continental United States.\n\nNOAA REFS is pre-operational, so expect changes to the model data and to the structure of this dataset.",
+  "examples": [
+    {
+      "title": "Precipitation map",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-refs-forecast-3-hourly-virtual\", chunks=None)\nds[\"total_precipitation_3_hour_surface\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", statistic=\"mean\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-refs-forecast-3-hourly-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-rrfs-ops-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"total_precipitation_3_hour_surface\"].sel(init_time=\"2026-09-16T12\", lead_time=\"24h\", statistic=\"mean\")",
+          "language": "python"
+        },
+        {
+          "label": "prompt",
+          "language": "text",
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-refs-forecast-3-hourly-virtual\nSTAC collection: https://stac-staging.dynamical.org/noaa-refs-forecast-3-hourly-virtual/collection.json"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2026-08-13T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        10800,
+        216000
+      ],
+      "unit": "seconds",
+      "size": 20
+    },
+    "statistic": {
+      "type": "other",
+      "extent": [
+        null,
+        null
+      ],
+      "unit": "1",
+      "size": 2
+    },
+    "x": {
+      "type": "spatial",
+      "extent": [
+        -2697520.142521929,
+        2696479.857478071
+      ],
+      "axis": "x",
+      "unit": "m",
+      "size": 1799
+    },
+    "y": {
+      "type": "spatial",
+      "extent": [
+        -1587306.152556665,
+        1586693.847443335
+      ],
+      "axis": "y",
+      "unit": "m",
+      "size": 1059
+    }
+  },
+  "cube:variables": {
+    "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_127": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 12 hour total precipitation (surface) above 127 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_127",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Ensemble agreement scale probability of 12 hour total precipitation (surface) above 127 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 12 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Ensemble agreement scale probability of 12 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 12 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Ensemble agreement scale probability of 12 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_2p54": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 12 hour total precipitation (surface) above 2.54 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_2p54",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Ensemble agreement scale probability of 12 hour total precipitation (surface) above 2.54 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_50p8": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 12 hour total precipitation (surface) above 50.8 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_50p8",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Ensemble agreement scale probability of 12 hour total precipitation (surface) above 50.8 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 12 hour total precipitation (surface) above 6.35 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Ensemble agreement scale probability of 12 hour total precipitation (surface) above 6.35 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_76p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 12 hour total precipitation (surface) above 76.2 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_12_hour_surface_above_76p2",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Ensemble agreement scale probability of 12 hour total precipitation (surface) above 76.2 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_127": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 24 hour total precipitation (surface) above 127 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_127",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Ensemble agreement scale probability of 24 hour total precipitation (surface) above 127 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 24 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Ensemble agreement scale probability of 24 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 24 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Ensemble agreement scale probability of 24 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_2p54": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 24 hour total precipitation (surface) above 2.54 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_2p54",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Ensemble agreement scale probability of 24 hour total precipitation (surface) above 2.54 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_50p8": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 24 hour total precipitation (surface) above 50.8 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_50p8",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Ensemble agreement scale probability of 24 hour total precipitation (surface) above 50.8 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 24 hour total precipitation (surface) above 6.35 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Ensemble agreement scale probability of 24 hour total precipitation (surface) above 6.35 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_76p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 24 hour total precipitation (surface) above 76.2 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_24_hour_surface_above_76p2",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Ensemble agreement scale probability of 24 hour total precipitation (surface) above 76.2 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_0p254": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 3 hour total precipitation (surface) above 0.254 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_0p254",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Ensemble agreement scale probability of 3 hour total precipitation (surface) above 0.254 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 3 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Ensemble agreement scale probability of 3 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 3 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Ensemble agreement scale probability of 3 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_50p8": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 3 hour total precipitation (surface) above 50.8 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_50p8",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Ensemble agreement scale probability of 3 hour total precipitation (surface) above 50.8 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 3 hour total precipitation (surface) above 6.35 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_3_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Ensemble agreement scale probability of 3 hour total precipitation (surface) above 6.35 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_0p254": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 6 hour total precipitation (surface) above 0.254 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_0p254",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Ensemble agreement scale probability of 6 hour total precipitation (surface) above 0.254 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 6 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Ensemble agreement scale probability of 6 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 6 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Ensemble agreement scale probability of 6 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_50p8": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 6 hour total precipitation (surface) above 50.8 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_50p8",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Ensemble agreement scale probability of 6 hour total precipitation (surface) above 50.8 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 6 hour total precipitation (surface) above 6.35 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Ensemble agreement scale probability of 6 hour total precipitation (surface) above 6.35 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_76p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 6 hour total precipitation (surface) above 76.2 kg m-2",
+      "short_name": "ensemble_agreement_scale_probability_of_total_precipitation_6_hour_surface_above_76p2",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Ensemble agreement scale probability of 6 hour total precipitation (surface) above 76.2 kg m-2."
+    },
+    "ensemble_agreement_scale_probability_of_total_snowfall_3_hour_surface_above_0p025": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 3 hour total snowfall (surface) above 0.025 m",
+      "short_name": "ensemble_agreement_scale_probability_of_total_snowfall_3_hour_surface_above_0p025",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Ensemble agreement scale probability of 3 hour total snowfall (surface) above 0.025 m."
+    },
+    "ensemble_agreement_scale_probability_of_total_snowfall_3_hour_surface_above_0p076": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 3 hour total snowfall (surface) above 0.076 m",
+      "short_name": "ensemble_agreement_scale_probability_of_total_snowfall_3_hour_surface_above_0p076",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Ensemble agreement scale probability of 3 hour total snowfall (surface) above 0.076 m."
+    },
+    "ensemble_agreement_scale_probability_of_total_snowfall_6_hour_surface_above_0p025": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 6 hour total snowfall (surface) above 0.025 m",
+      "short_name": "ensemble_agreement_scale_probability_of_total_snowfall_6_hour_surface_above_0p025",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Ensemble agreement scale probability of 6 hour total snowfall (surface) above 0.025 m."
+    },
+    "ensemble_agreement_scale_probability_of_total_snowfall_6_hour_surface_above_0p076": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 6 hour total snowfall (surface) above 0.076 m",
+      "short_name": "ensemble_agreement_scale_probability_of_total_snowfall_6_hour_surface_above_0p076",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Ensemble agreement scale probability of 6 hour total snowfall (surface) above 0.076 m."
+    },
+    "ensemble_agreement_scale_probability_of_total_snowfall_6_hour_surface_above_0p152": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Ensemble agreement scale probability of 6 hour total snowfall (surface) above 0.152 m",
+      "short_name": "ensemble_agreement_scale_probability_of_total_snowfall_6_hour_surface_above_0p152",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Ensemble agreement scale probability of 6 hour total snowfall (surface) above 0.152 m."
+    },
+    "localized_probability_matched_mean_total_precipitation_3_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Localized probability-matched mean of total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "localized_probability_matched_mean_total_precipitation_3_hour_surface",
+      "comment": "Accumulated over the preceding 3 hours. Published every 3 forecast hours from lead 3 hours."
+    },
+    "localized_probability_matched_mean_total_precipitation_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Localized probability-matched mean of total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "localized_probability_matched_mean_total_precipitation_6_hour_surface",
+      "comment": "Accumulated over the preceding 6 hours. Published every 3 forecast hours from lead 6 hours."
+    },
+    "mean_probability_matched_mean_average_total_precipitation_3_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Average of the ensemble mean and probability-matched mean of total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "mean_probability_matched_mean_average_total_precipitation_3_hour_surface",
+      "comment": "Accumulated over the preceding 3 hours. Published every 3 forecast hours from lead 3 hours."
+    },
+    "neighborhood_probability_of_freezing_rain_12_hour_surface_above_0p254": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour freezing rain (surface) above 0.254 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_12_hour_surface_above_0p254",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour freezing rain (surface) above 0.254 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_12_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour freezing rain (surface) above 12.7 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_12_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour freezing rain (surface) above 12.7 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_12_hour_surface_above_2p54": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour freezing rain (surface) above 2.54 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_12_hour_surface_above_2p54",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour freezing rain (surface) above 2.54 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_12_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour freezing rain (surface) above 6.35 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_12_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour freezing rain (surface) above 6.35 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_24_hour_surface_above_0p254": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour freezing rain (surface) above 0.254 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_24_hour_surface_above_0p254",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour freezing rain (surface) above 0.254 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_24_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour freezing rain (surface) above 12.7 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_24_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour freezing rain (surface) above 12.7 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_24_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour freezing rain (surface) above 25.4 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_24_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour freezing rain (surface) above 25.4 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_24_hour_surface_above_2p54": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour freezing rain (surface) above 2.54 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_24_hour_surface_above_2p54",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour freezing rain (surface) above 2.54 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_24_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour freezing rain (surface) above 6.35 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_24_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour freezing rain (surface) above 6.35 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_3_hour_surface_above_0p254": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour freezing rain (surface) above 0.254 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_3_hour_surface_above_0p254",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour freezing rain (surface) above 0.254 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_3_hour_surface_above_2p54": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour freezing rain (surface) above 2.54 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_3_hour_surface_above_2p54",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour freezing rain (surface) above 2.54 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_3_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour freezing rain (surface) above 6.35 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_3_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour freezing rain (surface) above 6.35 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_6_hour_surface_above_0p254": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour freezing rain (surface) above 0.254 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_6_hour_surface_above_0p254",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour freezing rain (surface) above 0.254 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_6_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour freezing rain (surface) above 12.7 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_6_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour freezing rain (surface) above 12.7 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_6_hour_surface_above_2p54": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour freezing rain (surface) above 2.54 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_6_hour_surface_above_2p54",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour freezing rain (surface) above 2.54 kg m-2."
+    },
+    "neighborhood_probability_of_freezing_rain_6_hour_surface_above_6p35": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour freezing rain (surface) above 6.35 kg m-2",
+      "short_name": "neighborhood_probability_of_freezing_rain_6_hour_surface_above_6p35",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour freezing rain (surface) above 6.35 kg m-2."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_100_year_average_recurrence_interval_24_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour precipitation above the 100 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_100_year_average_recurrence_interval_24_hour_surface",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour precipitation above the 100 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_100_year_average_recurrence_interval_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour precipitation above the 100 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_100_year_average_recurrence_interval_6_hour_surface",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour precipitation above the 100 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_10_year_average_recurrence_interval_24_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour precipitation above the 10 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_10_year_average_recurrence_interval_24_hour_surface",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour precipitation above the 10 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_10_year_average_recurrence_interval_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour precipitation above the 10 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_10_year_average_recurrence_interval_6_hour_surface",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour precipitation above the 10 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_1_year_average_recurrence_interval_24_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour precipitation above the 1 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_1_year_average_recurrence_interval_24_hour_surface",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour precipitation above the 1 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_1_year_average_recurrence_interval_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour precipitation above the 1 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_1_year_average_recurrence_interval_6_hour_surface",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour precipitation above the 1 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_25_year_average_recurrence_interval_24_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour precipitation above the 25 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_25_year_average_recurrence_interval_24_hour_surface",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour precipitation above the 25 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_25_year_average_recurrence_interval_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour precipitation above the 25 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_25_year_average_recurrence_interval_6_hour_surface",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour precipitation above the 25 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_2_year_average_recurrence_interval_24_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour precipitation above the 2 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_2_year_average_recurrence_interval_24_hour_surface",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour precipitation above the 2 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_2_year_average_recurrence_interval_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour precipitation above the 2 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_2_year_average_recurrence_interval_6_hour_surface",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour precipitation above the 2 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_3_hour_flash_flood_guidance_3_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour precipitation above the 3 hour flash flood guidance depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_3_hour_flash_flood_guidance_3_hour_surface",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour precipitation above the 3 hour flash flood guidance depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_50_year_average_recurrence_interval_24_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour precipitation above the 50 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_50_year_average_recurrence_interval_24_hour_surface",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour precipitation above the 50 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_50_year_average_recurrence_interval_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour precipitation above the 50 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_50_year_average_recurrence_interval_6_hour_surface",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour precipitation above the 50 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_5_year_average_recurrence_interval_24_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour precipitation above the 5 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_5_year_average_recurrence_interval_24_hour_surface",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour precipitation above the 5 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_5_year_average_recurrence_interval_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour precipitation above the 5 year average recurrence interval depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_5_year_average_recurrence_interval_6_hour_surface",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour precipitation above the 5 year average recurrence interval depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_precipitation_exceeding_6_hour_flash_flood_guidance_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour precipitation above the 6 hour flash flood guidance depth",
+      "short_name": "neighborhood_probability_of_precipitation_exceeding_6_hour_flash_flood_guidance_6_hour_surface",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour precipitation above the 6 hour flash flood guidance depth. Probabilities compare precipitation with a spatially varying guidance or recurrence-interval depth. Negative values are unavailable thresholds blended into neighboring cells by smoothing; positive values near coverage boundaries can also be biased low. Mask values < -0.1."
+    },
+    "neighborhood_probability_of_total_precipitation_12_hour_surface_above_127": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total precipitation (surface) above 127 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_12_hour_surface_above_127",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total precipitation (surface) above 127 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_12_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_12_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_12_hour_surface_above_203p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total precipitation (surface) above 203.2 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_12_hour_surface_above_203p2",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total precipitation (surface) above 203.2 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_12_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_12_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_12_hour_surface_above_50p8": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total precipitation (surface) above 50.8 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_12_hour_surface_above_50p8",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total precipitation (surface) above 50.8 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_12_hour_surface_above_76p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total precipitation (surface) above 76.2 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_12_hour_surface_above_76p2",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total precipitation (surface) above 76.2 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_24_hour_surface_above_127": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total precipitation (surface) above 127 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_24_hour_surface_above_127",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total precipitation (surface) above 127 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_24_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_24_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_24_hour_surface_above_203p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total precipitation (surface) above 203.2 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_24_hour_surface_above_203p2",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total precipitation (surface) above 203.2 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_24_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_24_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_24_hour_surface_above_50p8": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total precipitation (surface) above 50.8 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_24_hour_surface_above_50p8",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total precipitation (surface) above 50.8 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_24_hour_surface_above_76p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total precipitation (surface) above 76.2 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_24_hour_surface_above_76p2",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total precipitation (surface) above 76.2 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_3_hour_surface_above_127": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour total precipitation (surface) above 127 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_3_hour_surface_above_127",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour total precipitation (surface) above 127 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_3_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_3_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_3_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_3_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_3_hour_surface_above_50p8": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour total precipitation (surface) above 50.8 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_3_hour_surface_above_50p8",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour total precipitation (surface) above 50.8 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_3_hour_surface_above_76p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour total precipitation (surface) above 76.2 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_3_hour_surface_above_76p2",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour total precipitation (surface) above 76.2 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_6_hour_surface_above_127": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour total precipitation (surface) above 127 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_6_hour_surface_above_127",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour total precipitation (surface) above 127 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_6_hour_surface_above_12p7": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour total precipitation (surface) above 12.7 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_6_hour_surface_above_12p7",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour total precipitation (surface) above 12.7 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_6_hour_surface_above_25p4": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour total precipitation (surface) above 25.4 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_6_hour_surface_above_25p4",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour total precipitation (surface) above 25.4 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_6_hour_surface_above_50p8": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour total precipitation (surface) above 50.8 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_6_hour_surface_above_50p8",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour total precipitation (surface) above 50.8 kg m-2."
+    },
+    "neighborhood_probability_of_total_precipitation_6_hour_surface_above_76p2": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour total precipitation (surface) above 76.2 kg m-2",
+      "short_name": "neighborhood_probability_of_total_precipitation_6_hour_surface_above_76p2",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour total precipitation (surface) above 76.2 kg m-2."
+    },
+    "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p025": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total snowfall (surface) above 0.025 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p025",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total snowfall (surface) above 0.025 m."
+    },
+    "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p076": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total snowfall (surface) above 0.076 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p076",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total snowfall (surface) above 0.076 m."
+    },
+    "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p152": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total snowfall (surface) above 0.152 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p152",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total snowfall (surface) above 0.152 m."
+    },
+    "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p304": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total snowfall (surface) above 0.304 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p304",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total snowfall (surface) above 0.304 m."
+    },
+    "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p457": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 12 hour total snowfall (surface) above 0.457 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_12_hour_surface_above_0p457",
+      "comment": "Threshold applies to the preceding 12 hours of accumulation. Published every 3 forecast hours from lead 12 hours. Neighborhood probability of 12 hour total snowfall (surface) above 0.457 m."
+    },
+    "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p025": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total snowfall (surface) above 0.025 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p025",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total snowfall (surface) above 0.025 m."
+    },
+    "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p076": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total snowfall (surface) above 0.076 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p076",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total snowfall (surface) above 0.076 m."
+    },
+    "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p152": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total snowfall (surface) above 0.152 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p152",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total snowfall (surface) above 0.152 m."
+    },
+    "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p304": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total snowfall (surface) above 0.304 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p304",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total snowfall (surface) above 0.304 m."
+    },
+    "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p457": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 24 hour total snowfall (surface) above 0.457 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_24_hour_surface_above_0p457",
+      "comment": "Threshold applies to the preceding 24 hours of accumulation. Published every 3 forecast hours from lead 24 hours. Neighborhood probability of 24 hour total snowfall (surface) above 0.457 m."
+    },
+    "neighborhood_probability_of_total_snowfall_3_hour_surface_above_0p025": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour total snowfall (surface) above 0.025 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_3_hour_surface_above_0p025",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour total snowfall (surface) above 0.025 m."
+    },
+    "neighborhood_probability_of_total_snowfall_3_hour_surface_above_0p076": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour total snowfall (surface) above 0.076 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_3_hour_surface_above_0p076",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour total snowfall (surface) above 0.076 m."
+    },
+    "neighborhood_probability_of_total_snowfall_3_hour_surface_above_0p152": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 3 hour total snowfall (surface) above 0.152 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_3_hour_surface_above_0p152",
+      "comment": "Threshold applies to the preceding 3 hours of accumulation. Published every 3 forecast hours from lead 3 hours. Neighborhood probability of 3 hour total snowfall (surface) above 0.152 m."
+    },
+    "neighborhood_probability_of_total_snowfall_6_hour_surface_above_0p025": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour total snowfall (surface) above 0.025 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_6_hour_surface_above_0p025",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour total snowfall (surface) above 0.025 m."
+    },
+    "neighborhood_probability_of_total_snowfall_6_hour_surface_above_0p076": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour total snowfall (surface) above 0.076 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_6_hour_surface_above_0p076",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour total snowfall (surface) above 0.076 m."
+    },
+    "neighborhood_probability_of_total_snowfall_6_hour_surface_above_0p152": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour total snowfall (surface) above 0.152 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_6_hour_surface_above_0p152",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour total snowfall (surface) above 0.152 m."
+    },
+    "neighborhood_probability_of_total_snowfall_6_hour_surface_above_0p304": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "percent",
+      "long_name": "Neighborhood probability of 6 hour total snowfall (surface) above 0.304 m",
+      "short_name": "neighborhood_probability_of_total_snowfall_6_hour_surface_above_0p304",
+      "comment": "Threshold applies to the preceding 6 hours of accumulation. Published every 3 forecast hours from lead 6 hours. Neighborhood probability of 6 hour total snowfall (surface) above 0.304 m."
+    },
+    "probability_matched_mean_total_precipitation_3_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Probability-matched mean of total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "probability_matched_mean_total_precipitation_3_hour_surface",
+      "comment": "Accumulated over the preceding 3 hours. Published every 3 forecast hours from lead 3 hours."
+    },
+    "snowfall_water_equivalent_3_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Snowfall water equivalent",
+      "standard_name": "snowfall_amount",
+      "short_name": "sf",
+      "comment": "Accumulated over the preceding 3 hours. Published every 3 forecast hours from lead 3 hours."
+    },
+    "total_precipitation_3_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "tp",
+      "comment": "Accumulated over the preceding 3 hours. Published every 3 forecast hours from lead 3 hours."
+    },
+    "total_precipitation_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "kg m-2",
+      "long_name": "Total precipitation",
+      "standard_name": "precipitation_amount",
+      "short_name": "tp",
+      "comment": "Accumulated over the preceding 6 hours. Published every 3 forecast hours from lead 6 hours."
+    },
+    "total_snowfall_12_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Total snowfall",
+      "standard_name": "thickness_of_snowfall_amount",
+      "short_name": "asnow",
+      "comment": "Accumulated over the preceding 12 hours. Published every 3 forecast hours from lead 12 hours."
+    },
+    "total_snowfall_24_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Total snowfall",
+      "standard_name": "thickness_of_snowfall_amount",
+      "short_name": "asnow",
+      "comment": "Accumulated over the preceding 24 hours. Published every 3 forecast hours from lead 24 hours."
+    },
+    "total_snowfall_3_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Total snowfall",
+      "standard_name": "thickness_of_snowfall_amount",
+      "short_name": "asnow",
+      "comment": "Accumulated over the preceding 3 hours. Published every 3 forecast hours from lead 3 hours."
+    },
+    "total_snowfall_6_hour_surface": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "unit": "m",
+      "long_name": "Total snowfall",
+      "standard_name": "thickness_of_snowfall_amount",
+      "short_name": "asnow",
+      "comment": "Accumulated over the preceding 6 hours. Published every 3 forecast hours from lead 6 hours."
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float64",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "statistic",
+        "lead_time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        1,
+        1,
+        1059,
+        1799
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "3 hours",
+        "y": "3177 km",
+        "x": "5397 km"
+      },
+      "uncompressed_size_bytes": 15241128,
+      "uncompressed_size": "14.5 MiB"
+    }
+  },
+  "title": "NOAA REFS forecast, 3 hourly, virtual",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -134.09547424316406,
+          21.13812255859375,
+          -60.91719436645508,
+          52.61565399169922
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-08-13T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "NOAA NWS NCEP",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.weather.gov/ncep/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
+  "summaries": {
+    "spatial_domain": [
+      "Continental United States"
+    ],
+    "spatial_resolution": [
+      "3 km"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2026-08-13 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 3-60 hours ahead"
+    ],
+    "forecast_resolution": [
+      "3 hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-noaa-refs/noaa-refs-forecast-3-hourly-virtual/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "s3://noaa-rrfs-ops-pds/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-noaa-refs.s3.us-west-2.amazonaws.com/noaa-refs-forecast-3-hourly-virtual/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "s3://noaa-rrfs-ops-pds/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}
