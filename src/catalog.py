@@ -1326,8 +1326,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "projection, with spatial indexing along the `x` and `y` "
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
-            "gribberish>=1.8.4`) is required."
+            "Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs/forecast_sub_hourly_virtual/template_config.py",
         examples=(
@@ -1360,8 +1360,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "Variables on pressure levels, fixed heights above mean sea "
             "level and soil depths live in the `pressure_level`, "
             "`height_above_mean_sea_level` and `depth_below_ground` groups.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
-            "gribberish>=1.8.4`) is required."
+            "Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs/forecast_18_hour_virtual/template_config.py",
         examples=(
@@ -1400,8 +1400,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "Variables on pressure levels, fixed heights above mean sea "
             "level and soil depths live in the `pressure_level`, "
             "`height_above_mean_sea_level` and `depth_below_ground` groups.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
-            "gribberish>=1.8.4`) is required."
+            "Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs/forecast_84_hour_virtual/template_config.py",
         examples=(
@@ -1441,8 +1441,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
             "Variables on pressure levels live in the `pressure_level` group.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
-            "gribberish>=1.8.4`) is required."
+            "Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rrfs_ens/forecast_virtual/template_config.py",
         examples=(
@@ -1480,8 +1480,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "projection, with spatial indexing along the `x` and `y` "
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
-            "gribberish>=1.8.4`) is required."
+            "Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/refs/forecast_hourly_virtual/template_config.py",
         examples=(
@@ -1514,8 +1514,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "projection, with spatial indexing along the `x` and `y` "
             "dimensions. The example notebook shows how to use the embedded "
             "spatial reference to select geographic areas of interest.\n\n"
-            "Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 "
-            "gribberish>=1.8.4`) is required."
+            "Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or "
+            "`zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/refs/forecast_3_hourly_virtual/template_config.py",
         examples=(
