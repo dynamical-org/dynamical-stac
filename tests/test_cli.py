@@ -50,7 +50,8 @@ def test_main_unknown_command_returns_nonzero() -> None:
 
 
 @pytest.mark.parametrize(
-    "name", ["production", "staging", "test", "0.4.0-0.5.0", "0.7.0-0.8.0"]
+    "name",
+    ["production", "staging", "test", "0.4.0-0.5.0", "0.7.0-0.8.0", "1.0.0-1.0.0"],
 )
 @pytest.mark.parametrize("environment_first", [False, True])
 def test_main_generate_selects_one_environment(

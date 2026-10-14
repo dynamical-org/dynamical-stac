@@ -154,12 +154,13 @@ readable by the oldest supported release.
 
 ## Legacy client environments
 
-The same `STAC_ENVIRONMENTS` registry includes two production-only publications:
+The same `STAC_ENVIRONMENTS` registry includes three production-only publications:
 
 | environment | root on stac.dynamical.org | capability guidance |
 |---|---|---|
 | `0.4.0-0.5.0` | `catalog_0.4.0-0.5.0.json` | S3 repositories; no virtual Icechunk Zarr datasets |
 | `0.7.0-0.8.0` | `catalog_0.7.0-0.8.0.json` | S3 repositories; virtual source files must all be on S3 |
+| `1.0.0-1.0.0` | `catalog_1.0.0-1.0.0.json` | virtual datasets only if gribberish 1.7 decodes them |
 
 `ClientVersionRange` has explicit inclusive `min_version` and `max_version`
 bounds, normalized and compared with `packaging.version.Version`. Its name and
@@ -175,8 +176,11 @@ staging-only and fixture datasets must not be included. The 0.4.0–0.5.0 root
 contains the 18 materialized production collections. The 0.7.0–0.8.0 root adds
 the nine S3-backed virtual collections, for 27 of the 28 production
 collections. Both exclude `ecmwf-aifs-single-forecast-virtual`, whose `gs://`
-virtual chunk container is unsupported by these clients. Adding a new
-production dataset does not add it to either legacy root automatically.
+virtual chunk container is unsupported by these clients. The 1.0.0 root lists
+the production collections a client with gribberish 1.7 can read, currently all
+28: dynamical-catalog 1.0.0 pins `gribberish<1.8`, which panics on some GRIB
+messages that later releases read. Adding a new production dataset does not add it to
+any legacy root automatically.
 
 A stock 0.5.0 install does not declare the `gribberish` codec required by the
 virtual collections. The compatibility contract therefore uses the
