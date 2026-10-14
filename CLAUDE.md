@@ -213,3 +213,8 @@ validate the live edge. Confirm the published roots and routing before promoting
 a collection older clients cannot parse. Removing a collection from a supported
 legacy environment changes its compatibility contract and needs the same review
 as raising the client support floor.
+
+When you add a new legacy range, CI tests its root file directly and can't see
+the Cloudflare User-Agent routing in the ops repo (`stac-ua-routing/`). Don't
+ship production items excluded from the new root until the ops rewrite rule is
+applied and `stac-ua-routing/verify.py --expect routed` passes.
