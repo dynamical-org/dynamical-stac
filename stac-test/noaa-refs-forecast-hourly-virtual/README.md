@@ -6,7 +6,7 @@ Ensemble means and standard deviations are stored along the `statistic` dimensio
 
 This dataset uses the native RRFS Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.
 
-Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) is required.
+Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required.
 
 The RRFS Ensemble Forecast System (REFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) ensemble product system. It produces ensemble products on a 3 km grid, including means, spreads and probabilities of exceeding thresholds, from the current and 6 hour old cycles of the deterministic Rapid Refresh Forecast System (RRFS) and its ensemble (RRFS ENS), plus two HRRR members over the continental United States.
 

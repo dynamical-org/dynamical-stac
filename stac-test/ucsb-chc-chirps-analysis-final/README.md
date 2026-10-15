@@ -1,6 +1,6 @@
 # UCSB CHC CHIRPS analysis, final
 
-Daily CHIRPS version 3 precipitation over land from 60 degrees south to 60 degrees north, at 0.05 degree resolution, from 1981 onward. This is the final product, using the reanalysis-based daily distribution (final/rnl).
+This is the final CHIRPS product. It begins in 1981 and is released monthly, usually two to three weeks after the month ends.
 
 The Climate Hazards Center Infrared Precipitation with Stations (CHIRPS) version 3 combines satellite estimates and station observations into a precipitation record over land.
 
@@ -19,11 +19,11 @@ Source: [CHIRPS v3 at the UCSB Climate Hazards Center](https://www.chc.ucsb.edu/
 
 ### Product
 
-Final is released monthly, usually two to three weeks after the end of the month. It uses the best available rain-gauge reports with more quality checks than preliminary. ERA5 rainfall is used to split five-day CHIRPS totals into daily amounts.
+This is the final product, using the reanalysis-based daily distribution (final/rnl). It uses the best available rain-gauge reports with more quality checks than preliminary. ERA5 rainfall is used to split five-day CHIRPS totals into daily amounts.
 
 ### Source
 
-The [CHIRPS v3 documentation](https://www.chc.ucsb.edu/data/chirps3) describes the products and release schedule. Source files are provided by the [UCSB Climate Hazards Center daily archive](https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/).
+Source files are provided by the [UCSB Climate Hazards Center daily archive](https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/). The [CHIRPS v3 documentation](https://www.chc.ucsb.edu/data/chirps3) describes the products.
 
 ### Storage
 

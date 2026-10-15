@@ -4,7 +4,7 @@ This dataset is an archive of past and present RRFS forecasts, optimized for spa
 
 This dataset uses the native RRFS Lambert Conformal Conic projection, with spatial indexing along the `x` and `y` dimensions. The example notebook shows how to use the embedded spatial reference to select geographic areas of interest.
 
-Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) is required.
+Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required.
 
 The Rapid Refresh Forecast System (RRFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) convection-allowing weather forecast model with a 3 km grid, built on the Unified Forecast System. The RRFS ensemble (RRFS ENS) adds five perturbed members to this deterministic forecast, and REFS combines both with HRRR into ensemble products.
 

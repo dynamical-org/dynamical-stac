@@ -6,7 +6,7 @@ This dataset uses the native RRFS Lambert Conformal Conic projection, with spati
 
 Variables on pressure levels, fixed heights above mean sea level and soil depths live in the `pressure_level`, `height_above_mean_sea_level` and `depth_below_ground` groups.
 
-Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) is required.
+Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required.
 
 The Rapid Refresh Forecast System (RRFS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) convection-allowing weather forecast model with a 3 km grid, built on the Unified Forecast System. The RRFS ensemble (RRFS ENS) adds five perturbed members to this deterministic forecast, and REFS combines both with HRRR into ensemble products.
 

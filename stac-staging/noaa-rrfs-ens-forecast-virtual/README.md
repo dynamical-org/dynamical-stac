@@ -6,7 +6,7 @@ This dataset uses the native RRFS Lambert Conformal Conic projection, with spati
 
 Variables on pressure levels live in the `pressure_level` group.
 
-Note: `dynamical-catalog>=0.8.0` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) is required.
+Note: `dynamical-catalog>=1.0.1` and `gribberish>=1.8.4` (or `zarr>=3.2 icechunk>=2.0 gribberish>=1.8.4`) are required.
 
 The Rapid Refresh Forecast System ensemble (RRFS ENS) is a National Oceanic and Atmospheric Administration (NOAA) National Centers for Environmental Prediction (NCEP) convection-allowing ensemble with a 3 km grid. Five members run with different initial conditions, lateral boundary conditions and model physics from the deterministic RRFS forecast, to better cover the range of forecast possibilities. REFS combines these members with the deterministic RRFS and HRRR into ensemble products.
 

@@ -28,7 +28,7 @@ The repository references chunks in these upstream locations, which are read ano
 dynamical-catalog:
 
 ```python
-import dynamical_catalog  # dynamical-catalog>=0.8.0
+import dynamical_catalog  # dynamical-catalog>=1.0.1
 
 ds = dynamical_catalog.open("noaa-rrfs-ens-forecast-virtual", chunks=None)
 ds["temperature_2m"].sel(init_time="2026-09-16T12", lead_time="24h", ensemble_member=0)
@@ -46,7 +46,7 @@ import icechunk
 import pystac
 import xarray as xr
 
-catalog = pystac.Catalog.from_file("https://stac-staging.dynamical.org/catalog.json")
+catalog = pystac.Catalog.from_file("https://stac.dynamical.org/catalog.json")
 collection = catalog.get_child("noaa-rrfs-ens-forecast-virtual")
 asset = collection.assets["icechunk-https"]
 
@@ -71,7 +71,7 @@ prompt:
 ```text
 Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.
 Data product: noaa-rrfs-ens-forecast-virtual
-STAC collection: https://stac-staging.dynamical.org/noaa-rrfs-ens-forecast-virtual/collection.json
+STAC collection: https://stac.dynamical.org/noaa-rrfs-ens-forecast-virtual/collection.json
 ```
 
 ## Dimensions

@@ -1,6 +1,6 @@
 # UCSB CHC CHIRPS analysis, preliminary
 
-Daily CHIRPS version 3 precipitation over land from 60 degrees south to 60 degrees north, at 0.05 degree resolution, from 2025 onward. This is the preliminary product, using the satellite-based daily distribution (prelim/sat).
+This preliminary product is the lowest latency CHIRPS data. It begins in 2025 and has a handful-of-days latency, updating about two days after each five-day period ends.
 
 The Climate Hazards Center Infrared Precipitation with Stations (CHIRPS) version 3 combines satellite estimates and station observations into a precipitation record over land.
 
@@ -19,11 +19,11 @@ Source: [CHIRPS v3 at the UCSB Climate Hazards Center](https://www.chc.ucsb.edu/
 
 ### Product
 
-Preliminary is released about two days after each five-day period ends. It uses rain-gauge reports available soon after observation, with fewer quality checks than final. NASA IMERG satellite rainfall is used to split five-day CHIRPS totals into daily amounts; final uses ERA5 rainfall instead.
+This is the preliminary product, using the satellite-based daily distribution (prelim/sat). It uses rain-gauge reports available soon after observation, with fewer quality checks than final. NASA IMERG satellite rainfall is used to split five-day CHIRPS totals into daily amounts.
 
 ### Source
 
-The [CHIRPS v3 documentation](https://www.chc.ucsb.edu/data/chirps3) describes the products and release schedule. Source files are provided by the [UCSB Climate Hazards Center daily archive](https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/prelim/sat/).
+Source files are provided by the [UCSB Climate Hazards Center daily archive](https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/prelim/sat/). The [CHIRPS v3 documentation](https://www.chc.ucsb.edu/data/chirps3) describes the products.
 
 ### Storage
 
