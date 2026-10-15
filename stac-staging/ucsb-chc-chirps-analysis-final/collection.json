@@ -47,6 +47,18 @@
       "title": "CHIRPS preliminary and final (Colab)"
     },
     {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "README"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "Notes for agents"
+    },
+    {
       "rel": "self",
       "href": "https://stac-staging.dynamical.org/ucsb-chc-chirps-analysis-final/collection.json",
       "type": "application/json",
@@ -61,7 +73,8 @@
   ],
   "stac_extensions": [
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
   ],
   "attribution": "UCSB Climate Hazards Center CHIRPS version 3.0 data processed by dynamical.org from the Climate Hazards Center data archive. Funk, C., Peterson, P., Harrison, L. et al. The Climate Hazards Center Infrared Precipitation with Stations, Version 3. Sci Data 13, 718 (2026), data https://doi.org/10.15780/G2JQ0P.",
   "version": "0.1.0",
@@ -188,6 +201,7 @@
       "uncompressed_size": "2.9 GiB"
     }
   },
+  "updated": "2026-10-15T02:13:03Z",
   "title": "UCSB CHC CHIRPS analysis, final",
   "extent": {
     "spatial": {
@@ -229,7 +243,7 @@
   ],
   "summaries": {
     "spatial_domain": [
-      "Global land, 60 degrees north to 60 degrees south"
+      "Global land, 60N-60S"
     ],
     "spatial_resolution": [
       "0.05 degrees (~5km)"
