@@ -43,7 +43,7 @@ PACKAGE = "dynamical-catalog"
 # dependencies, a production catalog change that breaks one fails CI. Bumping
 # this floor is a support-policy change, so it goes in
 # its own PR with the catalog owner's approval, never in the PR whose
-# catalog change needs it. See "Client compatibility matrix" in CLAUDE.md.
+# catalog change needs it. See "Client compatibility matrix" in AGENTS.md.
 MIN_VERSION = "0.4.0"
 
 # Long-lived non-PyPI refs to also exercise. `main` catches breakage in
