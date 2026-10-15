@@ -237,7 +237,7 @@
       "long_name": "Maximum/Composite radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
       "short_name": "refc",
-      "comment": "The mean slice is always missing; the probability-matched mean is provided as a separate variable. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
+      "comment": "REFS does not populate the mean statistic, use probability_matched_mean_composite_reflectivity instead. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
     },
     "convective_available_potential_energy_180_0mb": {
       "dimensions": [
@@ -390,7 +390,7 @@
       "long_name": "Derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
       "short_name": "refd",
-      "comment": "The mean slice is always missing; the probability-matched mean is provided as a separate variable. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
+      "comment": "REFS does not populate the mean statistic, use probability_matched_mean_derived_radar_reflectivity_1000m instead. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
     },
     "dew_point_temperature_2m": {
       "dimensions": [
@@ -412,7 +412,7 @@
       "long_name": "2 metre dewpoint temperature",
       "standard_name": "dew_point_temperature",
       "short_name": "2d",
-      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_2m_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_2m_standard_deviation without the statistic dimension."
     },
     "dew_point_temperature_2m_standard_deviation": {
       "dimensions": [
@@ -431,7 +431,7 @@
       "unit": "K",
       "long_name": "Standard deviation of 2 metre dewpoint temperature",
       "short_name": "dew_point_temperature_2m_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "dew_point_temperature_500hpa": {
       "dimensions": [
@@ -453,7 +453,7 @@
       "long_name": "Dew point temperature",
       "standard_name": "dew_point_temperature",
       "short_name": "dpt",
-      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_500hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_500hpa_standard_deviation without the statistic dimension."
     },
     "dew_point_temperature_500hpa_standard_deviation": {
       "dimensions": [
@@ -472,7 +472,7 @@
       "unit": "K",
       "long_name": "Standard deviation of dew point temperature",
       "short_name": "dew_point_temperature_500hpa_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "dew_point_temperature_700hpa": {
       "dimensions": [
@@ -494,7 +494,7 @@
       "long_name": "Dew point temperature",
       "standard_name": "dew_point_temperature",
       "short_name": "dpt",
-      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_700hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_700hpa_standard_deviation without the statistic dimension."
     },
     "dew_point_temperature_700hpa_standard_deviation": {
       "dimensions": [
@@ -513,7 +513,7 @@
       "unit": "K",
       "long_name": "Standard deviation of dew point temperature",
       "short_name": "dew_point_temperature_700hpa_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "dew_point_temperature_850hpa": {
       "dimensions": [
@@ -535,7 +535,7 @@
       "long_name": "Dew point temperature",
       "standard_name": "dew_point_temperature",
       "short_name": "dpt",
-      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_850hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_850hpa_standard_deviation without the statistic dimension."
     },
     "dew_point_temperature_850hpa_standard_deviation": {
       "dimensions": [
@@ -554,7 +554,7 @@
       "unit": "K",
       "long_name": "Standard deviation of dew point temperature",
       "short_name": "dew_point_temperature_850hpa_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "dew_point_temperature_925hpa": {
       "dimensions": [
@@ -576,7 +576,7 @@
       "long_name": "Dew point temperature",
       "standard_name": "dew_point_temperature",
       "short_name": "dpt",
-      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_925hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read dew_point_temperature_925hpa_standard_deviation without the statistic dimension."
     },
     "dew_point_temperature_925hpa_standard_deviation": {
       "dimensions": [
@@ -595,7 +595,7 @@
       "unit": "K",
       "long_name": "Standard deviation of dew point temperature",
       "short_name": "dew_point_temperature_925hpa_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "echo_top": {
       "dimensions": [
@@ -616,7 +616,7 @@
       "unit": "m",
       "long_name": "Echo top",
       "short_name": "retop",
-      "comment": "The mean slice is always missing; the probability-matched mean is provided as a separate variable. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
+      "comment": "REFS does not populate the mean statistic, use probability_matched_mean_echo_top instead. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
     },
     "ensemble_agreement_scale_probability_of_total_precipitation_1_hour_surface_above_0p254": {
       "dimensions": [
@@ -986,7 +986,7 @@
       "long_name": "Hourly maximum of simulated reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
       "short_name": "maxref",
-      "comment": "Maximum value over the preceding hour. The mean slice is always missing; the probability-matched mean is provided as a separate variable. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
+      "comment": "Maximum value over the preceding hour. REFS does not populate the mean statistic, use probability_matched_mean_hourly_maximum_radar_reflectivity_1000m instead. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
     },
     "localized_probability_matched_mean_total_precipitation_1_hour_surface": {
       "dimensions": [
@@ -1048,7 +1048,7 @@
       "unit": "m2 s-2",
       "long_name": "Updraft Helicity",
       "short_name": "uphl",
-      "comment": "Maximum value over the preceding hour. The mean slice is always missing; the probability-matched mean is provided as a separate variable."
+      "comment": "Maximum value over the preceding hour. REFS does not populate the mean statistic, use probability_matched_mean_maximum_updraft_helicity_5000_2000m instead."
     },
     "mean_probability_matched_mean_average_total_precipitation_1_hour_surface": {
       "dimensions": [
@@ -4069,7 +4069,7 @@
       "long_name": "Soil temperature",
       "standard_name": "soil_temperature",
       "short_name": "sot",
-      "comment": "Over water, absent member soil values enter the statistics as raw zero before Celsius conversion, while some members may contribute nonzero values. Means and standard deviations there are not soil temperature quantities. These cells are not marked; use a land mask. The standard_deviation slice is not populated; read soil_temperature_0m_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "Over water, absent member soil values enter the statistics as raw zero before Celsius conversion, while some members may contribute nonzero values. Means and standard deviations there are not soil temperature quantities. These cells are not marked; use a land mask. The standard_deviation slice is not populated; read soil_temperature_0m_standard_deviation without the statistic dimension."
     },
     "soil_temperature_0m_standard_deviation": {
       "dimensions": [
@@ -4088,7 +4088,7 @@
       "unit": "K",
       "long_name": "Standard deviation of soil temperature",
       "short_name": "soil_temperature_0m_standard_deviation",
-      "comment": "Over water, absent member soil values enter the statistics as raw zero before Celsius conversion, while some members may contribute nonzero values. Means and standard deviations there are not soil temperature quantities. These cells are not marked; use a land mask. NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "Over water, absent member soil values enter the statistics as raw zero before Celsius conversion, while some members may contribute nonzero values. Means and standard deviations there are not soil temperature quantities. These cells are not marked; use a land mask. NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "storm_relative_helicity_3000_0m": {
       "dimensions": [
@@ -4130,7 +4130,7 @@
       "long_name": "Temperature",
       "standard_name": "air_temperature",
       "short_name": "t",
-      "comment": "The standard_deviation slice is not populated; read temperature_250hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read temperature_250hpa_standard_deviation without the statistic dimension."
     },
     "temperature_250hpa_standard_deviation": {
       "dimensions": [
@@ -4149,7 +4149,7 @@
       "unit": "K",
       "long_name": "Standard deviation of temperature",
       "short_name": "temperature_250hpa_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "temperature_2m": {
       "dimensions": [
@@ -4171,7 +4171,7 @@
       "long_name": "2 metre temperature",
       "standard_name": "air_temperature",
       "short_name": "2t",
-      "comment": "The standard_deviation slice is not populated; read temperature_2m_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read temperature_2m_standard_deviation without the statistic dimension."
     },
     "temperature_2m_standard_deviation": {
       "dimensions": [
@@ -4190,7 +4190,7 @@
       "unit": "K",
       "long_name": "Standard deviation of 2 metre temperature",
       "short_name": "temperature_2m_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "temperature_500hpa": {
       "dimensions": [
@@ -4212,7 +4212,7 @@
       "long_name": "Temperature",
       "standard_name": "air_temperature",
       "short_name": "t",
-      "comment": "The standard_deviation slice is not populated; read temperature_500hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read temperature_500hpa_standard_deviation without the statistic dimension."
     },
     "temperature_500hpa_standard_deviation": {
       "dimensions": [
@@ -4231,7 +4231,7 @@
       "unit": "K",
       "long_name": "Standard deviation of temperature",
       "short_name": "temperature_500hpa_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "temperature_700hpa": {
       "dimensions": [
@@ -4253,7 +4253,7 @@
       "long_name": "Temperature",
       "standard_name": "air_temperature",
       "short_name": "t",
-      "comment": "The standard_deviation slice is not populated; read temperature_700hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read temperature_700hpa_standard_deviation without the statistic dimension."
     },
     "temperature_700hpa_standard_deviation": {
       "dimensions": [
@@ -4272,7 +4272,7 @@
       "unit": "K",
       "long_name": "Standard deviation of temperature",
       "short_name": "temperature_700hpa_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "temperature_850hpa": {
       "dimensions": [
@@ -4294,7 +4294,7 @@
       "long_name": "Temperature",
       "standard_name": "air_temperature",
       "short_name": "t",
-      "comment": "The standard_deviation slice is not populated; read temperature_850hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read temperature_850hpa_standard_deviation without the statistic dimension."
     },
     "temperature_850hpa_standard_deviation": {
       "dimensions": [
@@ -4313,7 +4313,7 @@
       "unit": "K",
       "long_name": "Standard deviation of temperature",
       "short_name": "temperature_850hpa_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "temperature_925hpa": {
       "dimensions": [
@@ -4335,7 +4335,7 @@
       "long_name": "Temperature",
       "standard_name": "air_temperature",
       "short_name": "t",
-      "comment": "The standard_deviation slice is not populated; read temperature_925hpa_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read temperature_925hpa_standard_deviation without the statistic dimension."
     },
     "temperature_925hpa_standard_deviation": {
       "dimensions": [
@@ -4354,7 +4354,7 @@
       "unit": "K",
       "long_name": "Standard deviation of temperature",
       "short_name": "temperature_925hpa_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "temperature_surface": {
       "dimensions": [
@@ -4376,7 +4376,7 @@
       "long_name": "Skin temperature",
       "standard_name": "surface_temperature",
       "short_name": "skt",
-      "comment": "The standard_deviation slice is not populated; read temperature_surface_standard_deviation without the statistic dimension, in kelvin differences; 1 K of difference equals 1 degree_Celsius of difference."
+      "comment": "The standard_deviation slice is not populated; read temperature_surface_standard_deviation without the statistic dimension."
     },
     "temperature_surface_standard_deviation": {
       "dimensions": [
@@ -4395,7 +4395,7 @@
       "unit": "K",
       "long_name": "Standard deviation of skin temperature",
       "short_name": "temperature_surface_standard_deviation",
-      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members. This is a temperature difference in K, numerically equal to the difference in degree_Celsius; no temperature offset is applied."
+      "comment": "NOAA spread: member-weighted population standard deviation with weights normalized over contributing members."
     },
     "total_cloud_cover_atmosphere": {
       "dimensions": [
