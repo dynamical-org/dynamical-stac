@@ -384,48 +384,6 @@
       "short_name": "retop",
       "comment": "NaN where no radar echo was detected."
     },
-    "freezing_rain_run_total_surface": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "chunks": [
-        1,
-        1,
-        1,
-        1059,
-        1799
-      ],
-      "unit": "kg m-2",
-      "long_name": "Freezing Rain",
-      "short_name": "frzr",
-      "comment": "Accumulated from the forecast initialization time to this step."
-    },
-    "freezing_rain_surface": {
-      "dimensions": [
-        "init_time",
-        "ensemble_member",
-        "lead_time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "chunks": [
-        1,
-        1,
-        1,
-        1059,
-        1799
-      ],
-      "unit": "kg m-2",
-      "long_name": "Freezing Rain",
-      "short_name": "frzr",
-      "comment": "Accumulated over the preceding hour."
-    },
     "geopotential_height_surface": {
       "dimensions": [
         "init_time",
