@@ -217,28 +217,6 @@
       "short_name": "csnow",
       "comment": "Indicates whether snow is the dominant precipitation type."
     },
-    "composite_reflectivity": {
-      "dimensions": [
-        "init_time",
-        "statistic",
-        "lead_time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "chunks": [
-        1,
-        1,
-        1,
-        1059,
-        1799
-      ],
-      "unit": "dBZ",
-      "long_name": "Maximum/Composite radar reflectivity",
-      "standard_name": "equivalent_reflectivity_factor",
-      "short_name": "refc",
-      "comment": "REFS does not populate the mean statistic, use probability_matched_mean_composite_reflectivity instead. Standard deviation includes members' no-echo markers. Differences in echo presence or in the markers contribute to standard deviation, so it does not measure only uncertainty in echo magnitude or height."
-    },
     "convective_available_potential_energy_180_0mb": {
       "dimensions": [
         "init_time",
@@ -1338,63 +1316,6 @@
       "short_name": "neighborhood_probability_of_echo_top_above_9144",
       "comment": "Neighborhood probability of echo top (entire atmosphere) above 9144 m."
     },
-    "neighborhood_probability_of_freezing_rain_1_hour_surface_above_0p254": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "chunks": [
-        1,
-        1,
-        1059,
-        1799
-      ],
-      "unit": "percent",
-      "long_name": "Neighborhood probability of 1 hour freezing rain (surface) above 0.254 kg m-2",
-      "short_name": "neighborhood_probability_of_freezing_rain_1_hour_surface_above_0p254",
-      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour freezing rain (surface) above 0.254 kg m-2."
-    },
-    "neighborhood_probability_of_freezing_rain_1_hour_surface_above_2p54": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "chunks": [
-        1,
-        1,
-        1059,
-        1799
-      ],
-      "unit": "percent",
-      "long_name": "Neighborhood probability of 1 hour freezing rain (surface) above 2.54 kg m-2",
-      "short_name": "neighborhood_probability_of_freezing_rain_1_hour_surface_above_2p54",
-      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour freezing rain (surface) above 2.54 kg m-2."
-    },
-    "neighborhood_probability_of_freezing_rain_1_hour_surface_above_6p35": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "chunks": [
-        1,
-        1,
-        1059,
-        1799
-      ],
-      "unit": "percent",
-      "long_name": "Neighborhood probability of 1 hour freezing rain (surface) above 6.35 kg m-2",
-      "short_name": "neighborhood_probability_of_freezing_rain_1_hour_surface_above_6p35",
-      "comment": "Threshold applies to the preceding 1 hour of accumulation. Neighborhood probability of 1 hour freezing rain (surface) above 6.35 kg m-2."
-    },
     "neighborhood_probability_of_hourly_maximum_radar_reflectivity_1000m_above_40": {
       "dimensions": [
         "init_time",
@@ -1797,7 +1718,7 @@
       "long_name": "Probability-matched mean of maximum/composite radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
       "short_name": "probability_matched_mean_composite_reflectivity",
-      "comment": "The probability-matched mean retains member no-echo floors at -20, -10 or 0 dBZ. A value of 0 dBZ can also be a valid reflectivity; other negative dBZ values can be valid."
+      "comment": "A value of 0 dBZ can be a valid reflectivity."
     },
     "probability_matched_mean_derived_radar_reflectivity_1000m": {
       "dimensions": [
@@ -1817,7 +1738,7 @@
       "long_name": "Probability-matched mean of derived radar reflectivity",
       "standard_name": "equivalent_reflectivity_factor",
       "short_name": "probability_matched_mean_derived_radar_reflectivity_1000m",
-      "comment": "The probability-matched mean retains member no-echo floors at -20, -10 or 0 dBZ. A value of 0 dBZ can also be a valid reflectivity; other negative dBZ values can be valid."
+      "comment": "A value of 0 dBZ can be a valid reflectivity."
     },
     "probability_matched_mean_echo_top": {
       "dimensions": [

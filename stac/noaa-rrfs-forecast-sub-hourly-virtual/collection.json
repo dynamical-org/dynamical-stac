@@ -306,44 +306,6 @@
       "short_name": "retop",
       "comment": "NaN where no radar echo was detected."
     },
-    "freezing_rain_run_total_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "chunks": [
-        1,
-        1,
-        1059,
-        1799
-      ],
-      "unit": "kg m-2",
-      "long_name": "Freezing Rain",
-      "short_name": "frzr",
-      "comment": "Accumulated from the forecast initialization time to this step."
-    },
-    "frozen_precipitation_run_total_surface": {
-      "dimensions": [
-        "init_time",
-        "lead_time",
-        "y",
-        "x"
-      ],
-      "type": "data",
-      "chunks": [
-        1,
-        1,
-        1059,
-        1799
-      ],
-      "unit": "kg m-2",
-      "long_name": "Graupel (snow pellets) precipitation",
-      "short_name": "tgrp",
-      "comment": "Accumulated from the forecast initialization time to this step."
-    },
     "geopotential_height_cloud_base": {
       "dimensions": [
         "init_time",
