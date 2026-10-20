@@ -79,6 +79,11 @@ a staging store's new metadata reaches the staging catalog only through a
 committed regeneration. Add `"production"` to the list and merge to release the
 dataset to production.
 
+While validation is under review, a staging item may set `draft_validation_report_url`
+to the reviewable draft. Both prose and the collection validation link use it.
+Production membership rejects this field: publish the accepted report and clear
+the override before promotion.
+
 A staging dataset still needs its prose file, but its notebook is optional: a
 staging item may omit `notebooks` entirely (its collection then carries no
 `example` links) until the notebook is written. Any notebook it *does* declare

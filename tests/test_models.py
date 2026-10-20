@@ -122,7 +122,7 @@ def test_every_dataset_details_links_to_its_validation_report() -> None:
     ):
         section = (
             "### Validation report\n\n"
-            f"Review the [validation report](https://dynamical.org/catalog/{item.id}/validation/) "
+            f"Review the [validation report]({item.validation_url}) "
             "for variable availability, missing data, known quirks, fill values, "
             "value distributions, and sample plots."
         )
@@ -623,3 +623,40 @@ def test_every_mirrored_catalog_item_names_its_source() -> None:
     for item in CATALOG_ITEMS:
         produced_here = MODELS[item.model_id].producer == DYNAMICAL_ORG
         assert (item.source is None) == produced_here, item.id
+
+
+def test_staging_validation_report_links_use_draft() -> None:
+    draft = "https://example.com/drafts/review/validation_report.html"
+    item = CatalogItem(
+        id=_TEST_ID,
+        icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+        icechunk_region="us-west-2",
+        **{  # type: ignore[arg-type]
+            **_PROSE_KWARGS,
+            "environments": ["staging", "test"],
+            "draft_validation_report_url": draft,
+        },
+    )
+    assert item.validation_url == draft
+    assert f"[validation report]({draft})" in item.description_details("chunks")
+    collection = _valid_input(draft_validation_report_url=draft).to_pystac_collection()
+    links = [
+        link
+        for link in collection.links
+        if link.title == "Draft validation report (unaccepted)"
+    ]
+    assert len(links) == 1
+    assert links[0].target == draft
+
+
+def test_production_rejects_draft_validation_report() -> None:
+    with pytest.raises(pydantic.ValidationError, match="draft validation report"):
+        CatalogItem(
+            id=_TEST_ID,
+            icechunk_href=f"s3://dynamical-noaa-gfs/{_TEST_ID}/v1.icechunk/",
+            icechunk_region="us-west-2",
+            **{  # type: ignore[arg-type]
+                **_PROSE_KWARGS,
+                "draft_validation_report_url": "https://example.com/drafts/report.html",
+            },
+        )

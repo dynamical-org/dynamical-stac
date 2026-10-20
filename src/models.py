@@ -664,6 +664,7 @@ class CollectionInput(BaseModel):
     description_details: str = Field(min_length=1)
     description_model: str = Field(min_length=1)
     catalog_url: str = STAC_CATALOG_URL
+    draft_validation_report_url: str | None = None
     examples: tuple[DatasetExample, ...] = Field(min_length=1)
     # May be empty: staging-only datasets can be published before their
     # notebook exists, and test fixtures never get one, in which case the
@@ -709,8 +710,8 @@ class CollectionInput(BaseModel):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def validation_url(self) -> str:
-        """Per-dataset validation report, published under the dataset page."""
-        return f"{self.about_url}validation/"
+        """Validation report URL, including an explicitly selected draft."""
+        return self.draft_validation_report_url or f"{self.about_url}validation/"
 
     @classmethod
     def from_dataset(
@@ -801,6 +802,11 @@ class CollectionInput(BaseModel):
             description_details=item.description_details(chunking_table),
             description_model=model.description,
             catalog_url=item.catalog_url,
+            draft_validation_report_url=(
+                str(item.draft_validation_report_url)
+                if item.draft_validation_report_url is not None
+                else None
+            ),
             examples=item.examples,
             notebooks=item.notebooks,
         )
@@ -1017,7 +1023,11 @@ class CollectionInput(BaseModel):
                 rel="about",
                 target=self.validation_url,
                 media_type="text/html",
-                title="Validation report",
+                title=(
+                    "Draft validation report (unaccepted)"
+                    if self.draft_validation_report_url
+                    else "Validation report"
+                ),
             )
         )
         if self.source is not None:
