@@ -300,6 +300,16 @@ MODELS: dict[str, Model] = {
         ),
         producer=NOAA_NCEP,
     ),
+    "noaa-rtma": Model(
+        id="noaa-rtma",
+        name="NOAA RTMA",
+        description=(
+            "The Real-Time Mesoscale Analysis (RTMA) is NOAA NCEP's hourly "
+            "analysis of near-surface weather conditions. It combines observations "
+            "with a model background using two-dimensional variational assimilation."
+        ),
+        producer=NOAA_NCEP,
+    ),
     "noaa-hrrr": Model(
         id="noaa-hrrr",
         name="NOAA HRRR",
@@ -1272,6 +1282,34 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis"),),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="noaa-rtma-analysis-virtual",
+        icechunk_href="s3://dynamical-noaa-rtma/noaa-rtma-analysis-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-rtma-pds/",),
+        model_id="noaa-rtma",
+        source=UpstreamSource(
+            href="https://registry.opendata.aws/noaa-rtma/",  # type: ignore[arg-type]
+            title="NOAA RTMA on NOAA Open Data Dissemination",
+        ),
+        description_summary=(
+            "Hourly near-surface analyses on the 2.5 km CONUS Western Expansion "
+            "grid, from 2017-05-02 onward. This virtual dataset references NOAA's "
+            "GRIB files and is optimized for spatial (map) access. It contains "
+            "13 analysis fields, with dimensions time, y, and x on the native "
+            "Lambert Conformal Conic projection. Precipitation is not included."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rtma/analysis_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-rtma-analysis-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00")',
+                min_version="1.0.1",
+            ),
+        ),
     ),
     CatalogItem(
         environments=["production", "staging", "test", "0.7.0-0.8.0", "1.0.0-1.0.0"],
