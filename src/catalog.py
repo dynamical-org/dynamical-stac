@@ -528,6 +528,7 @@ class CatalogItem(BaseModel):
     # notebook written yet. Enforced non-empty for production items by
     # `_production_items_have_notebooks`.
     notebooks: tuple[DatasetNotebook, ...] = ()
+    draft_validation_report_url: HttpUrl | None = None
     additional_terms: AdditionalTerms | None = None
     # Required unless dynamical.org produced the data. See `_mirror_names_source`.
     source: UpstreamSource | None = None
@@ -583,6 +584,12 @@ class CatalogItem(BaseModel):
             if environment.name in self.environments
         )
 
+    @property
+    def validation_url(self) -> str:
+        if self.draft_validation_report_url is not None:
+            return str(self.draft_validation_report_url)
+        return f"https://dynamical.org/catalog/{self.id}/validation/"
+
     def description_details(self, chunking_table: str | None = None) -> str:
         """Long-form prose from ``prose/datasets/{id}.md``.
 
@@ -594,7 +601,7 @@ class CatalogItem(BaseModel):
         text = _load_prose(
             f"datasets/{self.id}.md",
             reformatter_url=self.reformatter_url,
-            validation_url=f"https://dynamical.org/catalog/{self.id}/validation/",
+            validation_url=self.validation_url,
         )
         if "{{ chunking_table }}" in text:
             if chunking_table is None:
@@ -646,6 +653,15 @@ class CatalogItem(BaseModel):
                 f"icechunk_href, which has no storage account; leave "
                 f"icechunk_account unset (got {self.icechunk_account!r})"
             )
+        return self
+
+    @model_validator(mode="after")
+    def _draft_report_is_unreleased(self) -> CatalogItem:
+        if (
+            "production" in self.environments
+            and self.draft_validation_report_url is not None
+        ):
+            raise ValueError("Production items cannot link a draft validation report")
         return self
 
     @model_validator(mode="after")
@@ -1286,6 +1302,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
     CatalogItem(
         environments=["staging", "test"],
         id="noaa-rtma-analysis-virtual",
+        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/noaa-rtma-analysis-virtual/drafts/v0.1.0_2026-10-20T16-16/validation_report.html",  # type: ignore[arg-type]
         icechunk_href="s3://dynamical-noaa-rtma/noaa-rtma-analysis-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-rtma-pds/",),
