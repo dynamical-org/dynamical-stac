@@ -1307,7 +1307,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Temperature map",
                 'ds = dynamical_catalog.open("noaa-rtma-analysis-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00")',
-                min_version="1.0.1",
+                min_version="1.0.0",  # Staging includes gs:// and https:// collections.
             ),
         ),
     ),
