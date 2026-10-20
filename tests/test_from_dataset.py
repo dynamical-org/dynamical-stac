@@ -4,10 +4,14 @@ import datetime as dt
 
 import numpy as np
 import pandas as pd
+import pydantic
 import pytest
 import xarray as xr
 
 from catalog import (
+    CATALOG_ITEMS,
+    WEATHERNEXT_LICENSE,
+    WEATHERNEXT_LICENSE_LINKS,
     AdditionalTerms,
     CatalogItem,
     DatasetExample,
@@ -305,6 +309,116 @@ def test_from_dataset_passes_additional_terms_through() -> None:
     )
     result = CollectionInput.from_dataset(item, _synthetic_dataset())
     assert result.additional_terms == terms
+
+
+@pytest.mark.parametrize("store_license", ["CC-BY-4.0", WEATHERNEXT_LICENSE])
+def test_weathernext_operational_license_states(store_license: str) -> None:
+    item = next(
+        item
+        for item in CATALOG_ITEMS
+        if item.id == "google-weathernext2-forecast-operational-virtual"
+    )
+    ds = _synthetic_dataset(item.id, ds_attrs_overrides={"license": store_license})
+    collection = CollectionInput.from_dataset(item, ds).to_pystac_collection().to_dict()
+    links = [link for link in collection["links"] if link["rel"] == "license"]
+    if store_license == "CC-BY-4.0":
+        assert collection["license"] == "CC-BY-4.0"
+        assert links == [
+            {
+                "rel": "license",
+                "href": "https://creativecommons.org/licenses/by/4.0/",
+                "type": "text/html",
+                "title": "CC-BY-4.0",
+            }
+        ]
+    else:
+        assert collection["license"] == "other"
+        assert links == [
+            {
+                "rel": "license",
+                "href": "https://storage.googleapis.com/weathernext-public/terms-of-use.pdf",
+                "title": "GDM Real-Time Weather Forecasting Experimental Data Terms of Use for Real-Time Data & Forecasts",
+            },
+            {
+                "rel": "license",
+                "href": "https://creativecommons.org/licenses/by/4.0/",
+                "title": "CC BY 4.0 for Historical Data",
+            },
+        ]
+
+
+def test_weathernext_historical_license_is_unchanged() -> None:
+    item = next(
+        item
+        for item in CATALOG_ITEMS
+        if item.id == "google-weathernext2-forecast-historical-virtual"
+    )
+    collection = (
+        CollectionInput.from_dataset(item, _synthetic_dataset(item.id))
+        .to_pystac_collection()
+        .to_dict()
+    )
+    assert not item.license_links
+    assert collection["license"] == "CC-BY-4.0"
+    assert [link for link in collection["links"] if link["rel"] == "license"] == [
+        {
+            "rel": "license",
+            "href": "https://creativecommons.org/licenses/by/4.0/",
+            "type": "text/html",
+            "title": "CC-BY-4.0",
+        }
+    ]
+
+
+@pytest.mark.parametrize("links", [(), WEATHERNEXT_LICENSE_LINKS[::-1]])
+def test_weathernext_license_requires_matching_item_links(
+    links: tuple[AdditionalTerms, ...],
+) -> None:
+    item = _catalog_item().model_copy(update={"license_links": links})
+    ds = _synthetic_dataset(ds_attrs_overrides={"license": WEATHERNEXT_LICENSE})
+    with pytest.raises(pydantic.ValidationError):
+        CollectionInput.from_dataset(item, ds)
+
+
+@pytest.mark.parametrize("store_license", ["unknown terms", WEATHERNEXT_LICENSE + " "])
+def test_weathernext_rejects_unknown_license(store_license: str) -> None:
+    item = next(
+        item
+        for item in CATALOG_ITEMS
+        if item.id == "google-weathernext2-forecast-operational-virtual"
+    )
+    ds = _synthetic_dataset(item.id, ds_attrs_overrides={"license": store_license})
+    with pytest.raises(pydantic.ValidationError):
+        CollectionInput.from_dataset(item, ds)
+
+
+@pytest.mark.parametrize(
+    "item",
+    [item for item in CATALOG_ITEMS if item.additional_terms is not None],
+    ids=lambda item: item.id,
+)
+def test_existing_additional_terms_license_output(item: CatalogItem) -> None:
+    collection = (
+        CollectionInput.from_dataset(item, _synthetic_dataset(item.id))
+        .to_pystac_collection()
+        .to_dict()
+    )
+    assert collection["license"] == "CC-BY-4.0"
+    assert item.additional_terms is not None
+    assert [link for link in collection["links"] if link["rel"] == "license"] == [
+        {
+            "rel": "license",
+            "href": "https://creativecommons.org/licenses/by/4.0/",
+            "type": "text/html",
+            "title": "CC-BY-4.0",
+        },
+        {
+            "rel": "license",
+            "href": str(item.additional_terms.href),
+            "type": "text/html",
+            "title": item.additional_terms.title,
+        },
+    ]
 
 
 def _icechunk_asset(item: CatalogItem) -> dict[str, object]:
