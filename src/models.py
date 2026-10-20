@@ -9,11 +9,20 @@ import numpy as np
 import pandas as pd
 import pystac
 import xarray as xr
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 from catalog import (
     DYNAMICAL_ORG,
     MODELS,
+    WEATHERNEXT_LICENSE,
+    WEATHERNEXT_LICENSE_LINKS,
     AdditionalTerms,
     CatalogItem,
     DatasetExample,
@@ -644,6 +653,7 @@ class CollectionInput(BaseModel):
     version: str = Field(min_length=1)
     summaries: dict[str, str] = Field(default_factory=dict)
     additional_terms: AdditionalTerms | None = None
+    license_links: tuple[AdditionalTerms, ...] = ()
     producer: Provider
     # None only when dynamical.org produced the data. See
     # `CatalogItem._mirror_names_source`.
@@ -660,6 +670,17 @@ class CollectionInput(BaseModel):
     # collection carries no `example` links. `CatalogItem` requires at least
     # one for production datasets.
     notebooks: tuple[DatasetNotebook, ...] = ()
+
+    @model_validator(mode="after")
+    def _license_links_match_license(self) -> CollectionInput:
+        if self.license == DatasetLicense.OTHER:
+            if not self.license_links:
+                raise ValueError("license_links are required for license 'other'")
+            if self.additional_terms is not None:
+                raise ValueError("additional_terms cannot accompany license 'other'")
+        elif self.license_links:
+            raise ValueError("license_links are only allowed for license 'other'")
+        return self
 
     @field_validator("bbox")
     @classmethod
@@ -744,11 +765,20 @@ class CollectionInput(BaseModel):
         model = MODELS[item.model_id]
         chunking = _build_chunking(ds)
         chunking_table = chunking.as_markdown_table() if chunking is not None else None
+        license_value = ds.attrs["license"]
+        license_links: tuple[AdditionalTerms, ...] = ()
+        if (
+            license_value == WEATHERNEXT_LICENSE
+            and item.license_links == WEATHERNEXT_LICENSE_LINKS
+        ):
+            license_value = DatasetLicense.OTHER
+            license_links = item.license_links
         return cls(
             id=item.id,
             name=ds.attrs["name"],
             description=ds.attrs["description"],
-            license=ds.attrs["license"],
+            license=license_value,
+            license_links=license_links,
             bbox=_bbox(ds),
             temporal_start=t0,
             cube_dimensions=dims,
@@ -947,14 +977,24 @@ class CollectionInput(BaseModel):
             ),
         )
 
-        collection.add_link(
-            pystac.Link(
-                rel="license",
-                target=LICENSE_URLS[self.license],
-                media_type="text/html",
-                title=self.license.value,
+        if self.license == DatasetLicense.OTHER:
+            for link in self.license_links:
+                collection.add_link(
+                    pystac.Link(
+                        rel="license",
+                        target=str(link.href),
+                        title=link.title,
+                    )
+                )
+        else:
+            collection.add_link(
+                pystac.Link(
+                    rel="license",
+                    target=LICENSE_URLS[self.license],
+                    media_type="text/html",
+                    title=self.license.value,
+                )
             )
-        )
         if self.additional_terms:
             collection.add_link(
                 pystac.Link(

@@ -12,6 +12,7 @@ from catalog import (
     DYNAMICAL_ORG,
     MODELS,
     NOAA_NCEP,
+    WEATHERNEXT_LICENSE_LINKS,
     AdditionalTerms,
     CatalogItem,
     DatasetExample,
@@ -419,6 +420,25 @@ def test_license_accepts_enum_and_string() -> None:
 def test_license_rejects_unknown_value() -> None:
     with pytest.raises(pydantic.ValidationError):
         _valid_input(license="MIT")
+
+
+def test_other_license_requires_links() -> None:
+    with pytest.raises(pydantic.ValidationError, match="license_links"):
+        _valid_input(license="other")
+
+
+def test_spdx_license_forbids_custom_links() -> None:
+    with pytest.raises(pydantic.ValidationError, match="license_links"):
+        _valid_input(license_links=WEATHERNEXT_LICENSE_LINKS)
+
+
+def test_other_license_forbids_additional_terms() -> None:
+    with pytest.raises(pydantic.ValidationError, match="additional_terms"):
+        _valid_input(
+            license="other",
+            license_links=WEATHERNEXT_LICENSE_LINKS,
+            additional_terms=WEATHERNEXT_LICENSE_LINKS[0],
+        )
 
 
 def test_cube_variable_accepts_short_name_and_comment() -> None:

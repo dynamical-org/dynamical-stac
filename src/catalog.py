@@ -97,6 +97,7 @@ def az_to_https_url(az_href: str, account: str) -> str:
 
 class DatasetLicense(StrEnum):
     CC_BY_4_0 = "CC-BY-4.0"
+    OTHER = "other"
 
 
 class AdditionalTerms(BaseModel):
@@ -104,6 +105,23 @@ class AdditionalTerms(BaseModel):
 
     href: HttpUrl
     title: str = Field(min_length=1)
+
+
+WEATHERNEXT_LICENSE = (
+    "Real-Time Data & Forecasts: GDM Real-Time Weather Forecasting Experimental Data Terms of Use "
+    "(https://storage.googleapis.com/weathernext-public/terms-of-use.pdf). "
+    "Historical Data: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)."
+)
+WEATHERNEXT_LICENSE_LINKS: tuple[AdditionalTerms, ...] = (
+    AdditionalTerms(
+        href="https://storage.googleapis.com/weathernext-public/terms-of-use.pdf",  # type: ignore[arg-type]
+        title="GDM Real-Time Weather Forecasting Experimental Data Terms of Use for Real-Time Data & Forecasts",
+    ),
+    AdditionalTerms(
+        href="https://creativecommons.org/licenses/by/4.0/",  # type: ignore[arg-type]
+        title="CC BY 4.0 for Historical Data",
+    ),
+)
 
 
 class Provider(BaseModel):
@@ -519,6 +537,7 @@ class CatalogItem(BaseModel):
     # `_production_items_have_notebooks`.
     notebooks: tuple[DatasetNotebook, ...] = ()
     additional_terms: AdditionalTerms | None = None
+    license_links: tuple[AdditionalTerms, ...] = ()
     # Required unless dynamical.org produced the data. See `_mirror_names_source`.
     source: UpstreamSource | None = None
     # Required, explicit publication membership; environments never imply others.
@@ -1798,6 +1817,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
     CatalogItem(
         environments=["staging", "test"],
         id="google-weathernext2-forecast-operational-virtual",
+        license_links=WEATHERNEXT_LICENSE_LINKS,
         icechunk_href=(
             "https://google-weathernext2.r2.dynamical.org/"
             "google-weathernext2-forecast-operational-virtual/v0.1.0.icechunk/"
@@ -1813,10 +1833,9 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "hours (15 days) along the `lead_time` dimension at a 6 hourly "
             "interval. Surface variables are at the dataset root; variables "
             "carried on pressure levels are in the `pressure_level` group.\n\n"
-            "Each forecast step is published once its valid time is at least "
-            "one hour in the past, so recent initializations are partially "
-            "filled: steps that were not yet eligible at the most recent "
-            "update read as NaN until a later update publishes them."
+            "Forecasts are published as Google's source files arrive and as "
+            "the publication policy allows; the newest initializations can "
+            "be partially filled, with unpublished steps reading as NaN."
         ),
         reformatter_url=(
             f"{REFORMATTERS_ROOT}/google/weathernext2/"
@@ -1826,7 +1845,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _example(
                 "Day-10 ensemble wind scenarios",
                 'ds = dynamical_catalog.open("google-weathernext2-forecast-operational-virtual", chunks=None)\n'
-                "# Choose an initialization whose day-10 step is eligible.\n"
+                "# Choose an older initialization for a published day-10 step.\n"
                 'init_time = ds.init_time[-1] - ds.lead_time.sel(lead_time="240h")\n'
                 'day10 = ds.sel(init_time=init_time, lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
                 '(day10["wind_u_100m"] ** 2 + day10["wind_v_100m"] ** 2) ** 0.5',
