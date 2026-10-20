@@ -102,6 +102,12 @@
     },
     {
       "rel": "child",
+      "href": "https://stac-staging.dynamical.org/noaa-rtma-analysis-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA RTMA analysis, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac-staging.dynamical.org/noaa-hrrr-analysis-virtual/collection.json",
       "type": "application/json",
       "title": "NOAA HRRR analysis, virtual"
