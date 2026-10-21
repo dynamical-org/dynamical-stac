@@ -1,20 +1,18 @@
 ### Source
 
-This archive is built from Google's [WeatherNext 2 experimental forecast dataset](https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0). WeatherNext 2 is a global, medium-range ensemble forecast produced by an operational version of Google DeepMind's Functional Network Generative weather model.
+This dataset is built from Google's [WeatherNext 2 experimental forecast dataset](https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0). WeatherNext 2 is a global, medium-range ensemble forecast produced by an operational version of Google DeepMind's Functional Generative Network (FGN) weather model.
 
-The [GDM Real-Time Weather Forecasting Experimental Data Terms of Use](https://storage.googleapis.com/weathernext-public/terms-of-use.pdf) govern "any data that relates to a time less than 1 hour ago and the future". They state: "Any data that relates to a time 1 hour ago or more is licensed under the Creative Commons Attribution International License, Version 4.0 (CC BY 4.0)". The time a forecast value relates to is its `valid_time` (`init_time` + `lead_time`). This product includes future-valid forecast steps, so its recent and future-valid steps are Real-Time Data & Forecasts under those Terms, and steps whose `valid_time` is 1 hour ago or more are Historical Data under CC BY 4.0.
+**Modifications.** dynamical.org restructures the source into an Icechunk virtual dataset with dynamical.org's variable and dimension names, and converts units as the data is read: temperatures from kelvin to degrees Celsius, geopotential to geopotential height (divided by standard gravity), and total precipitation from metres of water to kg m⁻². Values are otherwise the unchanged model output.
 
-**Notice files.** Next to the store are a [copy of the Terms](https://google-weathernext2.r2.dynamical.org/google-weathernext2-forecast-operational-virtual/TERMS_OF_USE.pdf) and the [Legally Binding Terms of Use](https://google-weathernext2.r2.dynamical.org/google-weathernext2-forecast-operational-virtual/LEGALLY_BINDING_TERMS_OF_USE.txt).
+### Terms of use
 
-The attribution for the real-time release is: "Google WeatherNext 2 forecast data processed by dynamical.org from Google's WeatherNext 2 experimental data. Copyright 2024-6 Google LLC. © 2024-6 Google LLC, whose machine learning models were used to create the experimental data made available under the following licence terms https://storage.googleapis.com/weathernext-public/terms-of-use.pdf. This data is intended for experimental modelling only and is not intended, validated, or approved for real world use." The collection's `attribution` metadata carries the store's attribution verbatim. The data is experimental: it is not an official forecast, alert, warning or notice from a meteorological agency. CC BY 4.0 includes a disclaimer of warranties and limitation of liability.
+Forecast values whose valid time (`init_time` + `lead_time`) is less than 1 hour ago or in the future are Real-Time Data & Forecasts under the [GDM Real-Time Weather Forecasting Experimental Data Terms of Use](https://storage.googleapis.com/weathernext-public/terms-of-use.pdf). Values whose valid time is 1 hour ago or more are Historical Data under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). A [copy of the Terms](https://google-weathernext2.r2.dynamical.org/google-weathernext2-forecast-operational-virtual/TERMS_OF_USE.pdf) and the [Legally Binding Terms of Use](https://google-weathernext2.r2.dynamical.org/google-weathernext2-forecast-operational-virtual/LEGALLY_BINDING_TERMS_OF_USE.txt) notice are published next to the store.
 
-**Modifications.** dynamical.org has modified the source data as follows: it is restructured into an Icechunk virtual dataset with dynamical.org's variable and dimension names, and read-time filters convert temperatures from kelvin to degrees Celsius, geopotential to geopotential height (divided by standard gravity), and total precipitation from metres of water to kg m⁻². Values are otherwise the unchanged model output.
+The Terms do not permit real-time data to be used in or made available to a Restricted Country, which they list as “Japan, South Korea, Indonesia, Cuba, Iran, North Korea, Crimea and the so-called Donetsk People’s Republic and Luhansk People’s Republic”. wn.dynamical.org refuses WeatherNext data requests from those locations, and requests whose location cannot be determined.
 
-**Restricted territories.** The GDM Real-Time Weather Forecasting Experimental Data Terms of Use (Section 1(c), and Section 4: Use Restrictions (b)) do not permit making real-time data available in a Restricted Country. Section 1(c) lists them as “Japan, South Korea, Indonesia, Cuba, Iran, North Korea, Crimea and the so-called Donetsk People’s Republic and Luhansk People’s Republic”. The data service at wn.dynamical.org refuses all WeatherNext data in those locations, whatever its age, and also refuses requests whose location cannot be determined, including requests over Tor.
+WeatherNext 2 data is experimental: it is not an official forecast, alert, warning or notice from a meteorological agency. dynamical.org and this dataset are not sponsored, endorsed, or granted official status by Google or any meteorological agency or department.
 
-dynamical.org and this dataset are not sponsored, endorsed, or granted official status by Google or any meteorological agency or department.
-
-**Third-party materials.** The following notices are reproduced from the Acknowledgements on Google's dataset page, which say that the experimental data was generated by models which communicate with and/or reference the following separate libraries and packages, and that use of these third-party materials may be governed by separate terms and conditions or license provisions:
+Google's dataset page notes that the model draws on the following third-party materials, whose use may be governed by separate terms and conditions or license provisions:
 
 * Data and products of the European Centre for Medium-range Weather Forecasts (ECMWF), as modified by Google.
 * Modified Copernicus Climate Change Service information 2023. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.
@@ -24,19 +22,11 @@ dynamical.org and this dataset are not sponsored, endorsed, or granted official 
   * License Statement: ECMWF open data is published under a Creative Commons Attribution 4.0 International (CC BY 4.0). [https://creativecommons.org/licenses/by/4.0/](https://creativecommons.org/licenses/by/4.0/)
   * Disclaimer: ECMWF does not accept any liability whatsoever for any error or omission in the data, their availability, or for any loss or damage arising from their use.
 
-These notices are reproduced from the [Acknowledgements](https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0#description) section of Google's dataset page.
-
 ### Data availability
 
-This product contains four daily initializations from 2025-01-01T00 UTC to the present. Forecasts include steps whose valid time is in the future. Recent initializations may be incomplete while source files arrive or await a subsequent update; unpublished lead times read as NaN. The fixed 2022–2024 source has a different native chunk layout and is published separately as the [historical WeatherNext 2 archive](https://dynamical.org/catalog/google-weathernext2-forecast-historical-virtual/). The two products share the same variables, dimensions and coordinates, so they can be concatenated along `init_time` when a workflow needs the full record.
+The archive starts with the 2025-01-01T00 UTC initialization and is updated four times a day. Forecasts include steps whose valid time is in the future. Recent initializations may be incomplete while source files arrive or await a subsequent update; unpublished steps read as NaN.
 
-### Variables
-
-The dataset carries 8 surface variables at the root and 6 atmospheric variables in the `pressure_level` group. Every forecast contains 64 ensemble members, 60 lead times at 6 hourly intervals, and a global 0.25 degree grid. The spatial dimensions are named `y` and `x`; their coordinates are geographic latitude and 0–360 degree longitude, not a projected grid.
-
-### Storage
-
-The Icechunk repository is served over public HTTPS by dynamical.org. Its virtual chunks reference the unchanged, compressed source Zarr chunks through the public `wn.dynamical.org` HTTPS endpoint; the unit conversions described under Source are applied as read-time filters.
+Forecasts initialized from 2022 through 2024 are in the [historical WeatherNext 2 dataset](https://dynamical.org/catalog/google-weathernext2-forecast-historical-virtual/). It has the same variables, dimensions and coordinates, so the two can be concatenated along `init_time`.
 
 ### Chunks
 
