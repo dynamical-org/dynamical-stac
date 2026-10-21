@@ -2,7 +2,7 @@
 
 This archive is built from Google's [WeatherNext 2 experimental forecast dataset](https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0). WeatherNext 2 is a global, medium-range ensemble forecast produced by an operational version of Google DeepMind's Functional Network Generative weather model.
 
-The [GDM Real-Time Weather Forecasting Experimental Data Terms of Use](https://storage.googleapis.com/weathernext-public/terms-of-use.pdf) govern "any data that relates to a time less than 1 hour ago and the future". They state: "Any data that relates to a time 1 hour ago or more is licensed under the Creative Commons Attribution International License, Version 4.0 (CC BY 4.0)". The time a forecast value relates to is its `valid_time` (`init_time` + `lead_time`).
+The [GDM Real-Time Weather Forecasting Experimental Data Terms of Use](https://storage.googleapis.com/weathernext-public/terms-of-use.pdf) govern "any data that relates to a time less than 1 hour ago and the future". They state: "Any data that relates to a time 1 hour ago or more is licensed under the Creative Commons Attribution International License, Version 4.0 (CC BY 4.0)". The time a forecast value relates to is its `valid_time` (`init_time` + `lead_time`). This product publishes steps as they arrive, so its recent and future-valid steps are Real-Time Data & Forecasts under those Terms, and steps whose `valid_time` is 1 hour ago or more are Historical Data under CC BY 4.0.
 
 **Notice files.** Next to the store are a [copy of the Terms](https://google-weathernext2.r2.dynamical.org/google-weathernext2-forecast-operational-virtual/TERMS_OF_USE.pdf) and the [Legally Binding Terms of Use](https://google-weathernext2.r2.dynamical.org/google-weathernext2-forecast-operational-virtual/LEGALLY_BINDING_TERMS_OF_USE.txt).
 
@@ -28,7 +28,7 @@ These notices are reproduced from the [Acknowledgements](https://developers.goog
 
 ### Data availability
 
-This product contains four daily initializations from 2025-01-01T00 UTC to the present. Forecasts are published as Google's source files arrive and as the publication policy allows; the newest initializations can be partially filled, with unpublished lead times reading as NaN. Choose an initialization with published values for the lead time you need. The fixed 2022–2024 source has a different native chunk layout and is published separately as the [historical WeatherNext 2 archive](https://dynamical.org/catalog/google-weathernext2-forecast-historical-virtual/). The two products share the same variables, dimensions and coordinates, so they can be concatenated along `init_time` when a workflow needs the full record.
+This product contains four daily initializations from 2025-01-01T00 UTC to the present. Forecasts are published as Google's source files arrive, including steps whose valid time is in the future. Only the newest initialization can be briefly partial while its source files land; unpublished lead times read as NaN. The fixed 2022–2024 source has a different native chunk layout and is published separately as the [historical WeatherNext 2 archive](https://dynamical.org/catalog/google-weathernext2-forecast-historical-virtual/). The two products share the same variables, dimensions and coordinates, so they can be concatenated along `init_time` when a workflow needs the full record.
 
 ### Variables
 

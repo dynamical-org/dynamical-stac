@@ -1888,9 +1888,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "hours (15 days) along the `lead_time` dimension at a 6 hourly "
             "interval. Surface variables are at the dataset root; variables "
             "carried on pressure levels are in the `pressure_level` group.\n\n"
-            "Forecasts are published as Google's source files arrive and as "
-            "the publication policy allows; the newest initializations can "
-            "be partially filled, with unpublished steps reading as NaN."
+            "Forecasts are published as Google's source files arrive, "
+            "including steps whose valid time is in the future. Only the "
+            "newest initialization can be briefly partial while its source "
+            "files land; unpublished steps read as NaN."
         ),
         reformatter_url=(
             f"{REFORMATTERS_ROOT}/google/weathernext2/"
@@ -1900,9 +1901,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _example(
                 "Day-10 ensemble wind scenarios",
                 'ds = dynamical_catalog.open("google-weathernext2-forecast-operational-virtual", chunks=None)\n'
-                "# Choose an older initialization for a published day-10 step.\n"
-                'init_time = ds.init_time[-1] - ds.lead_time.sel(lead_time="240h")\n'
-                'day10 = ds.sel(init_time=init_time, lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
+                'day10 = ds.sel(init_time=ds.init_time[-1], lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
                 '(day10["wind_u_100m"] ** 2 + day10["wind_v_100m"] ** 2) ** 0.5',
                 min_version="1.0.0",  # https:// repository
             ),
