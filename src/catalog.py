@@ -1888,10 +1888,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "hours (15 days) along the `lead_time` dimension at a 6 hourly "
             "interval. Surface variables are at the dataset root; variables "
             "carried on pressure levels are in the `pressure_level` group.\n\n"
-            "Forecasts are published as Google's source files arrive, "
-            "including steps whose valid time is in the future. Only the "
-            "newest initialization can be briefly partial while its source "
-            "files land; unpublished steps read as NaN."
+            "Forecasts include steps whose valid time is in the future. "
+            "Recent initializations may be incomplete while source files "
+            "arrive or await a subsequent update; unpublished steps read as "
+            "NaN."
         ),
         reformatter_url=(
             f"{REFORMATTERS_ROOT}/google/weathernext2/"
