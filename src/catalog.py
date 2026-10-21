@@ -1843,7 +1843,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="google-weathernext2",
         source=_WEATHERNEXT2,
         description_summary=(
-            "This dataset is the fixed 2022-2024 archive of Google "
+            "This data product is the fixed 2022-2024 archive of Google "
             "WeatherNext 2 forecasts, optimized for spatial (map) access "
             "patterns. Forecasts are identified by an initialization time "
             "(`init_time`) denoting the start time of the model run as well "
@@ -1886,7 +1886,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="google-weathernext2",
         source=_WEATHERNEXT2,
         description_summary=(
-            "This dataset is an archive of past and present Google "
+            "This data product is an archive of past and present Google "
             "WeatherNext 2 forecasts from 2025 onward, optimized for spatial "
             "(map) access patterns. Forecasts are identified by an "
             "initialization time (`init_time`) denoting the start time of the "
