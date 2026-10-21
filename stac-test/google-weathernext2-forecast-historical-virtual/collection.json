@@ -35,10 +35,22 @@
       "title": "WeatherNext 2 experimental forecast dataset"
     },
     {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/google-weathernext2-forecast-historical%2Boperational-virtual.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "WeatherNext 2 forecasts, historical and operational, virtual (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/google-weathernext2-forecast-historical%2Boperational-virtual.ipynb",
+      "type": "text/html",
+      "title": "WeatherNext 2 forecasts, historical and operational, virtual (Colab)"
+    },
+    {
       "rel": "self",
       "href": "https://stac-test.dynamical.org/google-weathernext2-forecast-historical-virtual/collection.json",
       "type": "application/json",
-      "title": "Google WeatherNext 2 historical forecast, virtual"
+      "title": "Google WeatherNext 2 forecast, historical, virtual"
     },
     {
       "rel": "parent",
@@ -51,7 +63,7 @@
     "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
     "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
   ],
-  "attribution": "Google requires this attribution: \u00a9 2025 DeepMind Technologies Limited's machine learning models used to create the experimental data made available at https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0 under CC BY 4.0 licence terms. This data is intended for experimental modelling only and is not intended, validated, or approved for real world use. Use of the third-party materials referred to in the Acknowledgements section may be governed by separate terms and conditions or license provisions. Your use of the third-party materials is subject to any such terms and you should check that you can comply with any applicable restrictions or terms and conditions before use.",
+  "attribution": "Google WeatherNext 2 forecast data processed by dynamical.org from Google's WeatherNext 2 experimental data. \u00a9 2025 DeepMind Technologies Limited's machine learning models used to create the experimental data made available at https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0 under CC BY 4.0 licence terms. This data is intended for experimental modelling only and is not intended, validated, or approved for real world use. Use of the third-party materials referred to in the Acknowledgements section may be governed by separate terms and conditions or license provisions. Your use of the third-party materials is subject to any such terms and you should check that you can comply with any applicable restrictions or terms and conditions before use.",
   "version": "0.1.0",
   "model_id": "google-weathernext2",
   "model_name": "Google WeatherNext 2",
@@ -69,13 +81,13 @@
         },
         {
           "label": "pystac",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"google-weathernext2-forecast-historical-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"https://wn.dynamical.org/chunks/\": icechunk.Credentials.HttpAccess()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"pressure_reduced_to_mean_sea_level\"].sel(init_time=\"2024-07-04T00\", lead_time=\"96h\", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\n\nds_pressure[\"geopotential_height\"].sel(init_time=\"2024-07-04T00\", lead_time=\"96h\", pressure_level=500).mean(\"ensemble_member\")",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"google-weathernext2-forecast-historical-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"https://wn.dynamical.org/chunks/\": icechunk.Credentials.HttpAccess()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"pressure_reduced_to_mean_sea_level\"].sel(init_time=\"2024-07-04T00\", lead_time=\"96h\", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\n\nds_pressure[\"geopotential_height\"].sel(init_time=\"2024-07-04T00\", lead_time=\"96h\", pressure_level=500).mean(\"ensemble_member\")",
           "language": "python"
         },
         {
           "label": "prompt",
           "language": "text",
-          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: google-weathernext2-forecast-historical-virtual\nSTAC collection: https://stac-staging.dynamical.org/google-weathernext2-forecast-historical-virtual/collection.json"
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: google-weathernext2-forecast-historical-virtual\nSTAC collection: https://stac.dynamical.org/google-weathernext2-forecast-historical-virtual/collection.json"
         }
       ]
     }
@@ -179,7 +191,7 @@
       "long_name": "Sea surface temperature",
       "standard_name": "sea_surface_temperature",
       "short_name": "sst",
-      "comment": "NaN over land where sea surface temperature does not apply."
+      "comment": "NaN over land where sea surface temperature does not apply. Value changes once every 24 hours."
     },
     "temperature_2m": {
       "dimensions": [
@@ -352,7 +364,8 @@
       "unit": "1",
       "long_name": "Specific humidity",
       "standard_name": "specific_humidity",
-      "short_name": "q"
+      "short_name": "q",
+      "comment": "Small negative values are raw model artifacts; set values < 0 to zero."
     },
     "pressure_level/temperature": {
       "dimensions": [
@@ -474,7 +487,7 @@
       "uncompressed_size": "15.8 MiB"
     }
   },
-  "title": "Google WeatherNext 2 historical forecast, virtual",
+  "title": "Google WeatherNext 2 forecast, historical, virtual",
   "extent": {
     "spatial": {
       "bbox": [

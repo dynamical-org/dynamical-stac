@@ -194,13 +194,13 @@
       "rel": "child",
       "href": "https://stac-staging.dynamical.org/google-weathernext2-forecast-historical-virtual/collection.json",
       "type": "application/json",
-      "title": "Google WeatherNext 2 historical forecast, virtual"
+      "title": "Google WeatherNext 2 forecast, historical, virtual"
     },
     {
       "rel": "child",
       "href": "https://stac-staging.dynamical.org/google-weathernext2-forecast-operational-virtual/collection.json",
       "type": "application/json",
-      "title": "Google WeatherNext 2 operational forecast, virtual"
+      "title": "Google WeatherNext 2 forecast, operational, virtual"
     },
     {
       "rel": "child",
