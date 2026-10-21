@@ -439,10 +439,8 @@ MODELS: dict[str, Model] = {
         id="google-weathernext2",
         name="Google WeatherNext 2",
         description=(
-            "WeatherNext 2 is Google's global medium-range probabilistic "
-            "weather forecasting model. It produces a 64-member ensemble on "
-            "a 0.25 degree grid, initialized four times daily with forecasts "
-            "extending to 15 days."
+            "WeatherNext 2 is Google's second-generation, global, "
+            "medium-range, probabilistic weather forecasting model."
         ),
         producer=Provider(
             name="Google DeepMind",
@@ -1845,14 +1843,16 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="google-weathernext2",
         source=_WEATHERNEXT2,
         description_summary=(
-            "This dataset is the fixed 2022-2024 archive of Google "
+            "This data product is the fixed 2022-2024 archive of Google "
             "WeatherNext 2 forecasts, optimized for spatial (map) access "
             "patterns. Forecasts are identified by an initialization time "
-            "(`init_time`) and one of 64 `ensemble_member` values, then step "
-            "forward from 6 to 360 hours (15 days) along the `lead_time` "
-            "dimension at a 6 hourly interval. Surface variables are at the "
-            "dataset root; variables carried on pressure levels are in the "
-            "`pressure_level` group."
+            "(`init_time`) denoting the start time of the model run as well "
+            "as by the `ensemble_member`, and step forward along the "
+            "`lead_time` dimension. A new forecast was initialized every 6 "
+            "hours.\n\n"
+            "Variables on pressure levels live in the `pressure_level` group. "
+            "The spatial dimensions `y` and `x` hold latitude and 0-360 "
+            "degree longitude."
         ),
         reformatter_url=(
             f"{REFORMATTERS_ROOT}/google/weathernext2/"
@@ -1862,7 +1862,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _example(
                 "Hurricane Beryl ensemble pressure",
                 'ds = dynamical_catalog.open("google-weathernext2-forecast-historical-virtual", chunks=None)\n'
-                'ds["pressure_reduced_to_mean_sea_level"].sel(init_time="2024-07-04T00", lead_time="96h", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))',
+                'ds["pressure_reduced_to_mean_sea_level"].sel(init_time="2024-07-04T00", lead_time="96h", ensemble_member=slice(0, 3), y=slice(10, 35), x=slice(255, 305))\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
+                'ds_pressure = dynamical_catalog.open("google-weathernext2-forecast-historical-virtual", group="pressure_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["geopotential_height"].sel(init_time="2024-07-04T00", lead_time="96h", pressure_level=500).mean("ensemble_member")',
                 min_version="1.0.0",  # https:// repository
             ),
         ),
@@ -1881,16 +1886,16 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="google-weathernext2",
         source=_WEATHERNEXT2,
         description_summary=(
-            "This dataset is the 2025-present archive of Google WeatherNext 2 "
-            "forecasts, optimized for spatial (map) access patterns. Forecasts "
-            "are identified by an initialization time (`init_time`) and one "
-            "of 64 `ensemble_member` values, then step forward from 6 to 360 "
-            "hours (15 days) along the `lead_time` dimension at a 6 hourly "
-            "interval. Surface variables are at the dataset root; variables "
-            "carried on pressure levels are in the `pressure_level` group.\n\n"
-            "Forecasts are published as Google's source files arrive and as "
-            "the publication policy allows; the newest initializations can "
-            "be partially filled, with unpublished steps reading as NaN."
+            "This data product is an archive of past and present Google "
+            "WeatherNext 2 forecasts from 2025 onward, optimized for spatial "
+            "(map) access patterns. Forecasts are identified by an "
+            "initialization time (`init_time`) denoting the start time of the "
+            "model run as well as by the `ensemble_member`, and step forward "
+            "along the `lead_time` dimension. A new forecast is initialized "
+            "every 6 hours.\n\n"
+            "Variables on pressure levels live in the `pressure_level` group. "
+            "The spatial dimensions `y` and `x` hold latitude and 0-360 "
+            "degree longitude."
         ),
         reformatter_url=(
             f"{REFORMATTERS_ROOT}/google/weathernext2/"
@@ -1900,10 +1905,13 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _example(
                 "Day-10 ensemble wind scenarios",
                 'ds = dynamical_catalog.open("google-weathernext2-forecast-operational-virtual", chunks=None)\n'
-                "# Choose an older initialization for a published day-10 step.\n"
-                'init_time = ds.init_time[-1] - ds.lead_time.sel(lead_time="240h")\n'
-                'day10 = ds.sel(init_time=init_time, lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
-                '(day10["wind_u_100m"] ** 2 + day10["wind_v_100m"] ** 2) ** 0.5',
+                'day10 = ds.sel(init_time=ds.init_time[-1], lead_time="240h", ensemble_member=slice(0, 3), y=slice(25, 75), x=slice(270, 359.75))\n'
+                '(day10["wind_u_100m"] ** 2 + day10["wind_v_100m"] ** 2) ** 0.5\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
+                'ds_pressure = dynamical_catalog.open("google-weathernext2-forecast-operational-virtual", group="pressure_level", chunks=None)\n'
+                "\n"
+                'ds_pressure["geopotential_height"].sel(init_time="2026-01-01T00", lead_time="24h", pressure_level=500).mean("ensemble_member")',
                 min_version="1.0.0",  # https:// repository
             ),
         ),
