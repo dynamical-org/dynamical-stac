@@ -86,8 +86,14 @@ def _stub_modal() -> types.ModuleType:
             pass
 
         @staticmethod
-        def function(**_: object) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-            return lambda fn: fn
+        def function(
+            **kwargs: object,
+        ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+            def decorate(fn: Callable[..., Any]) -> Callable[..., Any]:
+                fn.function_kwargs = kwargs  # type: ignore[attr-defined]
+                return fn
+
+            return decorate
 
     class _Secret:
         @staticmethod
@@ -374,6 +380,16 @@ def test_terminal_checkin_reuses_in_progress_id_and_config(
     config = checkins[0]["monitor_config"]
     assert config["schedule"] == {"type": "interval", "value": 10, "unit": "minute"}
     assert config["max_runtime"] == canary._TIMEOUT_SECONDS // 60 + 2
+
+
+def test_canary_runs_in_a_us_region(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    # Unpinned, Modal schedules runs worldwide; a run from a country where
+    # WeatherNext data is restricted fails those reads with 451.
+    canary = load_canary(_CATALOG)
+
+    assert canary.read_canary.function_kwargs["region"] == "us-west"
 
 
 def test_read_failure_captures_error_checkin_and_raises(

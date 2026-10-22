@@ -67,6 +67,13 @@ _MAX_RUNTIME_MINUTES = _TIMEOUT_SECONDS // 60 + 2
 _FLUSH_TIMEOUT_SECONDS = 15
 
 
+# Unpinned, Modal places runs in any of its regions worldwide. The WeatherNext 2
+# collections are served only to countries their terms permit, and a run placed
+# in one that is not fails those reads with HTTP 451 although the stores are
+# fine.
+_REGION = "us-west"
+
+
 _STDOUT_HANDLER = "read_canary.stdout"
 
 
@@ -165,6 +172,7 @@ def _read_all(collection_ids: list[str]) -> dict[str, float]:
     schedule=modal.Period(minutes=10),
     secrets=[modal.Secret.from_name("sentry-read-canary")],
     timeout=_TIMEOUT_SECONDS,
+    region=_REGION,
 )
 def read_canary() -> None:
     import os  # noqa: PLC0415
