@@ -70,8 +70,9 @@ _FLUSH_TIMEOUT_SECONDS = 15
 # Unpinned, Modal places runs in any of its regions worldwide. The WeatherNext 2
 # collections are served only to countries their terms permit, and a run placed
 # in one that is not fails those reads with HTTP 451 although the stores are
-# fine.
-_REGION = "us-west"
+# fine. The broad US region keeps every run in the US at a lower price
+# multiplier than any single narrow region.
+_REGION = "us"
 
 
 _STDOUT_HANDLER = "read_canary.stdout"

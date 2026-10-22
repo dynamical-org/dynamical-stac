@@ -389,7 +389,7 @@ def test_canary_runs_in_a_us_region(
     # WeatherNext data is restricted fails those reads with 451.
     canary = load_canary(_CATALOG)
 
-    assert canary.read_canary.function_kwargs["region"] == "us-west"
+    assert canary.read_canary.function_kwargs["region"] == "us"
 
 
 def test_read_failure_captures_error_checkin_and_raises(
