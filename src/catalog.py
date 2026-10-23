@@ -1323,9 +1323,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("noaa-hrrr-analysis"),),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "0.7.0-0.8.0", "1.0.0-1.0.0"],
         id="noaa-rtma-analysis-virtual",
-        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/noaa-rtma-analysis-virtual/drafts/v0.1.0_2026-10-20T16-16/validation_report.html",  # type: ignore[arg-type]
         icechunk_href="s3://dynamical-noaa-rtma/noaa-rtma-analysis-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
         virtual_chunk_container_prefixes=("s3://noaa-rtma-pds/",),
@@ -1347,7 +1346,11 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 "Temperature map",
                 'ds = dynamical_catalog.open("noaa-rtma-analysis-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00")',
-                min_version="1.0.0",  # Staging includes gs:// and https:// collections.
+            ),
+        ),
+        notebooks=(
+            DatasetNotebook(
+                slug="noaa-rtma-family", title="RTMA, RTMA-RU and URMA analyses"
             ),
         ),
     ),
