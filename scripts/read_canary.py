@@ -18,6 +18,19 @@ could show whether those two runs had executed, let alone what they read.
 This is the data-plane half of the 99.5% uptime SLA: proof that reads actually
 resolve, not merely that catalog.json is served.
 
+A read that fails is re-read from a fresh container before it counts. Each
+collection that failed, or that the sweep never reached, is read again twice by
+`confirm_reads`, in its own single-use container. A collection without a
+positive read, in the sweep or in both re-reads, is a confirmed failure: the
+run closes `error` as it always has. A run whose every failure read back is one
+the canary could not confirm. It still closes `read-canary` as `error`, never
+`ok`, and also closes a second monitor, `read-canary-coverage`, as `error`
+under a check-in id derived from the run's own. The status publisher
+(dynamical.org-data) treats only that exact pair as a monitoring gap, so a
+lost or late marker leaves an outage, and only a full sweep's `ok` ends one.
+Missing confirmation (the call failed, timed out, or left a collection out) is
+a confirmed failure, never a pass.
+
 Deploy:
     modal deploy scripts/read_canary.py
 
@@ -34,8 +47,13 @@ from __future__ import annotations
 
 import importlib.metadata
 import logging
+import queue
 import sys
+import threading
 import time
+import uuid
+from collections.abc import Callable
+from typing import Any
 
 import modal
 
@@ -65,6 +83,33 @@ _MAX_RUNTIME_MINUTES = _TIMEOUT_SECONDS // 60 + 2
 # not retry a rejected envelope, so this covers a slow edge, not a failing one.
 # 15 s matches reformatters' cron monitoring and is well inside the schedule.
 _FLUSH_TIMEOUT_SECONDS = 15
+
+# One budget from the run's start, inside _TIMEOUT_SECONDS. Healthy sweeps take
+# 18-32 s; a read still going at the sweep's deadline is a failed attempt that
+# the confirmation re-reads. The run stops waiting for the confirmation at
+# _CONFIRM_DEADLINE_SECONDS and keeps the rest for reporting and the flush.
+_CATALOG_DEADLINE_SECONDS = 60
+_MAIN_PASS_DEADLINE_SECONDS = 240
+_CONFIRM_DEADLINE_SECONDS = 500
+_READ_WORKERS = 8
+
+# The confirmation re-reads each collection _CONFIRM_READS times, a pause
+# apart, each attempt bounded, and starts no attempt it could not finish before
+# its own deadline. It returns a little before the run stops waiting.
+_CONFIRM_READS = 2
+_CONFIRM_ATTEMPT_SECONDS = 90
+_CONFIRM_INTERVAL_SECONDS = 15
+_CONFIRM_BUDGET_SECONDS = 240
+_CONFIRM_RETURN_MARGIN_SECONDS = 10
+_NO_TIME_TO_REREAD = "no time left to re-read"
+
+# The second monitor, closed `error` only on a run the canary could not
+# confirm. Its check-in id is uuid5 of the run's read-canary id (as hex) in
+# this namespace; dynamical.org-data's status.py holds the same constant and
+# pairs the two by it.
+_MONITOR_SLUG = "read-canary"
+_COVERAGE_MONITOR_SLUG = "read-canary-coverage"
+_COVERAGE_NAMESPACE = uuid.UUID("d014545d-f123-4e15-9893-6bfff7bbc831")
 
 
 # Unpinned, Modal places runs in any of its regions worldwide. The WeatherNext 2
@@ -142,30 +187,288 @@ def _check_collection(collection_id: str) -> float:
     return time.monotonic() - started
 
 
-def _read_all(collection_ids: list[str]) -> dict[str, float]:
-    """Read one value from every collection; return each read's wall time.
+def _run_with_deadline[T](fn: Callable[[], T], seconds: float, what: str) -> T:
+    """fn's result, or TimeoutError once `seconds` pass without one.
 
-    Every collection is attempted even after one fails, so a failure reports
-    the full set of broken stores rather than the first one.
+    fn runs on a daemon thread, which is abandoned rather than joined when it
+    overruns: a thread cannot be killed, and a daemon one cannot hold up
+    reporting or the interpreter's exit. The single-use container takes it.
     """
-    from concurrent.futures import ThreadPoolExecutor, as_completed  # noqa: PLC0415
+    outcome: list[tuple[bool, Any]] = []
 
-    errors: list[str] = []
-    durations: dict[str, float] = {}
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        futures = {pool.submit(_check_collection, cid): cid for cid in collection_ids}
-        for future in as_completed(futures):
-            collection_id = futures[future]
+    def target() -> None:
+        try:
+            outcome.append((True, fn()))
+        except Exception as error:  # noqa: BLE001
+            outcome.append((False, error))
+
+    thread = threading.Thread(target=target, name=f"read-canary {what}", daemon=True)
+    thread.start()
+    thread.join(max(0.0, seconds))
+    if not outcome:
+        raise TimeoutError(f"{what} did not finish within {seconds:.0f}s")
+    succeeded, value = outcome[0]
+    if succeeded:
+        return value
+    raise value
+
+
+def _read_all(
+    collection_ids: list[str], *, deadline: float
+) -> tuple[dict[str, float], dict[str, BaseException], list[str]]:
+    """Read one value from every collection until the monotonic `deadline`.
+
+    Returns each read's wall time, each failed read's error, and the
+    collections no worker reached. Every collection is attempted even after one
+    fails, so a failure reports the full set of broken stores rather than the
+    first one. A read still going at the deadline is a failure; its daemon
+    worker is abandoned.
+    """
+    pending: queue.SimpleQueue[str] = queue.SimpleQueue()
+    for collection_id in collection_ids:
+        pending.put(collection_id)
+    results: queue.SimpleQueue[tuple[str, float | None, BaseException | None]] = (
+        queue.SimpleQueue()
+    )
+
+    def work() -> None:
+        while True:
             try:
-                durations[collection_id] = future.result()
-            except Exception as e:  # noqa: BLE001
-                errors.append(f"{collection_id}: {e!r}")
-    if errors:
-        raise RuntimeError(
-            f"read canary failed for {len(errors)}/{len(collection_ids)} "
-            "collections:\n" + "\n".join(errors)
+                collection_id = pending.get_nowait()
+            except queue.Empty:
+                return
+            try:
+                results.put((collection_id, _check_collection(collection_id), None))
+            except Exception as error:  # noqa: BLE001
+                results.put((collection_id, None, error))
+
+    for index in range(min(_READ_WORKERS, len(collection_ids))):
+        threading.Thread(target=work, name=f"read-canary {index}", daemon=True).start()
+
+    durations: dict[str, float] = {}
+    failures: dict[str, BaseException] = {}
+
+    def record(item: tuple[str, float | None, BaseException | None]) -> None:
+        collection_id, duration, error = item
+        if error is not None:
+            failures[collection_id] = error
+        elif duration is not None:
+            durations[collection_id] = duration
+
+    while len(durations) + len(failures) < len(collection_ids):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        try:
+            record(results.get(timeout=remaining))
+        except queue.Empty:
+            break
+
+    # Taking the queue empty first stops the workers starting anything more.
+    unattempted: list[str] = []
+    while True:
+        try:
+            unattempted.append(pending.get_nowait())
+        except queue.Empty:
+            break
+    while True:
+        try:
+            record(results.get_nowait())
+        except queue.Empty:
+            break
+    for collection_id in collection_ids:
+        if (
+            collection_id not in durations
+            and collection_id not in failures
+            and collection_id not in unattempted
+        ):
+            failures[collection_id] = TimeoutError(
+                f"read did not finish by the sweep's {_MAIN_PASS_DEADLINE_SECONDS}s "
+                "deadline"
+            )
+    return durations, failures, sorted(unattempted)
+
+
+def _confirm_one(collection_id: str, deadline: float) -> list[tuple[bool, str]]:
+    """Up to _CONFIRM_READS bounded re-reads, stopping at the first failure.
+
+    `deadline` is wall-clock (time.time()), since the run that set it is in
+    another container. An attempt that could not finish before it is never
+    started; its place is recorded as _NO_TIME_TO_REREAD.
+    """
+    attempts: list[tuple[bool, str]] = []
+    for attempt in range(_CONFIRM_READS):
+        if attempt:
+            time.sleep(_CONFIRM_INTERVAL_SECONDS)
+        if time.time() + _CONFIRM_ATTEMPT_SECONDS > deadline:
+            attempts.append((False, _NO_TIME_TO_REREAD))
+            break
+        try:
+            seconds = _run_with_deadline(
+                lambda: _check_collection(collection_id),
+                _CONFIRM_ATTEMPT_SECONDS,
+                f"re-read of {collection_id}",
+            )
+        except Exception as error:  # noqa: BLE001
+            attempts.append((False, repr(error)))
+            break
+        attempts.append((True, f"read in {seconds:.1f}s"))
+    return attempts
+
+
+def _read_back(attempts: object) -> bool:
+    """Whether a confirmation shows a collection readable: every re-read passed."""
+    return (
+        isinstance(attempts, list)
+        and len(attempts) == _CONFIRM_READS
+        and all(
+            isinstance(attempt, tuple) and len(attempt) == 2 and attempt[0] is True
+            for attempt in attempts
         )
-    return durations
+    )
+
+
+def _confirm_all(
+    collection_ids: list[str], deadline: float
+) -> dict[str, list[tuple[bool, str]]]:
+    """_confirm_one for every collection, _READ_WORKERS at a time."""
+    pending: queue.SimpleQueue[str] = queue.SimpleQueue()
+    for collection_id in collection_ids:
+        pending.put(collection_id)
+    reads: dict[str, list[tuple[bool, str]]] = {}
+
+    def work() -> None:
+        while True:
+            try:
+                collection_id = pending.get_nowait()
+            except queue.Empty:
+                return
+            reads[collection_id] = _confirm_one(collection_id, deadline)
+
+    workers = [
+        threading.Thread(target=work, name=f"read-canary confirm {index}", daemon=True)
+        for index in range(min(_READ_WORKERS, len(collection_ids)))
+    ]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(max(0.0, deadline - time.time()))
+    return {
+        collection_id: list(reads.get(collection_id, [(False, _NO_TIME_TO_REREAD)]))
+        for collection_id in collection_ids
+    }
+
+
+@app.function(
+    image=image,
+    timeout=_CONFIRM_BUDGET_SECONDS + 60,
+    region=_REGION,
+    single_use_containers=True,
+)
+def confirm_reads(collection_ids: list[str], deadline: float) -> dict[str, Any]:
+    """Re-read collections from a fresh container, with a fresh catalog.
+
+    The run spawns this for every collection that failed or went unread, so
+    a fault confined to its own container, host, or connections does not
+    repeat here. Returns this container's Modal region and each collection's
+    re-read attempts as (passed, detail) pairs; `deadline` is wall-clock.
+    """
+    import os  # noqa: PLC0415
+
+    import dynamical_catalog  # noqa: PLC0415
+
+    log = _logger()
+    dynamical_catalog.clear_cache()
+    region = os.environ.get("MODAL_REGION", "unknown")
+    log.info("confirming %d collections in %s", len(collection_ids), region)
+    reads = _confirm_all(collection_ids, deadline)
+    log.info(
+        "confirmation read back %d of %d collections",
+        sum(_read_back(attempts) for attempts in reads.values()),
+        len(collection_ids),
+    )
+    return {"region": region, "reads": reads}
+
+
+def _confirm_remotely(
+    collection_ids: list[str], *, run_started: float
+) -> tuple[dict[str, Any] | None, str]:
+    """The confirmation's result, or None and why there is none.
+
+    Bounded by the run's _CONFIRM_DEADLINE_SECONDS. A call that does not
+    return by then is cancelled and its container terminated.
+    """
+    log = _logger()
+    remaining = run_started + _CONFIRM_DEADLINE_SECONDS - time.monotonic()
+    if remaining <= _CONFIRM_RETURN_MARGIN_SECONDS:
+        return None, "no time left to confirm"
+    deadline = time.time() + min(
+        remaining - _CONFIRM_RETURN_MARGIN_SECONDS, _CONFIRM_BUDGET_SECONDS
+    )
+    try:
+        call = _run_with_deadline(
+            lambda: confirm_reads.spawn(collection_ids, deadline),
+            remaining,
+            "starting the confirmation",
+        )
+    except Exception as error:  # noqa: BLE001
+        return None, f"could not start: {error!r}"
+    try:
+        wait = run_started + _CONFIRM_DEADLINE_SECONDS - time.monotonic()
+        result = _run_with_deadline(
+            lambda: call.get(timeout=max(0.0, wait)),
+            wait + 5,
+            "the confirmation",
+        )
+    except Exception as error:  # noqa: BLE001
+        try:
+            _run_with_deadline(
+                lambda: call.cancel(terminate_containers=True),
+                10,
+                "cancelling the confirmation",
+            )
+        except Exception:
+            log.exception("cancelling the confirmation failed")
+        return None, f"did not return: {error!r}"
+    if not isinstance(result, dict) or not isinstance(result.get("reads"), dict):
+        return None, f"returned {type(result).__name__}, not its result"
+    return result, ""
+
+
+def _confirmed_failures(
+    failures: dict[str, BaseException],
+    unattempted: list[str],
+    confirmation: dict[str, Any] | None,
+    missing: str,
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Split the sweep's shortfall into confirmed and unconfirmed failures.
+
+    Confirmed: any collection without a positive read in the sweep or in both
+    re-reads, including one the confirmation could not attempt or left out.
+    Unconfirmed: a failed read that read back twice. A collection the sweep
+    never reached that reads back twice is simply read.
+    """
+    reads: dict[str, Any] = confirmation["reads"] if confirmation else {}
+    confirmed: dict[str, str] = {}
+    unconfirmed: dict[str, str] = {}
+    for collection_id in sorted([*failures, *unattempted]):
+        error = failures.get(collection_id)
+        sweep = repr(error) if error is not None else "not reached by the sweep"
+        attempts = reads.get(collection_id)
+        if _read_back(attempts):
+            if error is not None:
+                unconfirmed[collection_id] = sweep
+            continue
+        if confirmation is None:
+            why = f"confirmation missing: {missing}"
+        elif not isinstance(attempts, list) or not attempts:
+            why = "confirmation missing: no re-read returned"
+        elif attempts[-1] == (False, _NO_TIME_TO_REREAD):
+            why = f"confirmation missing: {_NO_TIME_TO_REREAD}"
+        else:
+            why = f"re-read: {attempts[-1][1]}"
+        confirmed[collection_id] = f"{sweep}; {why}"
+    return confirmed, unconfirmed
 
 
 @app.function(
@@ -174,6 +477,9 @@ def _read_all(collection_ids: list[str]) -> dict[str, float]:
     secrets=[modal.Secret.from_name("sentry-read-canary")],
     timeout=_TIMEOUT_SECONDS,
     region=_REGION,
+    # A read abandoned at the sweep's deadline dies with its container instead
+    # of living on in a warm one beside the next run.
+    single_use_containers=True,
 )
 def read_canary() -> None:
     import os  # noqa: PLC0415
@@ -212,14 +518,38 @@ def read_canary() -> None:
         "failure_issue_threshold": 1,
         "recovery_threshold": 1,
     }
-    check_in_id = sentry_sdk.crons.capture_checkin(
-        monitor_slug="read-canary", status="in_progress", monitor_config=monitor_config
+    # The run's own id rather than capture_checkin's return value, which is None
+    # whenever the SDK does not capture the event (no DSN, say); the coverage
+    # marker's id is derived from it.
+    check_in_id = uuid.uuid4().hex
+    coverage_id = uuid.uuid5(_COVERAGE_NAMESPACE, check_in_id).hex
+    sentry_sdk.crons.capture_checkin(
+        monitor_slug=_MONITOR_SLUG,
+        check_in_id=check_in_id,
+        status="in_progress",
+        monitor_config=monitor_config,
     )
-    log.info("in_progress check-in %s queued", check_in_id)
+    sentry_sdk.crons.capture_checkin(
+        monitor_slug=_COVERAGE_MONITOR_SLUG,
+        check_in_id=coverage_id,
+        status="in_progress",
+        monitor_config=monitor_config,
+    )
+    log.info("in_progress check-in %s queued, coverage %s", check_in_id, coverage_id)
 
-    def _finish(status: Literal["ok", "error"]) -> None:
+    def _finish(
+        status: Literal["ok", "error"], coverage: Literal["ok", "error"] = "ok"
+    ) -> None:
+        # The marker goes first: a publisher that reads between the two sees
+        # the bare error, an outage, never a marker without its error.
         sentry_sdk.crons.capture_checkin(
-            monitor_slug="read-canary",
+            monitor_slug=_COVERAGE_MONITOR_SLUG,
+            check_in_id=coverage_id,
+            status=coverage,
+            monitor_config=monitor_config,
+        )
+        sentry_sdk.crons.capture_checkin(
+            monitor_slug=_MONITOR_SLUG,
             check_in_id=check_in_id,
             status=status,
             monitor_config=monitor_config,
@@ -244,14 +574,44 @@ def read_canary() -> None:
         # A warm container keeps dynamical_catalog's module-level catalog cache;
         # each run must fetch catalog.json afresh or it checks a stale listing.
         dynamical_catalog.clear_cache()
-        collection_ids = sorted(dynamical_catalog.load_catalog())
+        collection_ids = sorted(
+            _run_with_deadline(
+                dynamical_catalog.load_catalog,
+                started + _CATALOG_DEADLINE_SECONDS - time.monotonic(),
+                "loading the catalog",
+            )
+        )
         if len(collection_ids) < MIN_COLLECTIONS:
             raise RuntimeError(
                 f"catalog returned {len(collection_ids)} collections, "
                 f"expected >= {MIN_COLLECTIONS}"
             )
-        durations = _read_all(collection_ids)
-        slowest_id, slowest = max(durations.items(), key=lambda item: item[1])
+        durations, failures, unattempted = _read_all(
+            collection_ids, deadline=started + _MAIN_PASS_DEADLINE_SECONDS
+        )
+        confirmation: dict[str, Any] | None = None
+        missing = ""
+        if failures or unattempted:
+            log.warning(
+                "sweep left %d failed and %d unread of %d collections after "
+                "%.1fs; confirming from a fresh container",
+                len(failures),
+                len(unattempted),
+                len(collection_ids),
+                time.monotonic() - started,
+            )
+            confirmation, missing = _confirm_remotely(
+                sorted([*failures, *unattempted]), run_started=started
+            )
+        confirmed, unconfirmed = _confirmed_failures(
+            failures, unattempted, confirmation, missing
+        )
+        if confirmed:
+            raise RuntimeError(
+                f"read canary failed for {len(confirmed)}/{len(collection_ids)} "
+                "collections:\n"
+                + "\n".join(f"{cid}: {why}" for cid, why in confirmed.items())
+            )
     except Exception as error:
         # Anything that goes wrong after the in_progress check-in closes it as
         # `error` rather than leaving Sentry to declare a hang at max_runtime.
@@ -267,10 +627,48 @@ def read_canary() -> None:
         _finish("error")
         raise
 
+    if unconfirmed:
+        # Evidence first, as above. Never `ok`: an `ok` would end a failure
+        # still standing from an earlier run, which only a full sweep may do.
+        log.warning(
+            "read canary could not confirm %d failed reads after %.1fs; queueing "
+            "error check-in %s with coverage marker %s: %s",
+            len(unconfirmed),
+            time.monotonic() - started,
+            check_in_id,
+            coverage_id,
+            "; ".join(f"{cid}: {why}" for cid, why in unconfirmed.items()),
+        )
+        confirmed_by = confirmation or {}
+        sentry_sdk.capture_message(
+            "read canary could not confirm a failed read",
+            level="warning",
+            contexts={
+                "read_canary": {
+                    "unconfirmed": unconfirmed,
+                    "re-reads": {
+                        cid: confirmed_by.get("reads", {}).get(cid)
+                        for cid in unconfirmed
+                    },
+                    "regions": {
+                        "run": os.environ.get("MODAL_REGION", "unknown"),
+                        "confirmation": confirmed_by.get("region", "unknown"),
+                    },
+                }
+            },
+        )
+        _finish("error", coverage="error")
+        return
+
+    # A collection the sweep never reached was read in the confirmation, and
+    # has no sweep time.
+    slowest_id, slowest = max(
+        durations.items(), key=lambda item: item[1], default=("none", 0.0)
+    )
     log.info(
         "read canary ok: %d collections read in %.1fs (slowest %s %.1fs); "
         "queueing ok check-in %s",
-        len(durations),
+        len(collection_ids),
         time.monotonic() - started,
         slowest_id,
         slowest,
