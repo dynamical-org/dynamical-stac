@@ -103,17 +103,16 @@ _CONFIRM_BUDGET_SECONDS = 240
 _CONFIRM_RETURN_MARGIN_SECONDS = 10
 _NO_TIME_TO_REREAD = "no time left to re-read"
 
-# Storage retries for every read, repository and virtual chunks alike: icechunk
+# Storage tries for every read, repository and virtual chunks alike: icechunk
 # applies a repository's storage settings to its virtual chunk fetchers too.
-# Icechunk's defaults (10 tries from a 100 ms backoff) spend a connect-timeout
-# outage in about 50 s, so a short upstream blip failed the read. These keep a
-# fetch retrying through an outage of about 75 s, while the 5 s cap (the
-# virtual datasets' own persisted max_backoff) notices recovery within one
-# short sleep, well inside a re-read's _CONFIRM_ATTEMPT_SECONDS. Timeouts stay
-# as each repository sets them.
+# With icechunk's default 10 tries, a fetch spends a connect-timeout outage in
+# about 50 s, so a short upstream blip failed the read. Only the number of
+# tries changes: each path keeps its own backoff (from 100 ms, capped at the
+# repository's persisted 5 s or icechunk's 180 s), so a fetch's first 10 tries
+# are exactly today's and the rest only follow where today's fetch gave up. No
+# read that finishes today can finish later. Timeouts stay as each repository
+# sets them.
 _STORAGE_MAX_TRIES = 20
-_STORAGE_INITIAL_BACKOFF_MS = 1_000
-_STORAGE_MAX_BACKOFF_MS = 5_000
 
 # The second monitor, closed `error` only on a run the canary could not
 # confirm. Its check-in id is uuid5 of the run's read-canary id (as hex) in
@@ -185,11 +184,7 @@ def _check_collection(collection_id: str) -> float:
     import dynamical_catalog  # noqa: PLC0415
     import icechunk  # noqa: PLC0415
 
-    retries = icechunk.StorageRetriesSettings(
-        max_tries=_STORAGE_MAX_TRIES,
-        initial_backoff_ms=_STORAGE_INITIAL_BACKOFF_MS,
-        max_backoff_ms=_STORAGE_MAX_BACKOFF_MS,
-    )
+    retries = icechunk.StorageRetriesSettings(max_tries=_STORAGE_MAX_TRIES)
     started = time.monotonic()
     ds = dynamical_catalog.open(
         collection_id,

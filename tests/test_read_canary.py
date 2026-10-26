@@ -662,7 +662,7 @@ def test_check_collection_rejects_inf(
         canary._check_collection("collection-0")
 
 
-def test_check_collection_opens_with_longer_storage_backoff(
+def test_check_collection_opens_with_more_storage_tries(
     load_canary: Callable[[list[str]], types.ModuleType],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -684,29 +684,10 @@ def test_check_collection_opens_with_longer_storage_backoff(
     [(collection_id, config)] = opened
     assert collection_id == "collection-0"
     assert isinstance(config, icechunk.RepositoryConfig)
-    assert config.storage.retries == icechunk.StorageRetriesSettings(
-        max_tries=20, initial_backoff_ms=1_000, max_backoff_ms=5_000
-    )
-    # Timeouts are left to the repository's own persisted settings.
+    # Only the number of tries: each path keeps its own backoff, so a fetch's
+    # first 10 tries are exactly today's. Timeouts stay the repository's own.
+    assert config.storage.retries == icechunk.StorageRetriesSettings(max_tries=20)
     assert config.storage.timeouts is None
-
-
-def test_storage_retries_fit_a_confirmation_attempt(
-    load_canary: Callable[[list[str]], types.ModuleType],
-) -> None:
-    """The sleeps alone, at their longest, leave a re-read most of its time.
-
-    object_store's decorrelated jitter makes each sleep at most twice the last,
-    capped, so a fetch whose every attempt fails sleeps at most this long in
-    total before giving up.
-    """
-    canary = load_canary(_CATALOG)
-    longest, total = canary._STORAGE_INITIAL_BACKOFF_MS / 1000, 0.0
-    for _ in range(canary._STORAGE_MAX_TRIES - 1):
-        total += longest
-        longest = min(canary._STORAGE_MAX_BACKOFF_MS / 1000, 2 * longest)
-    assert total < canary._MAIN_PASS_DEADLINE_SECONDS - canary._CATALOG_DEADLINE_SECONDS
-    assert canary._STORAGE_MAX_BACKOFF_MS / 1000 < canary._CONFIRM_ATTEMPT_SECONDS / 10
 
 
 # --- confirming a failed read from a fresh container --------------------------
