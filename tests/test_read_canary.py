@@ -38,6 +38,9 @@ _RUN = "5f0c4a2e8b8d4c4f9d3c1f6a7b2e9d10"
 # Shared with dynamical.org-data's status publisher, which pairs on it.
 _COVERAGE_NAMESPACE = uuid.UUID("d014545d-f123-4e15-9893-6bfff7bbc831")
 _MARKER = uuid.uuid5(_COVERAGE_NAMESPACE, _RUN).hex
+# Shared with the status publisher, which fetches a failed run's event by it.
+_REPORT_NAMESPACE = uuid.UUID("f19ee126-79b9-4217-95db-f305e99ce3a6")
+_REPORT_EVENT = uuid.uuid5(_REPORT_NAMESPACE, _RUN).hex
 
 
 class _Recorder:
@@ -65,8 +68,16 @@ class _Recorder:
     def flushes(self) -> list[dict[str, Any]]:
         return [kw for name, kw in self.calls if name == "flush"]
 
+    def events(self) -> list[dict[str, Any]]:
+        return [kw["event"] for name, kw in self.calls if name == "capture_event"]
+
     def exceptions(self) -> list[BaseException]:
-        return [kw["error"] for name, kw in self.calls if name == "capture_exception"]
+        """Every error sent, by capture_exception or as a built event."""
+        return [
+            kw["error"] if name == "capture_exception" else kw["hint"]["exc_info"][1]
+            for name, kw in self.calls
+            if name in {"capture_exception", "capture_event"}
+        ]
 
     def messages(self) -> list[str]:
         return [kw["message"] for name, kw in self.calls if name == "log"]
@@ -167,12 +178,37 @@ def _stub_sentry(recorder: _Recorder) -> dict[str, types.ModuleType]:
     crons = types.ModuleType("sentry_sdk.crons")
     integrations = types.ModuleType("sentry_sdk.integrations")
     integrations_logging = types.ModuleType("sentry_sdk.integrations.logging")
+    utils = types.ModuleType("sentry_sdk.utils")
 
     def init(**kwargs: object) -> None:
         recorder.calls.append(("init", kwargs))
 
     def capture_exception(error: BaseException) -> None:
         recorder.calls.append(("capture_exception", {"error": error}))
+
+    def event_from_exception(
+        exc_info: BaseException | tuple[Any, Any, Any],
+        client_options: dict[str, Any] | None = None,
+        mechanism: dict[str, Any] | None = None,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        error = exc_info if isinstance(exc_info, BaseException) else exc_info[1]
+        event = {
+            "level": "error",
+            "exception": {"values": [{"type": type(error).__name__}]},
+        }
+        return event, {"exc_info": (type(error), error, error.__traceback__)}
+
+    def get_client() -> types.SimpleNamespace:
+        return types.SimpleNamespace(options={})
+
+    def capture_event(
+        event: dict[str, Any],
+        hint: dict[str, Any] | None = None,
+        scope: object = None,
+        **scope_kwargs: object,
+    ) -> str | None:
+        recorder.calls.append(("capture_event", {"event": event, "hint": hint}))
+        return event.get("event_id")
 
     def capture_message(
         message: str,
@@ -210,6 +246,10 @@ def _stub_sentry(recorder: _Recorder) -> dict[str, types.ModuleType]:
 
     sentry_sdk.init = init  # type: ignore[attr-defined]
     sentry_sdk.capture_exception = capture_exception  # type: ignore[attr-defined]
+    sentry_sdk.capture_event = capture_event  # type: ignore[attr-defined]
+    sentry_sdk.get_client = get_client  # type: ignore[attr-defined]
+    sentry_sdk.utils = utils  # type: ignore[attr-defined]
+    utils.event_from_exception = event_from_exception  # type: ignore[attr-defined]
     sentry_sdk.capture_message = capture_message  # type: ignore[attr-defined]
     sentry_sdk.flush = flush  # type: ignore[attr-defined]
     sentry_sdk.crons = crons  # type: ignore[attr-defined]
@@ -220,6 +260,7 @@ def _stub_sentry(recorder: _Recorder) -> dict[str, types.ModuleType]:
     return {
         "sentry_sdk": sentry_sdk,
         "sentry_sdk.crons": crons,
+        "sentry_sdk.utils": utils,
         "sentry_sdk.integrations": integrations,
         "sentry_sdk.integrations.logging": integrations_logging,
     }
@@ -231,13 +272,18 @@ def _stub_catalog(recorder: _Recorder, collection_ids: list[str]) -> types.Modul
     def clear_cache() -> None:
         recorder.calls.append(("clear_cache", {}))
 
-    def load_catalog() -> dict[str, None]:
+    def load_catalog() -> dict[str, dict[str, Any]]:
         recorder.calls.append(("load_catalog", {}))
-        return dict.fromkeys(collection_ids)
+        return {cid: {"name": _name(cid)} for cid in collection_ids}
 
     dynamical_catalog.clear_cache = clear_cache  # type: ignore[attr-defined]
     dynamical_catalog.load_catalog = load_catalog  # type: ignore[attr-defined]
     return dynamical_catalog
+
+
+def _name(collection_id: str) -> str:
+    """The title the stub catalog gives a collection."""
+    return collection_id.replace("-", " ").title()
 
 
 @pytest.fixture
@@ -393,7 +439,7 @@ def test_sentry_logging_integration_does_not_double_report_failures(
     recorder: _Recorder,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The failure line is logged at ERROR; only capture_exception may make an event."""
+    """The failure line is logged at ERROR; only the explicit capture may make an event."""
     canary = load_canary(_CATALOG)
     monkeypatch.setattr(canary, "_check_collection", lambda _cid: 0.1)
 
@@ -1024,3 +1070,315 @@ def test_the_run_owns_its_check_in_ids_when_sentry_captures_nothing(
         if name == "capture_checkin"
     }
     assert ids == {("read-canary", _RUN), ("read-canary-coverage", _MARKER)}
+
+
+# --- the failed run's report ---------------------------------------------------
+
+_36 = [f"collection-{i:02d}" for i in range(36)]
+_NO_TIME = (False, "no time left to re-read")
+_READ = (True, "read in 0.1s")
+
+
+def _report(
+    canary: types.ModuleType,
+    catalog: list[str],
+    *,
+    durations: list[str],
+    failures: list[str],
+    unattempted: list[str],
+    reads: dict[str, list[tuple[bool, str]]] | None,
+) -> dict[str, Any]:
+    """The report for one sweep and its confirmation, as the run builds it."""
+    sweep_errors: dict[str, BaseException] = {
+        cid: OSError(f"{cid}: reset") for cid in failures
+    }
+    confirmation = None if reads is None else {"region": "us-east", "reads": reads}
+    confirmed, _ = canary._confirmed_failures(
+        sweep_errors, unattempted, confirmation, "did not return"
+    )
+    return canary._read_report(
+        _RUN,
+        "production",
+        {cid: {"name": _name(cid)} for cid in catalog},
+        durations=dict.fromkeys(durations, 0.1),
+        failures=sweep_errors,
+        confirmation=confirmation,
+        confirmed=confirmed,
+    )
+
+
+def _ids(entries: list[dict[str, str]]) -> list[str]:
+    return [entry["id"] for entry in entries]
+
+
+def _assert_invariant(report: dict[str, Any]) -> None:
+    assert (
+        report["passed"] + len(report["failed"]) + len(report["unverified"])
+        == report["selected"]
+    )
+
+
+def test_report_buckets_when_every_collection_fails(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    canary = load_canary(_CATALOG)
+
+    report = _report(
+        canary,
+        _CATALOG,
+        durations=[],
+        failures=_CATALOG,
+        unattempted=[],
+        reads={cid: [(False, "OSError('reset')")] for cid in _CATALOG},
+    )
+
+    assert (report["selected"], report["passed"]) == (8, 0)
+    assert _ids(report["failed"]) == _CATALOG
+    assert report["unverified"] == []
+    _assert_invariant(report)
+
+
+def test_report_buckets_one_failure_with_the_rest_unreached_and_read_back(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    """2026-10-26: the sweep's only finished read failed, the other 35 were
+    never reached; the confirmation read the 35 and the failure failed again."""
+    canary = load_canary(_36)
+    broken, *rest = _36
+    reads = {cid: [_READ, _READ] for cid in rest}
+    reads[broken] = [(False, "OSError('reset')")]
+
+    report = _report(
+        canary, _36, durations=[], failures=[broken], unattempted=rest, reads=reads
+    )
+
+    assert (report["selected"], report["passed"]) == (36, 35)
+    assert report["failed"] == [{"id": broken, "name": _name(broken)}]
+    assert report["unverified"] == []
+    _assert_invariant(report)
+
+
+def test_report_buckets_one_failure_with_the_rest_unreached_and_no_confirmation(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    """Without the confirmation only the sweep's own failure was observed; the
+    unreached rest are unverified, never passed and never failed."""
+    canary = load_canary(_36)
+    broken, *rest = _36
+
+    report = _report(
+        canary, _36, durations=[], failures=[broken], unattempted=rest, reads=None
+    )
+
+    assert (report["selected"], report["passed"]) == (36, 0)
+    assert _ids(report["failed"]) == [broken]
+    assert _ids(report["unverified"]) == rest
+    _assert_invariant(report)
+
+
+def test_report_buckets_a_mixed_run(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    """Sweep: 30 read, 3 failed, 3 unreached. Of the failed, one reads back
+    twice, one fails its re-read, one gets no time; of the unreached, one reads
+    back, one fails its re-read, one gets no time."""
+    canary = load_canary(_36)
+    read, failed, unreached = _36[:30], _36[30:33], _36[33:]
+    reads = {
+        failed[0]: [_READ, _READ],
+        failed[1]: [(False, "OSError('reset')")],
+        failed[2]: [_NO_TIME],
+        unreached[0]: [_READ, _READ],
+        unreached[1]: [(False, "TimeoutError('re-read')")],
+        unreached[2]: [_NO_TIME],
+    }
+
+    report = _report(
+        canary, _36, durations=read, failures=failed, unattempted=unreached, reads=reads
+    )
+
+    assert (report["selected"], report["passed"]) == (36, 32)
+    assert _ids(report["failed"]) == [failed[1], failed[2], unreached[1]]
+    assert _ids(report["unverified"]) == [unreached[2]]
+    _assert_invariant(report)
+
+
+def test_report_buckets_a_pass_then_no_time_for_the_second_reread(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    """One good re-read is not two: it is unverified when no read was seen to
+    fail, and failed when the sweep's read did."""
+    canary = load_canary(_CATALOG)
+    swept_failed, unreached = "collection-1", "collection-2"
+    reads = {cid: [_READ, _NO_TIME] for cid in (swept_failed, unreached)}
+
+    report = _report(
+        canary,
+        _CATALOG,
+        durations=[cid for cid in _CATALOG if cid not in {swept_failed, unreached}],
+        failures=[swept_failed],
+        unattempted=[unreached],
+        reads=reads,
+    )
+
+    assert (report["selected"], report["passed"]) == (8, 6)
+    assert _ids(report["failed"]) == [swept_failed]
+    assert _ids(report["unverified"]) == [unreached]
+    _assert_invariant(report)
+
+
+def test_report_counts_a_sweep_deadline_as_a_failed_read(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    canary = load_canary(_CATALOG)
+    hung = "collection-3"
+    sweep_errors: dict[str, BaseException] = {hung: TimeoutError("sweep deadline")}
+    confirmed, _ = canary._confirmed_failures(sweep_errors, [], None, "no time")
+
+    report = canary._read_report(
+        _RUN,
+        "production",
+        {cid: {"name": _name(cid)} for cid in _CATALOG},
+        durations={cid: 0.1 for cid in _CATALOG if cid != hung},
+        failures=sweep_errors,
+        confirmation=None,
+        confirmed=confirmed,
+    )
+
+    assert _ids(report["failed"]) == [hung]
+    assert report["unverified"] == []
+
+
+def test_report_names_fall_back_to_the_id(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    canary = load_canary(_CATALOG)
+    catalog: dict[str, Any] = {cid: {"name": _name(cid)} for cid in _CATALOG}
+    catalog["collection-0"] = {}
+    catalog["collection-1"] = None
+    failures: dict[str, BaseException] = {
+        cid: OSError("reset") for cid in ("collection-0", "collection-1")
+    }
+    confirmed, _ = canary._confirmed_failures(failures, [], None, "no time")
+
+    report = canary._read_report(
+        _RUN,
+        "production",
+        catalog,
+        durations={cid: 0.1 for cid in _CATALOG if cid not in failures},
+        failures=failures,
+        confirmation=None,
+        confirmed=confirmed,
+    )
+
+    assert report["failed"] == [
+        {"id": "collection-0", "name": "collection-0"},
+        {"id": "collection-1", "name": "collection-1"},
+    ]
+
+
+def test_a_confirmed_failure_sends_its_report_under_the_derived_event_id(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setenv("SENTRY_ENVIRONMENT", "staging")
+    monkeypatch.setattr(canary, "_check_collection", _flaky({"collection-5": 9}))
+
+    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections") as excinfo:
+        canary.read_canary()
+
+    (event,) = recorder.events()
+    # The publisher derives the same id from the run's check-in id.
+    assert event["event_id"] == _REPORT_EVENT
+    assert canary._REPORT_NAMESPACE == _REPORT_NAMESPACE
+    assert recorder.exceptions() == [excinfo.value]
+    assert event["contexts"]["read_canary_report"] == {
+        "v": 1,
+        "run": _RUN,
+        "environment": "staging",
+        "selected": 8,
+        "passed": 7,
+        "failed": [{"id": "collection-5", "name": "Collection 5"}],
+        "unverified": [],
+    }
+    ((_, init_kwargs),) = [c for c in recorder.calls if c[0] == "init"]
+    assert init_kwargs["environment"] == "staging"
+    assert recorder.checkins() == ["in_progress", "error"]
+    assert recorder.coverage() == ["in_progress", "ok"]
+    assert recorder.index_of("capture_event") < recorder.index_of(
+        "capture_checkin", monitor_slug="read-canary", status="error"
+    )
+
+
+@pytest.mark.parametrize("broken", ["_read_report", "capture_event"])
+def test_a_report_that_cannot_be_sent_leaves_the_run_unchanged(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+    broken: str,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_check_collection", _flaky({"collection-5": 9}))
+
+    def explode(*_: object, **__: object) -> None:
+        raise KeyError("report exploded")
+
+    if broken == "_read_report":
+        monkeypatch.setattr(canary, "_read_report", explode)
+    else:
+        monkeypatch.setattr(sys.modules["sentry_sdk"], "capture_event", explode)
+
+    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections") as excinfo:
+        canary.read_canary()
+
+    # Today's capture, as if there were no report.
+    assert recorder.events() == []
+    assert [
+        kw["error"] for name, kw in recorder.calls if name == "capture_exception"
+    ] == [excinfo.value]
+    assert recorder.checkins() == ["in_progress", "error"]
+    assert recorder.coverage() == ["in_progress", "ok"]
+    assert [f["timeout"] for f in recorder.flushes()] == [15]
+    assert any(
+        m.startswith("could not send the run's report") for m in recorder.messages()
+    )
+
+
+def test_a_catalog_failure_event_has_the_derived_id_and_no_report(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+
+    def broken_load_catalog() -> dict[str, None]:
+        raise ConnectionError("catalog.json unreachable")
+
+    monkeypatch.setattr(
+        sys.modules["dynamical_catalog"], "load_catalog", broken_load_catalog
+    )
+
+    with pytest.raises(ConnectionError):
+        canary.read_canary()
+
+    (event,) = recorder.events()
+    assert event["event_id"] == _REPORT_EVENT
+    assert "read_canary_report" not in event.get("contexts", {})
+
+
+def test_an_unconfirmed_run_sends_no_report(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_check_collection", _flaky({"collection-2": 1}))
+
+    canary.read_canary()
+
+    assert recorder.events() == []
+    assert recorder.exceptions() == []
+    (warning,) = recorder.warnings()
+    assert "read_canary_report" not in warning["contexts"]

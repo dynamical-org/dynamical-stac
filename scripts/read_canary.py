@@ -31,6 +31,12 @@ lost or late marker leaves an outage, and only a full sweep's `ok` ends one.
 Missing confirmation (the call failed, timed out, or left a collection out) is
 a confirmed failure, never a pass.
 
+A run with a confirmed failure sends its error event under an id derived from
+the run's check-in id, carrying a report of which collections passed, failed,
+or could not be verified. The status publisher fetches it by that id to say
+how much of the catalog an outage affects; the report never changes the
+verdict.
+
 Deploy:
     modal deploy scripts/read_canary.py
 
@@ -45,6 +51,7 @@ attach an AWS secret to the function.
 
 from __future__ import annotations
 
+import functools
 import importlib.metadata
 import logging
 import queue
@@ -110,6 +117,13 @@ _NO_TIME_TO_REREAD = "no time left to re-read"
 _MONITOR_SLUG = "read-canary"
 _COVERAGE_MONITOR_SLUG = "read-canary-coverage"
 _COVERAGE_NAMESPACE = uuid.UUID("d014545d-f123-4e15-9893-6bfff7bbc831")
+
+# A failed run sends its error event under uuid5 of its read-canary id (as hex)
+# in this namespace, with a `read_canary_report` context when it has confirmed
+# failures. dynamical.org-data's status.py holds the same constant and fetches
+# the report by it.
+_REPORT_NAMESPACE = uuid.UUID("f19ee126-79b9-4217-95db-f305e99ce3a6")
+_REPORT_VERSION = 1
 
 
 # Unpinned, Modal places runs in any of its regions worldwide. The WeatherNext 2
@@ -471,6 +485,93 @@ def _confirmed_failures(
     return confirmed, unconfirmed
 
 
+def _read_report(
+    run: str,
+    environment: str,
+    catalog: dict[str, Any],
+    *,
+    durations: dict[str, float],
+    failures: dict[str, BaseException],
+    confirmation: dict[str, Any] | None,
+    confirmed: dict[str, str],
+) -> dict[str, Any]:
+    """Every catalog collection as passed, failed, or unverified.
+
+    Passed: a positive sweep read, or both re-reads. Failed: confirmed, and at
+    least one read was seen to fail, in the sweep (its deadline included) or a
+    re-read. Unverified: confirmed with no read seen to fail, such as one the
+    sweep never reached whose confirmation is missing.
+    """
+    reads: dict[str, Any] = confirmation["reads"] if confirmation else {}
+    passed = 0
+    failed: list[dict[str, str]] = []
+    unverified: list[dict[str, str]] = []
+    for collection_id in sorted(catalog):
+        attempts = reads.get(collection_id)
+        if collection_id in durations or _read_back(attempts):
+            passed += 1
+            continue
+        if collection_id not in confirmed:
+            raise ValueError(f"{collection_id} is neither read nor confirmed")
+        config = catalog[collection_id]
+        name = config.get("name") if isinstance(config, dict) else None
+        entry = {
+            "id": collection_id,
+            "name": name if isinstance(name, str) and name else collection_id,
+        }
+        failed_reread = isinstance(attempts, list) and any(
+            isinstance(attempt, tuple)
+            and len(attempt) == 2
+            and attempt[0] is False
+            and attempt[1] != _NO_TIME_TO_REREAD
+            for attempt in attempts
+        )
+        if collection_id in failures or failed_reread:
+            failed.append(entry)
+        else:
+            unverified.append(entry)
+    return {
+        "v": _REPORT_VERSION,
+        "run": run,
+        "environment": environment,
+        "selected": len(catalog),
+        "passed": passed,
+        "failed": failed,
+        "unverified": unverified,
+    }
+
+
+def _capture_failure(
+    error: BaseException,
+    event_id: str,
+    report: Callable[[], dict[str, Any]] | None,
+) -> None:
+    """Send the run's error event under `event_id`, with its report if any.
+
+    Best effort: if the event or its report cannot be built or sent, the error
+    goes out as a plain capture_exception, as it did before reports existed.
+    """
+    import sentry_sdk  # noqa: PLC0415
+    import sentry_sdk.utils  # noqa: PLC0415
+
+    try:
+        event, hint = sentry_sdk.utils.event_from_exception(
+            error, client_options=sentry_sdk.get_client().options
+        )
+        event["event_id"] = event_id
+        if report is not None:
+            event.setdefault("contexts", {})["read_canary_report"] = report()
+        sentry_sdk.capture_event(event, hint=hint)
+    except Exception:  # noqa: BLE001
+        _logger().warning(
+            "could not send the run's report as event %s; capturing the error "
+            "without it",
+            event_id,
+            exc_info=True,
+        )
+        sentry_sdk.capture_exception(error)
+
+
 @app.function(
     image=image,
     schedule=modal.Period(minutes=10),
@@ -481,7 +582,7 @@ def _confirmed_failures(
     # of living on in a warm one beside the next run.
     single_use_containers=True,
 )
-def read_canary() -> None:
+def read_canary() -> None:  # noqa: PLR0915
     import os  # noqa: PLC0415
     from typing import Literal  # noqa: PLC0415
 
@@ -501,10 +602,11 @@ def read_canary() -> None:
     # No-op when SENTRY_DSN is unset (e.g. the secret isn't attached yet).
     # `event_level=None`: the failure line below is logged at ERROR, and the
     # default integration would turn that into a second error event beside the
-    # explicit capture_exception. Breadcrumbs and Sentry logs stay on.
+    # explicit one. Breadcrumbs and Sentry logs stay on.
+    environment = os.environ.get("SENTRY_ENVIRONMENT", "production")
     sentry_sdk.init(
         dsn=os.environ.get("SENTRY_DSN"),
-        environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+        environment=environment,
         enable_logs=True,
         keep_alive=True,
         integrations=[LoggingIntegration(event_level=None)],
@@ -570,17 +672,18 @@ def read_canary() -> None:
             _FLUSH_TIMEOUT_SECONDS,
         )
 
+    # Set once the run has confirmed failures to report.
+    report: Callable[[], dict[str, Any]] | None = None
     try:
         # A warm container keeps dynamical_catalog's module-level catalog cache;
         # each run must fetch catalog.json afresh or it checks a stale listing.
         dynamical_catalog.clear_cache()
-        collection_ids = sorted(
-            _run_with_deadline(
-                dynamical_catalog.load_catalog,
-                started + _CATALOG_DEADLINE_SECONDS - time.monotonic(),
-                "loading the catalog",
-            )
+        catalog = _run_with_deadline(
+            dynamical_catalog.load_catalog,
+            started + _CATALOG_DEADLINE_SECONDS - time.monotonic(),
+            "loading the catalog",
         )
+        collection_ids = sorted(catalog)
         if len(collection_ids) < MIN_COLLECTIONS:
             raise RuntimeError(
                 f"catalog returned {len(collection_ids)} collections, "
@@ -607,6 +710,18 @@ def read_canary() -> None:
             failures, unattempted, confirmation, missing
         )
         if confirmed:
+            # Built only when the event is sent, so that a fault building it
+            # cannot change what this run raises.
+            report = functools.partial(
+                _read_report,
+                check_in_id,
+                environment,
+                catalog,
+                durations=durations,
+                failures=failures,
+                confirmation=confirmation,
+                confirmed=confirmed,
+            )
             raise RuntimeError(
                 f"read canary failed for {len(confirmed)}/{len(collection_ids)} "
                 "collections:\n"
@@ -623,7 +738,7 @@ def read_canary() -> None:
             check_in_id,
             error,
         )
-        sentry_sdk.capture_exception(error)
+        _capture_failure(error, uuid.uuid5(_REPORT_NAMESPACE, check_in_id).hex, report)
         _finish("error")
         raise
 
