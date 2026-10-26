@@ -58,7 +58,7 @@ from typing import Any
 import modal
 
 image = modal.Image.debian_slim(python_version="3.12").pip_install(
-    "dynamical-catalog>=1.0.0",
+    "dynamical-catalog>=1.1.0",
     "sentry-sdk>=2.72.0",
 )
 
@@ -102,6 +102,18 @@ _CONFIRM_INTERVAL_SECONDS = 15
 _CONFIRM_BUDGET_SECONDS = 240
 _CONFIRM_RETURN_MARGIN_SECONDS = 10
 _NO_TIME_TO_REREAD = "no time left to re-read"
+
+# Storage retries for every read, repository and virtual chunks alike: icechunk
+# applies a repository's storage settings to its virtual chunk fetchers too.
+# Icechunk's defaults (10 tries from a 100 ms backoff) spend a connect-timeout
+# outage in about 50 s, so a short upstream blip failed the read. These keep a
+# fetch retrying through an outage of about 75 s, while the 5 s cap (the
+# virtual datasets' own persisted max_backoff) notices recovery within one
+# short sleep, well inside a re-read's _CONFIRM_ATTEMPT_SECONDS. Timeouts stay
+# as each repository sets them.
+_STORAGE_MAX_TRIES = 20
+_STORAGE_INITIAL_BACKOFF_MS = 1_000
+_STORAGE_MAX_BACKOFF_MS = 5_000
 
 # The second monitor, closed `error` only on a run the canary could not
 # confirm. Its check-in id is uuid5 of the run's read-canary id (as hex) in
@@ -171,9 +183,20 @@ def _check_collection(collection_id: str) -> float:
     import math  # noqa: PLC0415
 
     import dynamical_catalog  # noqa: PLC0415
+    import icechunk  # noqa: PLC0415
 
+    retries = icechunk.StorageRetriesSettings(
+        max_tries=_STORAGE_MAX_TRIES,
+        initial_backoff_ms=_STORAGE_INITIAL_BACKOFF_MS,
+        max_backoff_ms=_STORAGE_MAX_BACKOFF_MS,
+    )
     started = time.monotonic()
-    ds = dynamical_catalog.open(collection_id)
+    ds = dynamical_catalog.open(
+        collection_id,
+        repository_config=icechunk.RepositoryConfig(
+            storage=icechunk.StorageSettings(retries=retries)
+        ),
+    )
     first_var = next(iter(ds.data_vars))
     da = ds[first_var]
     value = da.isel(dict.fromkeys(da.dims, 0)).load().item()

@@ -23,6 +23,7 @@ import uuid
 from collections.abc import Callable, Iterator
 from typing import Any
 
+import icechunk
 import numpy as np
 import pytest
 import xarray as xr
@@ -635,7 +636,7 @@ def test_check_collection_reads_corner_value_and_times_it(
     monkeypatch.setattr(
         sys.modules["dynamical_catalog"],
         "open",
-        lambda _cid: _dataset(value),
+        lambda _cid, **_: _dataset(value),
         raising=False,
     )
 
@@ -653,12 +654,59 @@ def test_check_collection_rejects_inf(
     monkeypatch.setattr(
         sys.modules["dynamical_catalog"],
         "open",
-        lambda _cid: _dataset(math.inf),
+        lambda _cid, **_: _dataset(math.inf),
         raising=False,
     )
 
     with pytest.raises(ValueError, match=r"collection-0\.temperature is inf"):
         canary._check_collection("collection-0")
+
+
+def test_check_collection_opens_with_longer_storage_backoff(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    opened: list[tuple[str, icechunk.RepositoryConfig]] = []
+
+    def fake_open(
+        collection_id: str, *, repository_config: icechunk.RepositoryConfig
+    ) -> xr.Dataset:
+        opened.append((collection_id, repository_config))
+        return _dataset(1.5)
+
+    monkeypatch.setattr(
+        sys.modules["dynamical_catalog"], "open", fake_open, raising=False
+    )
+
+    canary._check_collection("collection-0")
+
+    [(collection_id, config)] = opened
+    assert collection_id == "collection-0"
+    assert isinstance(config, icechunk.RepositoryConfig)
+    assert config.storage.retries == icechunk.StorageRetriesSettings(
+        max_tries=20, initial_backoff_ms=1_000, max_backoff_ms=5_000
+    )
+    # Timeouts are left to the repository's own persisted settings.
+    assert config.storage.timeouts is None
+
+
+def test_storage_retries_fit_a_confirmation_attempt(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    """The sleeps alone, at their longest, leave a re-read most of its time.
+
+    object_store's decorrelated jitter makes each sleep at most twice the last,
+    capped, so a fetch whose every attempt fails sleeps at most this long in
+    total before giving up.
+    """
+    canary = load_canary(_CATALOG)
+    longest, total = canary._STORAGE_INITIAL_BACKOFF_MS / 1000, 0.0
+    for _ in range(canary._STORAGE_MAX_TRIES - 1):
+        total += longest
+        longest = min(canary._STORAGE_MAX_BACKOFF_MS / 1000, 2 * longest)
+    assert total < canary._MAIN_PASS_DEADLINE_SECONDS - canary._CATALOG_DEADLINE_SECONDS
+    assert canary._STORAGE_MAX_BACKOFF_MS / 1000 < canary._CONFIRM_ATTEMPT_SECONDS / 10
 
 
 # --- confirming a failed read from a fresh container --------------------------
