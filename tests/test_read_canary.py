@@ -322,7 +322,7 @@ def test_success_checks_in_ok_and_flushes_with_budget(
     canary = load_canary(_CATALOG)
     checked: list[str] = []
 
-    def fake_check(collection_id: str) -> float:
+    def fake_check(collection_id: str, **_: object) -> float:
         checked.append(collection_id)
         return 0.25 if collection_id != "collection-3" else 1.5
 
@@ -396,7 +396,7 @@ def test_sentry_logging_integration_does_not_double_report_failures(
 ) -> None:
     """The failure line is logged at ERROR; only capture_exception may make an event."""
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_check_collection", lambda _cid: 0.1)
+    monkeypatch.setattr(canary, "_check_collection", lambda _cid, **_: 0.1)
 
     canary.read_canary()
 
@@ -415,7 +415,7 @@ def test_log_lines_reach_stdout_without_root_logging_config(
 ) -> None:
     """Modal only sees what hits stdout; a record-level check would pass without any handler."""
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_check_collection", lambda _cid: 0.1)
+    monkeypatch.setattr(canary, "_check_collection", lambda _cid, **_: 0.1)
     recording_handlers = list(canary_logger.handlers)
 
     canary.read_canary()
@@ -440,7 +440,7 @@ def test_terminal_checkin_reuses_in_progress_id_and_config(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_check_collection", lambda _cid: 0.1)
+    monkeypatch.setattr(canary, "_check_collection", lambda _cid, **_: 0.1)
 
     canary.read_canary()
 
@@ -522,7 +522,7 @@ def test_read_failure_captures_error_checkin_and_raises(
     canary = load_canary(_CATALOG)
     checked: list[str] = []
 
-    def fake_check(collection_id: str) -> float:
+    def fake_check(collection_id: str, **_: object) -> float:
         checked.append(collection_id)
         if collection_id == "collection-5":
             raise ValueError("collection-5.var is inf")
@@ -566,7 +566,7 @@ def test_catalog_load_failure_closes_checkin_as_error(
         sys.modules["dynamical_catalog"], "load_catalog", broken_load_catalog
     )
     monkeypatch.setattr(
-        canary, "_check_collection", lambda _cid: pytest.fail("must not read")
+        canary, "_check_collection", lambda _cid, **_: pytest.fail("must not read")
     )
 
     with pytest.raises(ConnectionError, match=r"catalog\.json unreachable"):
@@ -591,7 +591,7 @@ def test_short_catalog_fails_before_reading(
     assert len(short_catalog) < canary.MIN_COLLECTIONS
     checked: list[str] = []
     monkeypatch.setattr(
-        canary, "_check_collection", lambda cid: checked.append(cid) or 0.1
+        canary, "_check_collection", lambda cid, **_: checked.append(cid) or 0.1
     )
 
     with pytest.raises(RuntimeError, match=r"returned 3 collections, expected >= "):
@@ -613,7 +613,7 @@ def test_catalog_at_exactly_the_floor_is_read(
     assert len(floor_catalog) == canary.MIN_COLLECTIONS
     checked: list[str] = []
     monkeypatch.setattr(
-        canary, "_check_collection", lambda cid: checked.append(cid) or 0.1
+        canary, "_check_collection", lambda cid, **_: checked.append(cid) or 0.1
     )
 
     canary.read_canary()
@@ -662,7 +662,27 @@ def test_check_collection_rejects_inf(
         canary._check_collection("collection-0")
 
 
-def test_check_collection_opens_with_more_storage_tries(
+def test_check_collection_keeps_repository_settings_by_default(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    opened: list[tuple[str, dict[str, object]]] = []
+
+    def fake_open(collection_id: str, **kwargs: object) -> xr.Dataset:
+        opened.append((collection_id, kwargs))
+        return _dataset(1.5)
+
+    monkeypatch.setattr(
+        sys.modules["dynamical_catalog"], "open", fake_open, raising=False
+    )
+
+    canary._check_collection("collection-0")
+
+    assert opened == [("collection-0", {})]
+
+
+def test_check_collection_overrides_only_the_number_of_storage_tries(
     load_canary: Callable[[list[str]], types.ModuleType],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -679,25 +699,48 @@ def test_check_collection_opens_with_more_storage_tries(
         sys.modules["dynamical_catalog"], "open", fake_open, raising=False
     )
 
-    canary._check_collection("collection-0")
+    canary._check_collection("collection-0", storage_tries=20)
 
     [(collection_id, config)] = opened
     assert collection_id == "collection-0"
-    assert isinstance(config, icechunk.RepositoryConfig)
     # Only the number of tries: each path keeps its own backoff, so a fetch's
     # first 10 tries are exactly today's. Timeouts stay the repository's own.
     assert config.storage.retries == icechunk.StorageRetriesSettings(max_tries=20)
     assert config.storage.timeouts is None
 
 
+def test_only_the_confirmation_reads_with_more_storage_tries(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The sweep keeps icechunk's defaults, so a failing fetch holds a sweep
+    worker no longer than today; the re-reads get the extra tries."""
+    canary = load_canary(_CATALOG)
+    reads: list[tuple[str, int | None]] = []
+    flaky = _flaky({"collection-2": 1})
+
+    def check(collection_id: str, *, storage_tries: int | None = None) -> float:
+        reads.append((collection_id, storage_tries))
+        return flaky(collection_id)
+
+    monkeypatch.setattr(canary, "_check_collection", check)
+
+    canary.read_canary()
+
+    sweep = reads[: len(_CATALOG)]
+    rereads = reads[len(_CATALOG) :]
+    assert {tries for _, tries in sweep} == {None}
+    assert rereads == [("collection-2", 20), ("collection-2", 20)]
+
+
 # --- confirming a failed read from a fresh container --------------------------
 
 
-def _flaky(failing: dict[str, int]) -> Callable[[str], float]:
+def _flaky(failing: dict[str, int]) -> Callable[..., float]:
     """A read that fails each listed collection that many times, then succeeds."""
     remaining = dict(failing)
 
-    def check(collection_id: str) -> float:
+    def check(collection_id: str, **_: object) -> float:
         if remaining.get(collection_id, 0) > 0:
             remaining[collection_id] -= 1
             raise TimeoutError(f"{collection_id}: operation timed out")
@@ -754,7 +797,7 @@ def test_a_failure_that_fails_its_first_reread_is_confirmed(
     checked: list[str] = []
     flaky = _flaky({"collection-2": 2})
 
-    def check(collection_id: str) -> float:
+    def check(collection_id: str, **_: object) -> float:
         checked.append(collection_id)
         return flaky(collection_id)
 
@@ -780,7 +823,7 @@ def test_a_second_reread_failure_confirms(
     canary = load_canary(_CATALOG)
     calls: dict[str, int] = {}
 
-    def check(collection_id: str) -> float:
+    def check(collection_id: str, **_: object) -> float:
         calls[collection_id] = calls.get(collection_id, 0) + 1
         if collection_id == "collection-4" and calls[collection_id] != 2:
             raise OSError("connection reset")
@@ -877,7 +920,7 @@ def test_a_hung_read_does_not_hold_the_run_past_its_deadline(
     never = threading.Event()
     hung = {"collection-3"}
 
-    def check(collection_id: str) -> float:
+    def check(collection_id: str, **_: object) -> float:
         if collection_id in hung:
             hung.discard(collection_id)  # the confirmation's reads are fine
             never.wait()
@@ -912,7 +955,7 @@ def test_reads_never_started_are_confirmed_not_failed(
     never = threading.Event()
     hung = {"collection-0"}
 
-    def check(collection_id: str) -> float:
+    def check(collection_id: str, **_: object) -> float:
         if collection_id in hung:
             hung.discard(collection_id)
             never.wait()
@@ -968,7 +1011,7 @@ def test_confirm_reads_reads_each_collection_twice_from_a_fresh_catalog(
     monkeypatch.setenv("MODAL_REGION", "us-west")
     checked: list[str] = []
     monkeypatch.setattr(
-        canary, "_check_collection", lambda cid: checked.append(cid) or 0.1
+        canary, "_check_collection", lambda cid, **_: checked.append(cid) or 0.1
     )
 
     result = canary.confirm_reads(
@@ -990,7 +1033,7 @@ def test_confirm_reads_bounds_each_attempt(
     monkeypatch.setattr(canary, "_CONFIRM_ATTEMPT_SECONDS", 0.2)
     never = threading.Event()
 
-    def check(_collection_id: str) -> float:
+    def check(_collection_id: str, **_: object) -> float:
         never.wait()
         return 0.1
 
@@ -1017,7 +1060,7 @@ def test_confirm_reads_never_starts_an_attempt_it_cannot_finish(
     canary = load_canary(_CATALOG)
     checked: list[str] = []
     monkeypatch.setattr(
-        canary, "_check_collection", lambda cid: checked.append(cid) or 0.1
+        canary, "_check_collection", lambda cid, **_: checked.append(cid) or 0.1
     )
 
     result = canary.confirm_reads(

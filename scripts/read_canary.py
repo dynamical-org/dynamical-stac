@@ -103,16 +103,19 @@ _CONFIRM_BUDGET_SECONDS = 240
 _CONFIRM_RETURN_MARGIN_SECONDS = 10
 _NO_TIME_TO_REREAD = "no time left to re-read"
 
-# Storage tries for every read, repository and virtual chunks alike: icechunk
-# applies a repository's storage settings to its virtual chunk fetchers too.
-# With icechunk's default 10 tries, a fetch spends a connect-timeout outage in
-# about 50 s, so a short upstream blip failed the read. Only the number of
-# tries changes: each path keeps its own backoff (from 100 ms, capped at the
-# repository's persisted 5 s or icechunk's 180 s), so a fetch's first 10 tries
-# are exactly today's and the rest only follow where today's fetch gave up. No
-# read that finishes today can finish later. Timeouts stay as each repository
-# sets them.
-_STORAGE_MAX_TRIES = 20
+# Storage tries for the confirmation's re-reads, repository and virtual chunks
+# alike: icechunk applies a repository's storage settings to its virtual chunk
+# fetchers too. With icechunk's default 10 tries, a fetch spends a
+# connect-timeout outage in about 50 s, so a re-read during a short upstream
+# blip failed. Only the number of tries changes: each path keeps its own backoff
+# (from 100 ms, capped at the repository's persisted 5 s or icechunk's 180 s), so
+# a fetch's first 10 tries are exactly today's and the rest only follow where
+# today's fetch gave up. The sweep keeps icechunk's defaults: a longer failing
+# fetch there would hold a worker the sweep's other reads need. In the
+# confirmation, a re-read that fails today already confirms the run's failure,
+# so holding its worker longer cannot turn a run that reads back into one that
+# does not. Timeouts stay as each repository sets them.
+_CONFIRM_STORAGE_MAX_TRIES = 20
 
 # The second monitor, closed `error` only on a run the canary could not
 # confirm. Its check-in id is uuid5 of the run's read-canary id (as hex) in
@@ -177,21 +180,29 @@ def _runtime_versions() -> str:
     )
 
 
-def _check_collection(collection_id: str) -> float:
-    """Read one value from the collection; return the wall time it took."""
+def _check_collection(collection_id: str, *, storage_tries: int | None = None) -> float:
+    """Read one value from the collection; return the wall time it took.
+
+    `storage_tries` overrides icechunk's number of storage tries for this read;
+    None keeps every repository's own settings.
+    """
     import math  # noqa: PLC0415
 
     import dynamical_catalog  # noqa: PLC0415
-    import icechunk  # noqa: PLC0415
 
-    retries = icechunk.StorageRetriesSettings(max_tries=_STORAGE_MAX_TRIES)
     started = time.monotonic()
-    ds = dynamical_catalog.open(
-        collection_id,
-        repository_config=icechunk.RepositoryConfig(
-            storage=icechunk.StorageSettings(retries=retries)
-        ),
-    )
+    if storage_tries is None:
+        ds = dynamical_catalog.open(collection_id)
+    else:
+        import icechunk  # noqa: PLC0415
+
+        retries = icechunk.StorageRetriesSettings(max_tries=storage_tries)
+        ds = dynamical_catalog.open(
+            collection_id,
+            repository_config=icechunk.RepositoryConfig(
+                storage=icechunk.StorageSettings(retries=retries)
+            ),
+        )
     first_var = next(iter(ds.data_vars))
     da = ds[first_var]
     value = da.isel(dict.fromkeys(da.dims, 0)).load().item()
@@ -323,7 +334,9 @@ def _confirm_one(collection_id: str, deadline: float) -> list[tuple[bool, str]]:
             break
         try:
             seconds = _run_with_deadline(
-                lambda: _check_collection(collection_id),
+                lambda: _check_collection(
+                    collection_id, storage_tries=_CONFIRM_STORAGE_MAX_TRIES
+                ),
                 _CONFIRM_ATTEMPT_SECONDS,
                 f"re-read of {collection_id}",
             )
