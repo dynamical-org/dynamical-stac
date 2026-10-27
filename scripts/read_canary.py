@@ -60,9 +60,12 @@ import threading
 import time
 import uuid
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import modal
+
+if TYPE_CHECKING:
+    import xarray as xr
 
 image = modal.Image.debian_slim(python_version="3.12").pip_install(
     "dynamical-catalog>=1.0.0",
@@ -133,6 +136,11 @@ _REPORT_VERSION = 1
 # multiplier than any single narrow region.
 _REGION = "us"
 
+# The canary names itself in the User-Agent of its WeatherNext chunk reads, so
+# proxy analytics can tell our own traffic apart.
+_WN_CHUNKS_PREFIX = "https://wn.dynamical.org/"
+_CLIENT = "dynamical-stac-read-canary/1"
+
 
 _STDOUT_HANDLER = "read_canary.stdout"
 
@@ -180,14 +188,56 @@ def _runtime_versions() -> str:
     )
 
 
+def _user_agent() -> str:
+    """The User-Agent of the canary's WeatherNext chunk reads."""
+    import icechunk  # noqa: PLC0415
+
+    # icechunk 2.3 keeps a configured user agent as a prefix of its own token;
+    # earlier releases replace theirs with it, so name the library ourselves.
+    if hasattr(icechunk, "Attribution"):
+        return _CLIENT
+    return f"{_CLIENT} icechunk-rust-{icechunk.__version__}"
+
+
+def _open_dataset(collection_id: str) -> xr.Dataset:
+    """The collection's `main` tip, its WeatherNext chunk reads identified."""
+    import dynamical_catalog  # noqa: PLC0415
+    import icechunk  # noqa: PLC0415
+    import xarray as xr  # noqa: PLC0415
+
+    repo = dynamical_catalog.get_repository(collection_id)
+    config = repo.config
+    # A config's containers replace the persisted ones wholesale, so every
+    # container is carried over and only the WeatherNext stores gain the agent,
+    # keeping the options and headers they were persisted with.
+    wn_containers = [
+        container
+        for container in (config.virtual_chunk_containers or {}).values()
+        if container.url_prefix.startswith(_WN_CHUNKS_PREFIX)
+        and isinstance(container.store, icechunk.ObjectStoreConfig.Http)
+    ]
+    for container in wn_containers:
+        # The Http variant's fields are positional: (opts, headers).
+        opts, headers = container.store._0, container.store._1  # noqa: SLF001
+        store = icechunk.http_store(
+            opts={**(opts or {}), "user_agent": _user_agent()}, headers=headers
+        )
+        config.set_virtual_chunk_container(
+            icechunk.VirtualChunkContainer(container.url_prefix, store, container.name)
+        )
+    if wn_containers:
+        # Without new credentials, reopen keeps the ones the catalog authorized.
+        repo = repo.reopen(config=config)
+    # icechunk manages its own metadata; zarr's consolidated metadata doesn't apply.
+    return xr.open_zarr(repo.readonly_session("main").store, consolidated=False)
+
+
 def _check_collection(collection_id: str) -> float:
     """Read one value from the collection; return the wall time it took."""
     import math  # noqa: PLC0415
 
-    import dynamical_catalog  # noqa: PLC0415
-
     started = time.monotonic()
-    ds = dynamical_catalog.open(collection_id)
+    ds = _open_dataset(collection_id)
     first_var = next(iter(ds.data_vars))
     da = ds[first_var]
     value = da.isel(dict.fromkeys(da.dims, 0)).load().item()
