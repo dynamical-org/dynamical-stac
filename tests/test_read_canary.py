@@ -756,7 +756,7 @@ def test_weathernext_chunk_reads_name_the_canary(
     storage = icechunk.local_filesystem_storage(str(tmp_path / "repo"))
     config = icechunk.RepositoryConfig.default()
     config.set_virtual_chunk_container(
-        icechunk.VirtualChunkContainer(prefix, icechunk.http_store())
+        icechunk.VirtualChunkContainer(prefix, icechunk.http_store(), "wn-data")
     )
     repo = icechunk.Repository.create(storage, config=config)
     repo.save_config()
@@ -770,8 +770,9 @@ def test_weathernext_chunk_reads_name_the_canary(
         compressors=None,
         dimension_names=("time", "x"),
     )
+    # A reference through the container's name, which the reopen must keep.
     session.store.set_virtual_ref(
-        "temperature/c/0/0", f"{prefix}data.bin", offset=0, length=16
+        "temperature/c/0/0", "vcc://wn-data/data.bin", offset=0, length=16
     )
     session.commit("one virtual chunk")
 

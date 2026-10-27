@@ -223,7 +223,7 @@ def _open_dataset(collection_id: str) -> xr.Dataset:
             opts={**(opts or {}), "user_agent": _user_agent()}, headers=headers
         )
         config.set_virtual_chunk_container(
-            icechunk.VirtualChunkContainer(container.url_prefix, store)
+            icechunk.VirtualChunkContainer(container.url_prefix, store, container.name)
         )
     if wn_containers:
         # Without new credentials, reopen keeps the ones the catalog authorized.
