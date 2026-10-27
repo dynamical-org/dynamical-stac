@@ -9,6 +9,7 @@ under the normal `uv sync --group integration` environment with no network.
 
 from __future__ import annotations
 
+import http.server
 import importlib.metadata
 import importlib.util
 import logging
@@ -678,12 +679,7 @@ def test_check_collection_reads_corner_value_and_times_it(
     value: float,
 ) -> None:
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(
-        sys.modules["dynamical_catalog"],
-        "open",
-        lambda _cid: _dataset(value),
-        raising=False,
-    )
+    monkeypatch.setattr(canary, "_open_dataset", lambda _cid: _dataset(value))
 
     elapsed = canary._check_collection("collection-0")
 
@@ -696,15 +692,111 @@ def test_check_collection_rejects_inf(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(
-        sys.modules["dynamical_catalog"],
-        "open",
-        lambda _cid: _dataset(math.inf),
-        raising=False,
-    )
+    monkeypatch.setattr(canary, "_open_dataset", lambda _cid: _dataset(math.inf))
 
     with pytest.raises(ValueError, match=r"collection-0\.temperature is inf"):
         canary._check_collection("collection-0")
+
+
+# --- identifying the canary to the WeatherNext proxy --------------------------
+
+
+class _ChunkServer(http.server.ThreadingHTTPServer):
+    """Serves one virtual chunk file, recording each request's User-Agent."""
+
+    def __init__(self, body: bytes) -> None:
+        self.body = body
+        self.user_agents: list[str | None] = []
+        super().__init__(("127.0.0.1", 0), _ChunkHandler)
+
+
+class _ChunkHandler(http.server.BaseHTTPRequestHandler):
+    server: _ChunkServer
+
+    def do_GET(self) -> None:
+        self.server.user_agents.append(self.headers.get("User-Agent"))
+        body = self.server.body
+        size, status, start, end = len(body), 200, 0, len(body) - 1
+        if match := re.fullmatch(r"bytes=(\d+)-(\d*)", self.headers.get("Range", "")):
+            start, end = int(match[1]), int(match[2] or size - 1)
+            body, status = body[start : end + 1], 206
+        self.send_response(status)
+        if status == 206:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format: str, *args: object) -> None:  # noqa: A002
+        pass
+
+
+@pytest.fixture
+def chunk_server() -> Iterator[_ChunkServer]:
+    server = _ChunkServer(np.array([[1.5, 3.0]]).tobytes())
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield server
+    server.shutdown()
+    server.server_close()
+
+
+def test_weathernext_chunk_reads_name_the_canary(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: pathlib.Path,
+    chunk_server: _ChunkServer,
+) -> None:
+    """The virtual chunk's HTTP request carries the canary's User-Agent."""
+    import icechunk  # noqa: PLC0415
+    import zarr  # noqa: PLC0415
+
+    host, port = chunk_server.server_address[:2]
+    prefix = f"http://{host}:{port}/chunks/"
+    storage = icechunk.local_filesystem_storage(str(tmp_path / "repo"))
+    config = icechunk.RepositoryConfig.default()
+    config.set_virtual_chunk_container(
+        icechunk.VirtualChunkContainer(prefix, icechunk.http_store())
+    )
+    repo = icechunk.Repository.create(storage, config=config)
+    repo.save_config()
+    session = repo.writable_session("main")
+    zarr.create_array(
+        session.store,
+        name="temperature",
+        shape=(1, 2),
+        chunks=(1, 2),
+        dtype="<f8",
+        compressors=None,
+        dimension_names=("time", "x"),
+    )
+    session.store.set_virtual_ref(
+        "temperature/c/0/0", f"{prefix}data.bin", offset=0, length=16
+    )
+    session.commit("one virtual chunk")
+
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_WN_CHUNKS_PREFIX", prefix)
+    # As the catalog opens it: the persisted container, authorized anonymously.
+    monkeypatch.setattr(
+        sys.modules["dynamical_catalog"],
+        "get_repository",
+        lambda _cid: icechunk.Repository.open(
+            storage,
+            authorize_virtual_chunk_access={prefix: icechunk.Credentials.HttpAccess()},
+        ),
+        raising=False,
+    )
+
+    canary._check_collection("collection-0")
+
+    assert chunk_server.user_agents
+    if hasattr(icechunk, "Attribution"):
+        expected = f"dynamical-stac-read-canary/1 icechunk/{icechunk.__version__}"
+        assert all(ua.startswith(expected) for ua in chunk_server.user_agents)
+    else:
+        expected = f"dynamical-stac-read-canary/1 icechunk-rust-{icechunk.__version__}"
+        assert set(chunk_server.user_agents) == {expected}
 
 
 # --- confirming a failed read from a fresh container --------------------------
