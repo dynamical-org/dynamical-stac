@@ -702,11 +702,12 @@ def test_check_collection_rejects_inf(
 
 
 class _ChunkServer(http.server.ThreadingHTTPServer):
-    """Serves one virtual chunk file, recording each request's User-Agent."""
+    """Serves one virtual chunk file, recording each request's identifying headers."""
 
     def __init__(self, body: bytes) -> None:
         self.body = body
         self.user_agents: list[str | None] = []
+        self.service_tokens: list[str | None] = []
         super().__init__(("127.0.0.1", 0), _ChunkHandler)
 
 
@@ -715,6 +716,7 @@ class _ChunkHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         self.server.user_agents.append(self.headers.get("User-Agent"))
+        self.server.service_tokens.append(self.headers.get("X-Dynamical-Service-Token"))
         body = self.server.body
         size, status, start, end = len(body), 200, 0, len(body) - 1
         if match := re.fullmatch(r"bytes=(\d+)-(\d*)", self.headers.get("Range", "")):
@@ -741,13 +743,13 @@ def chunk_server() -> Iterator[_ChunkServer]:
     server.server_close()
 
 
-def test_weathernext_chunk_reads_name_the_canary(
+def _check_weathernext_collection(
     load_canary: Callable[[list[str]], types.ModuleType],
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: pathlib.Path,
     chunk_server: _ChunkServer,
 ) -> None:
-    """The virtual chunk's HTTP request carries the canary's User-Agent."""
+    """Check a collection whose one chunk is virtual, served by `chunk_server`."""
     import icechunk  # noqa: PLC0415
     import zarr  # noqa: PLC0415
 
@@ -791,6 +793,18 @@ def test_weathernext_chunk_reads_name_the_canary(
 
     canary._check_collection("collection-0")
 
+
+def test_weathernext_chunk_reads_name_the_canary(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: pathlib.Path,
+    chunk_server: _ChunkServer,
+) -> None:
+    """The virtual chunk's HTTP request carries the canary's User-Agent."""
+    import icechunk  # noqa: PLC0415
+
+    _check_weathernext_collection(load_canary, monkeypatch, tmp_path, chunk_server)
+
     assert chunk_server.user_agents
     if hasattr(icechunk, "Attribution"):
         expected = f"dynamical-stac-read-canary/1 icechunk/{icechunk.__version__}"
@@ -798,6 +812,33 @@ def test_weathernext_chunk_reads_name_the_canary(
     else:
         expected = f"dynamical-stac-read-canary/1 icechunk-rust-{icechunk.__version__}"
         assert set(chunk_server.user_agents) == {expected}
+
+
+@pytest.mark.parametrize("token", ["fake-service-token", "", None])
+def test_weathernext_chunk_reads_carry_the_service_token(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: pathlib.Path,
+    chunk_server: _ChunkServer,
+    token: str | None,
+) -> None:
+    """Only a set token reaches the wire, and it is never saved to the repo."""
+    import icechunk  # noqa: PLC0415
+
+    if token is None:
+        monkeypatch.delenv("WN_SERVICE_TOKEN", raising=False)
+    else:
+        monkeypatch.setenv("WN_SERVICE_TOKEN", token)
+
+    _check_weathernext_collection(load_canary, monkeypatch, tmp_path, chunk_server)
+
+    assert chunk_server.service_tokens
+    assert set(chunk_server.service_tokens) == {token or None}
+    storage = icechunk.local_filesystem_storage(str(tmp_path / "repo"))
+    persisted = icechunk.Repository.fetch_config(storage)
+    assert persisted is not None
+    for container in (persisted.virtual_chunk_containers or {}).values():
+        assert container.store._1 is None
 
 
 # --- confirming a failed read from a fresh container --------------------------

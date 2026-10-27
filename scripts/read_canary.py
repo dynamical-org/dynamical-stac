@@ -140,6 +140,12 @@ _REGION = "us"
 # proxy analytics can tell our own traffic apart.
 _WN_CHUNKS_PREFIX = "https://wn.dynamical.org/"
 _CLIENT = "dynamical-stac-read-canary/1"
+# The service token puts the canary's reads in our services' own allowance at
+# the WeatherNext proxy's rate limit. It comes from the wn-service-token Modal
+# secret; without it the reads go out as before and count as public traffic.
+_SERVICE_TOKEN_ENV = "WN_SERVICE_TOKEN"  # noqa: S105
+_SERVICE_TOKEN_HEADER = "X-Dynamical-Service-Token"  # noqa: S105
+_WN_SECRET = modal.Secret.from_name("wn-service-token")
 
 
 _STDOUT_HANDLER = "read_canary.stdout"
@@ -201,6 +207,8 @@ def _user_agent() -> str:
 
 def _open_dataset(collection_id: str) -> xr.Dataset:
     """The collection's `main` tip, its WeatherNext chunk reads identified."""
+    import os  # noqa: PLC0415
+
     import dynamical_catalog  # noqa: PLC0415
     import icechunk  # noqa: PLC0415
     import xarray as xr  # noqa: PLC0415
@@ -216,9 +224,13 @@ def _open_dataset(collection_id: str) -> xr.Dataset:
         if container.url_prefix.startswith(_WN_CHUNKS_PREFIX)
         and isinstance(container.store, icechunk.ObjectStoreConfig.Http)
     ]
+    # The token goes only into this reopened config, which is never saved.
+    token = os.environ.get(_SERVICE_TOKEN_ENV)
     for container in wn_containers:
         # The Http variant's fields are positional: (opts, headers).
         opts, headers = container.store._0, container.store._1  # noqa: SLF001
+        if token:
+            headers = {**(headers or {}), _SERVICE_TOKEN_HEADER: token}
         store = icechunk.http_store(
             opts={**(opts or {}), "user_agent": _user_agent()}, headers=headers
         )
@@ -426,6 +438,7 @@ def _confirm_all(
 @app.function(
     image=image,
     timeout=_CONFIRM_BUDGET_SECONDS + 60,
+    secrets=[_WN_SECRET],
     region=_REGION,
     single_use_containers=True,
 )
@@ -625,7 +638,7 @@ def _capture_failure(
 @app.function(
     image=image,
     schedule=modal.Period(minutes=10),
-    secrets=[modal.Secret.from_name("sentry-read-canary")],
+    secrets=[modal.Secret.from_name("sentry-read-canary"), _WN_SECRET],
     timeout=_TIMEOUT_SECONDS,
     region=_REGION,
     # A read abandoned at the sweep's deadline dies with its container instead
