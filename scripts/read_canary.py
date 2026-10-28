@@ -443,6 +443,8 @@ def _load_catalog(window_end: float) -> tuple[dict[str, Any] | None, dict[str, A
                 f"catalog returned {len(catalog)} collections, "
                 f"expected >= {MIN_COLLECTIONS}"
             )
+            # The client cached that short catalog; the next load must fetch.
+            dynamical_catalog.clear_cache()
         log.warning("catalog load %d failed: %r", attempts, error)
         pause = _CATALOG_BACKOFF_SECONDS[
             min(attempts, len(_CATALOG_BACKOFF_SECONDS)) - 1
@@ -691,12 +693,65 @@ def _judge_region(region: str, result: object) -> dict[str, Any]:
     }
 
 
+def _cancel(call: modal.FunctionCall) -> None:
+    """Cancel a re-run and terminate its container, best effort."""
+    log = _logger()
+    try:
+        call.cancel(terminate_containers=True)
+    except Exception:
+        log.exception("cancelling a re-run failed")
+
+
+def _spawn(
+    function: modal.Function, return_by: float, seconds: float, region: str
+) -> modal.FunctionCall:
+    """`function.spawn(return_by)`, or TimeoutError once `seconds` pass.
+
+    A spawn that completes after the run gave up on it is cancelled at once:
+    nothing would collect it, and its container would run on unwatched.
+    """
+    lock = threading.Lock()
+    outcome: list[modal.FunctionCall | BaseException] = []
+    gave_up = False
+
+    def target() -> None:
+        try:
+            call = function.spawn(return_by)
+        except Exception as error:  # noqa: BLE001
+            with lock:
+                outcome.append(error)
+            return
+        with lock:
+            late = gave_up
+            if not late:
+                outcome.append(call)
+        if late:
+            _cancel(call)
+
+    thread = threading.Thread(
+        target=target, name=f"read-canary spawn {region}", daemon=True
+    )
+    thread.start()
+    thread.join(max(0.0, seconds))
+    with lock:
+        if not outcome:
+            gave_up = True
+            raise TimeoutError(
+                f"starting the re-run in {region} did not finish within {seconds:.0f}s"
+            )
+        value = outcome[0]
+    if isinstance(value, BaseException):
+        raise value
+    return value
+
+
 def _rerun_regions(run_started: float) -> list[dict[str, Any]]:
     """Every region's judged re-run, in _REGIONS order.
 
     The re-runs start together and are waited on together, so one that hangs
-    cannot cost another its result. Any still out at the run's
-    _COLLECT_BY_SECONDS is cancelled, its container terminated.
+    cannot cost another its result. Every call not known to have returned by
+    the run's _COLLECT_BY_SECONDS, including one whose wait failed, is
+    cancelled and its container terminated.
     """
     log = _logger()
     return_by = time.time() + (run_started + _RETURN_BY_SECONDS - time.monotonic())
@@ -704,6 +759,8 @@ def _rerun_regions(run_started: float) -> list[dict[str, Any]]:
     lock = threading.Lock()
     judged: dict[str, dict[str, Any]] = {}
     calls: dict[str, modal.FunctionCall] = {}
+    # Calls known to have finished; any other is cancelled, whatever was judged.
+    returned: set[str] = set()
     closed = False
 
     def settle(region: str, entry: dict[str, Any]) -> None:
@@ -718,17 +775,18 @@ def _rerun_regions(run_started: float) -> list[dict[str, Any]]:
             return
         function = _REGION_FUNCTIONS[region]
         try:
-            call = _run_with_deadline(
-                lambda: function.spawn(return_by),
-                min(_SPAWN_SECONDS, spawn_left),
-                f"starting the re-run in {region}",
-            )
+            call = _spawn(function, return_by, min(_SPAWN_SECONDS, spawn_left), region)
         except Exception as error:  # noqa: BLE001
             log.warning("re-run in %s did not start: %r", region, error)
             settle(region, _unobserved(region, "not_started"))
             return
         with lock:
             calls[region] = call
+            late = closed
+        if late:
+            # Started after the run stopped waiting: nothing will collect it.
+            _cancel(call)
+            return
         wait = collect_by - time.monotonic()
         try:
             result = _run_with_deadline(
@@ -740,6 +798,8 @@ def _rerun_regions(run_started: float) -> list[dict[str, Any]]:
             log.warning("re-run in %s returned no result: %r", region, error)
             settle(region, _unobserved(region, "no_result"))
             return
+        with lock:
+            returned.add(region)
         settle(region, _judge_region(region, result))
 
     threads = [
@@ -755,17 +815,11 @@ def _rerun_regions(run_started: float) -> list[dict[str, Any]]:
     with lock:
         closed = True
         frozen = dict(judged)
-        outstanding = [calls[region] for region in calls if region not in frozen]
-
-    def cancel(call: modal.FunctionCall) -> None:
-        try:
-            call.cancel(terminate_containers=True)
-        except Exception:
-            log.exception("cancelling a re-run failed")
+        outstanding = [call for region, call in calls.items() if region not in returned]
 
     cancels = [
         threading.Thread(
-            target=cancel, args=(call,), name="read-canary cancel", daemon=True
+            target=_cancel, args=(call,), name="read-canary cancel", daemon=True
         )
         for call in outstanding
     ]

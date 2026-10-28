@@ -779,10 +779,44 @@ def test_the_catalog_is_retried_until_it_loads(
     assert outcome["loaded"] is True
     assert outcome["attempts"] == 3
     assert outcome["error"] is None
-    # One clear for the window, so later loads may reuse what earlier ones fetched.
-    assert [name for name, _ in recorder.calls if name == "clear_cache"] == [
-        "clear_cache"
+    # One clear for the window, so later loads may reuse what earlier ones
+    # fetched, and one after the short catalog, which the client cached.
+    assert [
+        name for name, _ in recorder.calls if name in {"clear_cache", "load_catalog"}
+    ] == [
+        "clear_cache",
+        "load_catalog",
+        "load_catalog",
+        "clear_cache",
+        "load_catalog",
     ]
+
+
+def test_a_short_catalog_the_client_cached_is_fetched_again(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """dynamical-catalog keeps a catalog that loaded, short or not, until its
+    cache is cleared; a retry that kept it would never see the repaired one."""
+    canary = load_canary(_CATALOG)
+    client = sys.modules["dynamical_catalog"]
+    served = [_CATALOG[:3], _CATALOG]
+    cache: list[dict[str, Any]] = []
+
+    def load_catalog() -> dict[str, Any]:
+        if not cache:
+            ids = served.pop(0) if len(served) > 1 else served[0]
+            cache.append({cid: {"name": _name(cid)} for cid in ids})
+        return cache[0]
+
+    monkeypatch.setattr(client, "load_catalog", load_catalog)
+    monkeypatch.setattr(client, "clear_cache", cache.clear)
+
+    catalog, outcome = canary._load_catalog(time.monotonic() + 30)
+
+    assert sorted(catalog) == _CATALOG
+    assert outcome["attempts"] == 2
 
 
 def test_a_catalog_that_never_loads_fails_when_the_window_ends(
@@ -1351,6 +1385,50 @@ def test_a_rerun_that_raises_is_unobserved(
     regions = canary._rerun_regions(time.monotonic())
 
     assert regions[0] == {"id": "us-east", "status": "unobserved", "why": "no_result"}
+    # Its wait failed, which does not mean its container stopped.
+    cancels = [kw for name, kw in recorder.calls if name == "cancel"]
+    assert cancels == [{"region": "us-east", "terminate_containers": True}]
+
+
+def test_only_reruns_that_returned_go_uncancelled(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _reruns(canary, monkeypatch, recorder)
+
+    canary._rerun_regions(time.monotonic())
+
+    assert [name for name, _ in recorder.calls if name == "cancel"] == []
+
+
+def test_a_rerun_whose_spawn_returns_late_is_cancelled(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _reruns(canary, monkeypatch, recorder)
+    late = canary._REGION_FUNCTIONS["eu-west"]
+    spawn = late.spawn
+
+    def slow_spawn(return_by: float) -> object:
+        time.sleep(0.4)
+        return spawn(return_by)
+
+    monkeypatch.setattr(late, "spawn", slow_spawn)
+    # 0.1 s to start a re-run, 0.6 s before the run stops waiting.
+    monkeypatch.setattr(canary, "_SPAWN_BY_SECONDS", canary._COLLECT_BY_SECONDS - 0.5)
+    run_started = time.monotonic() - (canary._COLLECT_BY_SECONDS - 0.6)
+
+    regions = canary._rerun_regions(run_started)
+    time.sleep(0.5)  # the spawn completes after the run gave up on it
+
+    assert regions[2] == {"id": "eu-west", "status": "unobserved", "why": "not_started"}
+    # Its spawn completed after the run gave up on it.
+    cancels = [kw for name, kw in recorder.calls if name == "cancel"]
+    assert cancels == [{"region": "eu-west", "terminate_containers": True}]
 
 
 # --- the verdict -------------------------------------------------------------------
