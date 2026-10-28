@@ -1,0 +1,491 @@
+{
+  "type": "Collection",
+  "id": "noaa-urma-analysis-virtual",
+  "stac_version": "1.1.0",
+  "description": "Hourly Unrestricted Mesoscale Analysis (URMA) operated by NOAA NWS NCEP on the native CONUS grid, incorporating observations received after the RTMA analysis.",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-urma-analysis-virtual/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/noaa-urma-analysis-virtual/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "via",
+      "href": "https://registry.opendata.aws/noaa-rtma/",
+      "type": "text/html",
+      "title": "NOAA URMA on NOAA Open Data Dissemination"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-rtma-family.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "RTMA, RTMA-RU and URMA analyses (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-rtma-family.ipynb",
+      "type": "text/html",
+      "title": "RTMA, RTMA-RU and URMA analyses (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-test.dynamical.org/noaa-urma-analysis-virtual/collection.json",
+      "type": "application/json",
+      "title": "NOAA URMA analysis, virtual"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-test.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "NOAA NWS NCEP URMA data processed by dynamical.org from NOAA Open Data Dissemination archives.",
+  "version": "0.1.0",
+  "model_id": "noaa-urma",
+  "model_name": "NOAA URMA",
+  "description_summary": "Hourly near-surface analyses incorporating observations received after RTMA, on the 2.5 km CONUS Western Expansion grid from 2017-05-02 onward. This virtual dataset references NOAA's GRIB files and is optimized for spatial (map) access. It contains 14 analysis fields, including significant wave height, with dimensions time, y, and x on the native Lambert Conformal Conic projection. Precipitation is not included.",
+  "description_details": "### Construction\n\nHourly URMA analyses incorporate observations received after RTMA. They are\nrepresented as virtual references to NOAA's CONUS Western Expansion GRIB files,\non their native 2345 by 1597 Lambert Conformal Conic grid. Each chunk contains\none complete field at one analysis time. The 14 fields include temperature,\ndew point, specific humidity, surface pressure, terrain height, wind, cloud cover,\nceiling, visibility, and significant wave height. Precipitation is not included.\n\nWind components are grid-relative; wind direction is relative to true north.\nCeiling and visibility retain the source's finite values. Their historical\nbounds vary, and ceiling's vertical reference is not established for this archive.\nConsult the validation report before interpreting these fields across eras.\n\n### Source\n\nSource files are provided by [NOAA Open Data Dissemination](https://www.noaa.gov/information-technology/open-data-dissemination)\nin the public [NOAA URMA archive](https://registry.opendata.aws/noaa-rtma/).\n\n### Data availability\n\nThe archive begins at 2017-05-02 00:00 UTC and updates hourly. Missing source\nfiles remain gaps. Significant wave height begins at 2018-12-03 12:00 UTC;\nearlier fields are excluded because they mix land zeros with calm-water zeros.\nWave height is missing where no wave analysis is made,\nincluding land and ice-covered water. Great Lakes wave values begin at\n2020-07-27 12:00 UTC. See the [validation report](https://dynamical.org/catalog/noaa-urma-analysis-virtual/validation/) for\nchecked coverage, source-archive gaps, and historical field limitations.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| time | 1 (1 hour) |\n| y | 1597 (4055.91 km) |\n| x | 2345 (5955.6 km) |\n| **uncompressed** | 28.6 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-urma-analysis-virtual/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.",
+  "description_model": "The Unrestricted Mesoscale Analysis (URMA) is NOAA NCEP's hourly analysis of near-surface weather conditions, incorporating observations received after the RTMA analysis.",
+  "examples": [
+    {
+      "title": "Temperature map",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-urma-analysis-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
+          "language": "python"
+        },
+        {
+          "label": "pystac",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-urma-analysis-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-urma-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
+          "language": "python"
+        },
+        {
+          "label": "prompt",
+          "language": "text",
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-urma-analysis-virtual\nSTAC collection: https://stac.dynamical.org/noaa-urma-analysis-virtual/collection.json"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "time": {
+      "type": "temporal",
+      "extent": [
+        "2017-05-02T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "x": {
+      "type": "spatial",
+      "extent": [
+        -3271147.2882942613,
+        2681916.543705739
+      ],
+      "axis": "x",
+      "unit": "m",
+      "size": 2345
+    },
+    "y": {
+      "type": "spatial",
+      "extent": [
+        -263797.50271268317,
+        3789568.4852873166
+      ],
+      "axis": "y",
+      "unit": "m",
+      "size": 1597
+    }
+  },
+  "cube:variables": {
+    "cloud_ceiling_height": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "m",
+      "long_name": "Ceiling",
+      "short_name": "ceil"
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
+    "geopotential_height_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "m",
+      "long_name": "Geopotential height",
+      "standard_name": "geopotential_height",
+      "short_name": "gh"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "significant_wave_height_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "m",
+      "long_name": "Significant height of combined wind waves and swell",
+      "standard_name": "sea_surface_wave_significant_height",
+      "short_name": "swh",
+      "comment": "NaN where no wave analysis is made, such as over land and ice-covered water."
+    },
+    "specific_humidity_2m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "1",
+      "long_name": "Specific humidity",
+      "standard_name": "specific_humidity",
+      "short_name": "q"
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
+    },
+    "visibility_surface": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "m",
+      "long_name": "Visibility",
+      "standard_name": "visibility_in_air",
+      "short_name": "vis"
+    },
+    "wind_direction_10m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "degree",
+      "long_name": "10 metre wind direction",
+      "standard_name": "wind_from_direction",
+      "short_name": "10wdir",
+      "comment": "Direction the wind blows from, clockwise from true north."
+    },
+    "wind_gust_10m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "m s-1",
+      "long_name": "Wind speed (gust)",
+      "standard_name": "wind_speed_of_gust",
+      "short_name": "gust"
+    },
+    "wind_speed_10m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre wind speed",
+      "standard_name": "wind_speed",
+      "short_name": "10si"
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "x_wind",
+      "short_name": "10u",
+      "comment": "Velocity along the model grid's x dimension, not eastward velocity."
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        1597,
+        2345
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "y_wind",
+      "short_name": "10v",
+      "comment": "Velocity along the model grid's y dimension, not northward velocity."
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float64",
+    "chunk": {
+      "dimensions": [
+        "time",
+        "y",
+        "x"
+      ],
+      "shape": [
+        1,
+        1597,
+        2345
+      ],
+      "lengths": {
+        "time": "1 hour",
+        "y": "4055.91 km",
+        "x": "5955.6 km"
+      },
+      "uncompressed_size_bytes": 29959720,
+      "uncompressed_size": "28.6 MiB"
+    }
+  },
+  "title": "NOAA URMA analysis, virtual",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -138.37319946289062,
+          19.228975296020508,
+          -59.04214859008789,
+          57.08856201171875
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2017-05-02T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "NOAA NWS NCEP",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.weather.gov/ncep/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
+  "summaries": {
+    "spatial_domain": [
+      "Continental United States"
+    ],
+    "spatial_resolution": [
+      "2.5 km"
+    ],
+    "time_domain": [
+      "2017-05-02 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "1 hour"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-noaa-urma/noaa-urma-analysis-virtual/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "s3://noaa-urma-pds/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-noaa-urma.s3.us-west-2.amazonaws.com/noaa-urma-analysis-virtual/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "icechunk:virtual_chunk_containers": [
+        {
+          "url_prefix": "s3://noaa-urma-pds/",
+          "credentials": {
+            "type": "s3",
+            "anonymous": true
+          }
+        }
+      ],
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

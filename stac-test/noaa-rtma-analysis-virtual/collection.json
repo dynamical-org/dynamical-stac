@@ -24,15 +24,27 @@
     },
     {
       "rel": "about",
-      "href": "https://dataset-validation-reports.dynamical.org/noaa-rtma-analysis-virtual/drafts/v0.1.0_2026-10-20T16-16/validation_report.html",
+      "href": "https://dynamical.org/catalog/noaa-rtma-analysis-virtual/validation/",
       "type": "text/html",
-      "title": "Draft validation report (unaccepted)"
+      "title": "Validation report"
     },
     {
       "rel": "via",
       "href": "https://registry.opendata.aws/noaa-rtma/",
       "type": "text/html",
       "title": "NOAA RTMA on NOAA Open Data Dissemination"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-rtma-family.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "RTMA, RTMA-RU and URMA analyses (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-rtma-family.ipynb",
+      "type": "text/html",
+      "title": "RTMA, RTMA-RU and URMA analyses (Colab)"
     },
     {
       "rel": "self",
@@ -56,26 +68,26 @@
   "model_id": "noaa-rtma",
   "model_name": "NOAA RTMA",
   "description_summary": "Hourly near-surface analyses on the 2.5 km CONUS Western Expansion grid, from 2017-05-02 onward. This virtual dataset references NOAA's GRIB files and is optimized for spatial (map) access. It contains 13 analysis fields, with dimensions time, y, and x on the native Lambert Conformal Conic projection. Precipitation is not included.",
-  "description_details": "This dataset is available in the staging catalog. For the dynamical-catalog\nexample, set `DYNAMICAL_STAC_CATALOG_URL=https://stac-staging.dynamical.org/catalog.json`\nbefore starting Python. The pystac example selects the staging catalog directly.\n\n### Construction\n\nHourly RTMA analyses are represented as virtual references to NOAA's CONUS\nWestern Expansion GRIB files, on their native 2345 by 1597 Lambert Conformal\nConic grid. Each chunk contains one complete field at one analysis time.\nThe 13 fields include temperature, dew point, specific humidity, surface pressure,\nterrain height, wind, cloud cover, ceiling, and visibility. Precipitation is not included.\n\nWind components are grid-relative; wind direction is relative to true north.\nCeiling and visibility retain the source's finite values. Consult the validation\nreport for their interpretation and historical limitations.\n\n### Source\n\nSource files are provided by [NOAA Open Data Dissemination](https://www.noaa.gov/information-technology/open-data-dissemination)\nin the public [NOAA RTMA archive](https://registry.opendata.aws/noaa-rtma/).\n\n### Data availability\n\nThe archive begins at 2017-05-02 00:00 UTC and updates hourly. Missing source\nfiles remain gaps. See the [draft validation report](https://dataset-validation-reports.dynamical.org/noaa-rtma-analysis-virtual/drafts/v0.1.0_2026-10-20T16-16/validation_report.html) for checked\ncoverage, source-archive gaps, and the ceiling/visibility findings.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| time | 1 (1 hour) |\n| y | 1597 (4055.91 km) |\n| x | 2345 (5955.6 km) |\n| **uncompressed** | 28.6 MiB |\n\n### Validation report\n\nReview the [validation report](https://dataset-validation-reports.dynamical.org/noaa-rtma-analysis-virtual/drafts/v0.1.0_2026-10-20T16-16/validation_report.html) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.\n\nThis report is a draft awaiting acceptance. It has not been published as a stable validation report.",
-  "description_model": "The Real-Time Mesoscale Analysis (RTMA) is NOAA NCEP's hourly analysis of near-surface weather conditions. It combines observations with a model background using two-dimensional variational assimilation.",
+  "description_details": "### Construction\n\nHourly RTMA analyses are represented as virtual references to NOAA's CONUS\nWestern Expansion GRIB files, on their native 2345 by 1597 Lambert Conformal\nConic grid. Each chunk contains one complete field at one analysis time.\nThe 13 fields include temperature, dew point, specific humidity, surface pressure,\nterrain height, wind, cloud cover, ceiling, and visibility. Precipitation is not included.\n\nWind components are grid-relative; wind direction is relative to true north.\nCeiling and visibility retain the source's finite values. Consult the validation\nreport for their interpretation and historical limitations.\n\n### Source\n\nSource files are provided by [NOAA Open Data Dissemination](https://www.noaa.gov/information-technology/open-data-dissemination)\nin the public [NOAA RTMA archive](https://registry.opendata.aws/noaa-rtma/).\n\n### Data availability\n\nThe archive begins at 2017-05-02 00:00 UTC and updates hourly. Missing source\nfiles remain gaps. See the [validation report](https://dynamical.org/catalog/noaa-rtma-analysis-virtual/validation/) for checked\ncoverage, source-archive gaps, and the ceiling/visibility findings.\n\n### Storage\n\nStorage for this dataset is generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\n\n### Chunks\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk |\n|---|---|\n| time | 1 (1 hour) |\n| y | 1597 (4055.91 km) |\n| x | 2345 (5955.6 km) |\n| **uncompressed** | 28.6 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/noaa-rtma-analysis-virtual/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.",
+  "description_model": "The Real-Time Mesoscale Analysis (RTMA) is NOAA NCEP's analysis of near-surface weather conditions. It combines observations with a model background using two-dimensional variational assimilation.",
   "examples": [
     {
       "title": "Temperature map",
       "variants": [
         {
           "label": "dynamical-catalog",
-          "code": "import dynamical_catalog  # dynamical-catalog>=1.0.0\n\nds = dynamical_catalog.open(\"noaa-rtma-analysis-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"noaa-rtma-analysis-virtual\", chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
           "language": "python"
         },
         {
           "label": "pystac",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-rtma-analysis-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-rtma-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"noaa-rtma-analysis-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"s3://noaa-rtma-pds/\": icechunk.s3_anonymous_credentials()})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(time=\"2025-01-01T00\")",
           "language": "python"
         },
         {
           "label": "prompt",
           "language": "text",
-          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-rtma-analysis-virtual\nSTAC collection: https://stac-staging.dynamical.org/noaa-rtma-analysis-virtual/collection.json"
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: noaa-rtma-analysis-virtual\nSTAC collection: https://stac.dynamical.org/noaa-rtma-analysis-virtual/collection.json"
         }
       ]
     }
