@@ -322,9 +322,19 @@ MODELS: dict[str, Model] = {
         id="noaa-rtma",
         name="NOAA RTMA",
         description=(
-            "The Real-Time Mesoscale Analysis (RTMA) is NOAA NCEP's hourly "
+            "The Real-Time Mesoscale Analysis (RTMA) is NOAA NCEP's "
             "analysis of near-surface weather conditions. It combines observations "
             "with a model background using two-dimensional variational assimilation."
+        ),
+        producer=NOAA_NCEP,
+    ),
+    "noaa-urma": Model(
+        id="noaa-urma",
+        name="NOAA URMA",
+        description=(
+            "The Unrestricted Mesoscale Analysis (URMA) is NOAA NCEP's hourly "
+            "analysis of near-surface weather conditions, incorporating observations "
+            "received after the RTMA analysis."
         ),
         producer=NOAA_NCEP,
     ),
@@ -1345,6 +1355,73 @@ CATALOG_ITEMS: list[CatalogItem] = [
             _example(
                 "Temperature map",
                 'ds = dynamical_catalog.open("noaa-rtma-analysis-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00")',
+            ),
+        ),
+        notebooks=(
+            DatasetNotebook(
+                slug="noaa-rtma-family", title="RTMA, RTMA-RU and URMA analyses"
+            ),
+        ),
+    ),
+    CatalogItem(
+        environments=["production", "staging", "test", "0.7.0-0.8.0", "1.0.0-1.0.0"],
+        id="noaa-rtma-ru-analysis-virtual",
+        icechunk_href="s3://dynamical-noaa-rtma/noaa-rtma-ru-analysis-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-rtma-pds/",),
+        model_id="noaa-rtma",
+        source=UpstreamSource(
+            href="https://registry.opendata.aws/noaa-rtma/",  # type: ignore[arg-type]
+            title="NOAA RTMA on NOAA Open Data Dissemination",
+        ),
+        description_summary=(
+            "Near-surface rapid-update analyses every 15 minutes on the 2.5 km "
+            "CONUS Western Expansion grid, from 2017-12-13 onward. This virtual "
+            "dataset references NOAA's GRIB files and is optimized for spatial "
+            "(map) access. It contains 13 analysis fields, with dimensions time, "
+            "y, and x on the native Lambert Conformal Conic projection. "
+            "Precipitation is not included."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rtma_ru/analysis_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-rtma-ru-analysis-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(time="2025-01-01T00:15")',
+            ),
+        ),
+        notebooks=(
+            DatasetNotebook(
+                slug="noaa-rtma-family", title="RTMA, RTMA-RU and URMA analyses"
+            ),
+        ),
+    ),
+    CatalogItem(
+        environments=["production", "staging", "test", "0.7.0-0.8.0", "1.0.0-1.0.0"],
+        id="noaa-urma-analysis-virtual",
+        icechunk_href="s3://dynamical-noaa-urma/noaa-urma-analysis-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("s3://noaa-urma-pds/",),
+        model_id="noaa-urma",
+        source=UpstreamSource(
+            href="https://registry.opendata.aws/noaa-rtma/",  # type: ignore[arg-type]
+            title="NOAA URMA on NOAA Open Data Dissemination",
+        ),
+        description_summary=(
+            "Hourly near-surface analyses incorporating observations received "
+            "after RTMA, on the 2.5 km CONUS Western Expansion grid from "
+            "2017-05-02 onward. This virtual dataset references NOAA's GRIB "
+            "files and is optimized for spatial (map) access. It contains 14 "
+            "analysis fields, including significant wave height, with dimensions "
+            "time, y, and x on the native Lambert Conformal Conic projection. "
+            "Precipitation is not included."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/noaa/urma/analysis_virtual/template_config.py",
+        examples=(
+            _example(
+                "Temperature map",
+                'ds = dynamical_catalog.open("noaa-urma-analysis-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(time="2025-01-01T00")',
             ),
         ),
