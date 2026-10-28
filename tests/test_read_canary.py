@@ -12,6 +12,7 @@ from __future__ import annotations
 import http.server
 import importlib.metadata
 import importlib.util
+import json
 import logging
 import math
 import pathlib
@@ -351,10 +352,12 @@ def load_canary(
         assert spec.loader is not None
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        # The shipped pause between re-reads is checked in
-        # test_the_budget_fits_inside_modals_timeout; tests do not wait it out.
-        module.SHIPPED_CONFIRM_INTERVAL_SECONDS = module._CONFIRM_INTERVAL_SECONDS
-        module._CONFIRM_INTERVAL_SECONDS = 0.0
+        # The shipped pauses are checked in
+        # test_the_budget_fits_inside_modals_timeout; tests do not wait them out.
+        module.SHIPPED_CATALOG_BACKOFF_SECONDS = module._CATALOG_BACKOFF_SECONDS
+        module.SHIPPED_READ_RETRY_PAUSE_SECONDS = module._READ_RETRY_PAUSE_SECONDS
+        module._CATALOG_BACKOFF_SECONDS = (0,)
+        module._READ_RETRY_PAUSE_SECONDS = 0.0
         return module
 
     return _load
@@ -379,7 +382,7 @@ def test_success_checks_in_ok_and_flushes_with_budget(
     assert sorted(checked) == _CATALOG
     assert recorder.checkins() == ["in_progress", "ok"]
     assert recorder.coverage() == ["in_progress", "ok"]
-    assert recorder.spawns() == []  # nothing failed, so nothing to confirm
+    assert recorder.spawns() == []  # nothing failed, so nothing to re-run
     # The terminal check-in must get a real flush budget: the sdk default is 2 s,
     # which a slow Sentry edge exhausts before the envelope leaves the queue.
     assert recorder.flushes() == [
@@ -517,24 +520,36 @@ def test_canary_runs_in_a_us_region(
     canary = load_canary(_CATALOG)
 
     assert canary.read_canary.function_kwargs["region"] == "us"
-    assert canary.confirm_reads.function_kwargs["region"] == "us"
 
 
-def test_every_run_and_every_confirmation_gets_its_own_container(
+def test_each_rerun_is_pinned_to_its_own_region(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    """One function per region, so placement is fixed at deploy; none is in a
+    country the WeatherNext terms exclude."""
+    canary = load_canary(_CATALOG)
+
+    assert canary._REGIONS == ("us-east", "us-west", "eu-west")
+    assert {
+        region: function.function_kwargs["region"]
+        for region, function in canary._REGION_FUNCTIONS.items()
+    } == {"us-east": "us-east", "us-west": "us-west", "eu-west": "eu-west"}
+
+
+def test_every_run_and_every_rerun_gets_its_own_container(
     load_canary: Callable[[list[str]], types.ModuleType],
 ) -> None:
     """A read left hanging dies with its container instead of living on in a
-    warm one, and a confirmation never reuses the connections, cache, or host
-    state of the run whose failure it re-reads."""
+    warm one, and a re-run never reuses the connections, cache, or host state
+    of the run whose failure triggered it."""
     canary = load_canary(_CATALOG)
 
     assert canary.read_canary.function_kwargs["single_use_containers"] is True
-    assert canary.confirm_reads.function_kwargs["single_use_containers"] is True
-    assert canary.confirm_reads.function_kwargs["image"] is canary.image
-    assert (
-        canary.confirm_reads.function_kwargs["timeout"]
-        >= canary._CONFIRM_BUDGET_SECONDS + 30
-    )
+    for function in canary._REGION_FUNCTIONS.values():
+        assert function.function_kwargs["single_use_containers"] is True
+        assert function.function_kwargs["image"] is canary.image
+        assert function.function_kwargs["timeout"] >= canary._RETURN_BY_SECONDS
+        assert "secrets" not in function.function_kwargs  # no telemetry of its own
 
 
 def test_the_budget_fits_inside_modals_timeout(
@@ -542,130 +557,42 @@ def test_the_budget_fits_inside_modals_timeout(
 ) -> None:
     canary = load_canary(_CATALOG)
 
-    assert canary.SHIPPED_CONFIRM_INTERVAL_SECONDS == 15
+    assert canary._TIMEOUT_SECONDS == 840
+    assert canary._MAX_RUNTIME_MINUTES == 16
+    assert canary.SHIPPED_CATALOG_BACKOFF_SECONDS == (2, 4, 8, 16)
+    assert canary.SHIPPED_READ_RETRY_PAUSE_SECONDS == 5
+    # The scheduled run's catalog window and sweep end before the re-runs
+    # start, and the last spawn leaves Modal time to start a container before
+    # the region's own admission deadline.
+    assert canary._CATALOG_WINDOW_SECONDS == 120
     assert (
-        canary._CATALOG_DEADLINE_SECONDS
-        < canary._MAIN_PASS_DEADLINE_SECONDS
-        < canary._CONFIRM_DEADLINE_SECONDS
+        canary._CATALOG_WINDOW_SECONDS
+        < canary._SWEEP_DEADLINE_SECONDS
+        < canary._SPAWN_BY_SECONDS
+        < canary._REGION_START_BY_SECONDS
     )
-    # Reporting and the flush keep their reserve after confirmation gives up.
+    assert canary._REGION_START_BY_SECONDS - canary._SPAWN_BY_SECONDS >= 60
+    # A region admitted at the last moment still gets the full catalog window
+    # and two full reads of a collection with the pause between them.
     assert (
-        canary._CONFIRM_DEADLINE_SECONDS + canary._FLUSH_TIMEOUT_SECONDS + 60
+        canary._REGION_START_BY_SECONDS
+        + canary._CATALOG_WINDOW_SECONDS
+        + 2 * canary._READ_ATTEMPT_SECONDS
+        + canary.SHIPPED_READ_RETRY_PAUSE_SECONDS
+        + canary._REGION_RETURN_MARGIN_SECONDS
+        == canary._RETURN_BY_SECONDS
+    )
+    # The slowest healthy read seen (122 s) fits one read.
+    assert canary._READ_ATTEMPT_SECONDS > 122
+    # Waiting, cancelling, reporting and the flush keep their reserve.
+    assert canary._RETURN_BY_SECONDS < canary._COLLECT_BY_SECONDS
+    assert (
+        canary._COLLECT_BY_SECONDS
+        + canary._CANCEL_SECONDS
+        + canary._FLUSH_TIMEOUT_SECONDS
+        + 30
         <= canary._TIMEOUT_SECONDS
     )
-    # Two full re-reads and the pause between them fit one confirmation.
-    assert (
-        2 * canary._CONFIRM_ATTEMPT_SECONDS + canary.SHIPPED_CONFIRM_INTERVAL_SECONDS
-        < canary._CONFIRM_BUDGET_SECONDS
-    )
-
-
-def test_read_failure_captures_error_checkin_and_raises(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    canary = load_canary(_CATALOG)
-    checked: list[str] = []
-
-    def fake_check(collection_id: str) -> float:
-        checked.append(collection_id)
-        if collection_id == "collection-5":
-            raise ValueError("collection-5.var is inf")
-        return 0.1
-
-    monkeypatch.setattr(canary, "_check_collection", fake_check)
-
-    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections") as excinfo:
-        canary.read_canary()
-
-    # One failure does not stop the sweep; the confirmation re-read it once.
-    assert sorted(checked) == sorted([*_CATALOG, "collection-5"])
-    assert recorder.checkins() == ["in_progress", "error"]
-    # A confirmed failure is a conclusive run.
-    assert recorder.coverage() == ["in_progress", "ok"]
-    assert [f["timeout"] for f in recorder.flushes()] == [15]
-    (captured,) = recorder.exceptions()
-    assert captured is excinfo.value  # captured as raised, so it carries a traceback
-    assert "collection-5: ValueError('collection-5.var is inf')" in str(captured)
-    assert "re-read: ValueError('collection-5.var is inf')" in str(captured)
-    assert recorder.warnings() == []
-    failure = next(m for m in recorder.messages() if m.startswith("read canary failed"))
-    assert f"; queueing error check-in {_RUN}: " in failure
-    assert "collection-5" in failure
-    assert recorder.index_of_log("read canary failed") < recorder.index_of(
-        "capture_checkin", status="error"
-    )
-
-
-def test_catalog_load_failure_closes_checkin_as_error(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    canary = load_canary(_CATALOG)
-
-    def broken_load_catalog() -> dict[str, None]:
-        raise ConnectionError("catalog.json unreachable")
-
-    monkeypatch.setattr(
-        sys.modules["dynamical_catalog"], "load_catalog", broken_load_catalog
-    )
-    monkeypatch.setattr(
-        canary, "_check_collection", lambda _cid: pytest.fail("must not read")
-    )
-
-    with pytest.raises(ConnectionError, match=r"catalog\.json unreachable"):
-        canary.read_canary()
-
-    # Previously this raised straight through the in_progress check-in and
-    # Sentry only noticed once max_runtime elapsed.
-    assert recorder.checkins() == ["in_progress", "error"]
-    assert recorder.coverage() == ["in_progress", "ok"]
-    assert [f["timeout"] for f in recorder.flushes()] == [15]
-    (captured,) = recorder.exceptions()
-    assert isinstance(captured, ConnectionError)
-
-
-def test_short_catalog_fails_before_reading(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    short_catalog = _CATALOG[:3]
-    canary = load_canary(short_catalog)
-    assert len(short_catalog) < canary.MIN_COLLECTIONS
-    checked: list[str] = []
-    monkeypatch.setattr(
-        canary, "_check_collection", lambda cid: checked.append(cid) or 0.1
-    )
-
-    with pytest.raises(RuntimeError, match=r"returned 3 collections, expected >= "):
-        canary.read_canary()
-
-    assert checked == []
-    assert recorder.checkins() == ["in_progress", "error"]
-    assert [f["timeout"] for f in recorder.flushes()] == [15]
-    assert len(recorder.exceptions()) == 1
-
-
-def test_catalog_at_exactly_the_floor_is_read(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    floor_catalog = _CATALOG[:6]
-    canary = load_canary(floor_catalog)
-    assert len(floor_catalog) == canary.MIN_COLLECTIONS
-    checked: list[str] = []
-    monkeypatch.setattr(
-        canary, "_check_collection", lambda cid: checked.append(cid) or 0.1
-    )
-
-    canary.read_canary()
-
-    assert sorted(checked) == floor_catalog
-    assert recorder.checkins() == ["in_progress", "ok"]
 
 
 def _dataset(value: float) -> xr.Dataset:
@@ -800,343 +727,1205 @@ def test_weathernext_chunk_reads_name_the_canary(
         assert set(chunk_server.user_agents) == {expected}
 
 
-# --- confirming a failed read from a fresh container --------------------------
+# --- the catalog window ----------------------------------------------------------
 
 
-def _flaky(failing: dict[str, int]) -> Callable[[str], float]:
-    """A read that fails each listed collection that many times, then succeeds."""
-    remaining = dict(failing)
+def _loads(
+    monkeypatch: pytest.MonkeyPatch,
+    recorder: _Recorder,
+    outcomes: list[Callable[[], dict[str, Any]]],
+) -> None:
+    """load_catalog answering with each outcome in turn, the last one repeated."""
+    remaining = list(outcomes)
+
+    def load_catalog() -> dict[str, Any]:
+        recorder.calls.append(("load_catalog", {}))
+        outcome = remaining.pop(0) if len(remaining) > 1 else remaining[0]
+        return outcome()
+
+    monkeypatch.setattr(sys.modules["dynamical_catalog"], "load_catalog", load_catalog)
+
+
+def _catalog_of(ids: list[str]) -> Callable[[], dict[str, Any]]:
+    return lambda: {cid: {"name": _name(cid)} for cid in ids}
+
+
+def _raise(error: BaseException) -> Callable[[], dict[str, Any]]:
+    def fail() -> dict[str, Any]:
+        raise error
+
+    return fail
+
+
+def test_the_catalog_is_retried_until_it_loads(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _loads(
+        monkeypatch,
+        recorder,
+        [
+            _raise(TimeoutError("The read operation timed out")),
+            _catalog_of(_CATALOG[:3]),  # short: a failed load too
+            _catalog_of(_CATALOG),
+        ],
+    )
+
+    catalog, outcome = canary._load_catalog(time.monotonic() + 30)
+
+    assert sorted(catalog) == _CATALOG
+    assert outcome["loaded"] is True
+    assert outcome["attempts"] == 3
+    assert outcome["error"] is None
+    # One clear for the window, so later loads may reuse what earlier ones
+    # fetched, and one after the short catalog, which the client cached.
+    assert [
+        name for name, _ in recorder.calls if name in {"clear_cache", "load_catalog"}
+    ] == [
+        "clear_cache",
+        "load_catalog",
+        "load_catalog",
+        "clear_cache",
+        "load_catalog",
+    ]
+
+
+def test_a_short_catalog_the_client_cached_is_fetched_again(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """dynamical-catalog keeps a catalog that loaded, short or not, until its
+    cache is cleared; a retry that kept it would never see the repaired one."""
+    canary = load_canary(_CATALOG)
+    client = sys.modules["dynamical_catalog"]
+    served = [_CATALOG[:3], _CATALOG]
+    cache: list[dict[str, Any]] = []
+
+    def load_catalog() -> dict[str, Any]:
+        if not cache:
+            ids = served.pop(0) if len(served) > 1 else served[0]
+            cache.append({cid: {"name": _name(cid)} for cid in ids})
+        return cache[0]
+
+    monkeypatch.setattr(client, "load_catalog", load_catalog)
+    monkeypatch.setattr(client, "clear_cache", cache.clear)
+
+    catalog, outcome = canary._load_catalog(time.monotonic() + 30)
+
+    assert sorted(catalog) == _CATALOG
+    assert outcome["attempts"] == 2
+
+
+def test_a_catalog_that_never_loads_fails_when_the_window_ends(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_CATALOG_MIN_ATTEMPT_SECONDS", 0.05)
+    _loads(monkeypatch, recorder, [_raise(ConnectionError("unreachable"))])
+    started = time.monotonic()
+
+    catalog, outcome = canary._load_catalog(started + 0.3)
+
+    assert catalog is None
+    assert outcome["loaded"] is False
+    assert outcome["attempts"] >= 2
+    assert "ConnectionError('unreachable')" in outcome["error"]
+    assert time.monotonic() - started < 0.5
+
+
+def test_a_hung_catalog_load_ends_the_window_without_a_second_load(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A second load would race the first for the client's cache."""
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_CATALOG_MIN_ATTEMPT_SECONDS", 0.01)
+    release = threading.Event()
+
+    def hang() -> dict[str, Any]:
+        release.wait(5)
+        return {}
+
+    _loads(monkeypatch, recorder, [hang])
+    started = time.monotonic()
+    try:
+        catalog, outcome = canary._load_catalog(started + 0.2)
+    finally:
+        release.set()
+
+    assert catalog is None
+    assert outcome["attempts"] == 1
+    assert "did not finish" in outcome["error"]
+    assert time.monotonic() - started < 1
+
+
+def test_no_catalog_load_starts_without_time_for_it(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+) -> None:
+    canary = load_canary(_CATALOG)
+
+    catalog, outcome = canary._load_catalog(time.monotonic() + 1)
+
+    assert catalog is None
+    assert outcome == {
+        "loaded": False,
+        "attempts": 0,
+        "seconds": 0.0,
+        "error": "no time to load",
+    }
+    assert [name for name, _ in recorder.calls if name == "load_catalog"] == []
+
+
+# --- reads ------------------------------------------------------------------------
+
+
+def test_the_scheduled_sweep_stops_at_its_first_failure(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The scheduled run only triggers the re-runs; reading on would delay them."""
+    canary = load_canary(_CATALOG)
+    release = threading.Event()
 
     def check(collection_id: str) -> float:
-        if remaining.get(collection_id, 0) > 0:
-            remaining[collection_id] -= 1
-            raise TimeoutError(f"{collection_id}: operation timed out")
+        if collection_id == "collection-0":
+            raise OSError("store unreachable")
+        release.wait(5)
+        return 0.1
+
+    monkeypatch.setattr(canary, "_check_collection", check)
+    started = time.monotonic()
+    try:
+        _durations, failures, unread = canary._read_all(_CATALOG, deadline=started + 5)
+    finally:
+        release.set()
+
+    assert time.monotonic() - started < 1
+    assert list(failures) == ["collection-0"]
+    assert isinstance(failures["collection-0"], OSError)
+    # Reads cut short by the failure are unread, not failed.
+    assert set(unread) <= set(_CATALOG[1:])
+
+
+@pytest.mark.parametrize(
+    ("raised", "expected"),
+    [
+        (None, "passed"),
+        (OSError("403"), "error"),
+        # The library's own timeout is a read that returned an error.
+        (TimeoutError("The read operation timed out"), "error"),
+    ],
+)
+def test_an_attempt_tells_an_error_from_a_pass(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+    raised: BaseException | None,
+    expected: str,
+) -> None:
+    canary = load_canary(_CATALOG)
+
+    def check(_cid: str) -> float:
+        if raised is not None:
+            raise raised
+        return 0.25
+
+    monkeypatch.setattr(canary, "_check_collection", check)
+
+    result, detail = canary._attempt("collection-0", 5)
+
+    assert result == expected
+    assert detail == ("read in 0.2s" if raised is None else repr(raised))
+
+
+def test_an_attempt_the_canary_stops_waiting_for_is_a_deadline(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    release = threading.Event()
+    monkeypatch.setattr(canary, "_check_collection", lambda _cid: release.wait(5))
+    try:
+        assert canary._attempt("collection-0", 0.1) == (
+            "deadline",
+            "no result within 0s",
+        )
+    finally:
+        release.set()
+
+
+@pytest.mark.parametrize(
+    ("attempts", "cell"),
+    [
+        (["passed"], "passed"),
+        (["error", "passed"], "passed"),
+        (["deadline", "passed"], "passed"),
+        (["error", "error"], "failed"),
+        (["error", "deadline"], "not_verified"),
+        (["deadline", "deadline"], "not_verified"),
+        (["error"], "not_verified"),  # no time for the second read
+        ([], "not_verified"),
+    ],
+)
+def test_one_read_of_two_passes_a_collection_in_a_region(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    attempts: list[str],
+    cell: str,
+) -> None:
+    canary = load_canary(_CATALOG)
+
+    assert canary._cell([(result, "detail") for result in attempts]) == cell
+
+
+def _scripted(script: dict[str, list[str]]) -> Callable[[str], float]:
+    """_check_collection following each collection's script of results.
+
+    "pass" returns, "error" raises, a number sleeps that long and returns.
+    Collections without a script pass.
+    """
+    lock = threading.Lock()
+    remaining = {cid: list(results) for cid, results in script.items()}
+
+    def check(collection_id: str) -> float:
+        with lock:
+            queue_ = remaining.get(collection_id)
+            step = queue_.pop(0) if queue_ else "pass"
+        if step == "error":
+            raise OSError(f"{collection_id} unreadable")
+        if step != "pass":
+            time.sleep(float(step))
         return 0.1
 
     return check
 
 
-def test_a_failure_that_reads_back_twice_is_reported_unconfirmed(
+def test_read_twice_retries_only_what_did_not_pass(
     load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """2026-10-24 01:04Z: one fetch timed out, and the next run read it fine.
-    The run reports `error` on read-canary, never `ok`, with its coverage
-    marker, so the status page publishes a gap and a lost marker errs to down."""
-    canary = load_canary(_CATALOG)
-    monkeypatch.setenv("MODAL_REGION", "us-east")
-    monkeypatch.setattr(canary, "_check_collection", _flaky({"collection-2": 1}))
-
-    canary.read_canary()  # an inconclusive run is not a failed function
-
-    assert recorder.checkins() == ["in_progress", "error"]
-    assert recorder.coverage() == ["in_progress", "error"]
-    # The marker goes first, so a publisher reading between them sees the
-    # pair or the bare error — down — never a bare marker.
-    assert recorder.index_of(
-        "capture_checkin", monitor_slug="read-canary-coverage", status="error"
-    ) < recorder.index_of("capture_checkin", monitor_slug="read-canary", status="error")
-    (spawn,) = recorder.spawns()
-    assert spawn["fn"] == "confirm_reads"
-    assert spawn["args"][0] == ["collection-2"]
-    assert recorder.exceptions() == []
-    (warning,) = recorder.warnings()
-    assert warning["level"] == "warning"
-    assert warning["message"] == "read canary could not confirm a failed read"
-    evidence = warning["contexts"]["read_canary"]
-    assert evidence["unconfirmed"] == {
-        "collection-2": "TimeoutError('collection-2: operation timed out')"
-    }
-    assert evidence["regions"] == {"run": "us-east", "confirmation": "us-east"}
-    assert len(evidence["re-reads"]["collection-2"]) == 2
-    assert [f["timeout"] for f in recorder.flushes()] == [15]
-    line = next(m for m in recorder.messages() if m.startswith("read canary could"))
-    assert f"queueing error check-in {_RUN} with coverage marker {_MARKER}" in line
-
-
-def test_a_failure_that_fails_its_first_reread_is_confirmed(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    canary = load_canary(_CATALOG)
-    checked: list[str] = []
-    flaky = _flaky({"collection-2": 2})
-
-    def check(collection_id: str) -> float:
-        checked.append(collection_id)
-        return flaky(collection_id)
-
-    monkeypatch.setattr(canary, "_check_collection", check)
-
-    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections"):
-        canary.read_canary()
-
-    # The first failed re-read settles it; there is no second.
-    assert checked.count("collection-2") == 2
-    assert recorder.checkins() == ["in_progress", "error"]
-    assert recorder.coverage() == ["in_progress", "ok"]
-    assert len(recorder.exceptions()) == 1
-    assert recorder.warnings() == []
-
-
-def test_a_second_reread_failure_confirms(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Fails in the sweep, reads back once, then fails again."""
-    canary = load_canary(_CATALOG)
-    calls: dict[str, int] = {}
-
-    def check(collection_id: str) -> float:
-        calls[collection_id] = calls.get(collection_id, 0) + 1
-        if collection_id == "collection-4" and calls[collection_id] != 2:
-            raise OSError("connection reset")
-        return 0.1
-
-    monkeypatch.setattr(canary, "_check_collection", check)
-
-    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections"):
-        canary.read_canary()
-
-    assert calls["collection-4"] == 3
-    assert recorder.coverage() == ["in_progress", "ok"]
-
-
-def test_one_confirmed_failure_outranks_unconfirmed_ones(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     canary = load_canary(_CATALOG)
     monkeypatch.setattr(
-        canary, "_check_collection", _flaky({"collection-1": 1, "collection-6": 9})
+        canary,
+        "_check_collection",
+        _scripted(
+            {
+                "collection-1": ["error", "pass"],
+                "collection-2": ["error", "error"],
+                "collection-3": ["error", "error", "pass"],  # never a third read
+            }
+        ),
     )
 
-    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections") as excinfo:
-        canary.read_canary()
+    reads = canary._read_twice(_CATALOG, end=time.monotonic() + 5)
 
-    assert "collection-6" in str(excinfo.value)
-    assert "collection-1" not in str(excinfo.value)
-    assert recorder.checkins() == ["in_progress", "error"]
-    assert recorder.coverage() == ["in_progress", "ok"]
+    cells = {cid: canary._cell(attempts) for cid, attempts in reads.items()}
+    assert cells == {
+        **dict.fromkeys(_CATALOG, "passed"),
+        "collection-2": "failed",
+        "collection-3": "failed",
+    }
+    assert [result for result, _ in reads["collection-0"]] == ["passed"]
+    assert [result for result, _ in reads["collection-1"]] == ["error", "passed"]
+    assert len(reads["collection-3"]) == 2
+
+
+def test_read_twice_bounds_each_read_and_retries_a_slow_one(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_READ_ATTEMPT_SECONDS", 0.2)
+    monkeypatch.setattr(
+        canary, "_check_collection", _scripted({"collection-4": ["3", "pass"]})
+    )
+
+    reads = canary._read_twice(_CATALOG, end=time.monotonic() + 2)
+
+    assert [result for result, _ in reads["collection-4"]] == ["deadline", "passed"]
+    assert canary._cell(reads["collection-4"]) == "passed"
+
+
+def test_read_twice_reads_every_collection_once_before_any_twice(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_READ_WORKERS", 1)
+    order: list[str] = []
+    failing = _scripted({cid: ["error"] for cid in _CATALOG[:2]})
+
+    def check(collection_id: str) -> float:
+        order.append(collection_id)
+        return failing(collection_id)
+
+    monkeypatch.setattr(canary, "_check_collection", check)
+
+    canary._read_twice(_CATALOG, end=time.monotonic() + 5)
+
+    assert order == [*_CATALOG, "collection-0", "collection-1"]
+
+
+def test_read_twice_starts_nothing_after_its_end(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_READ_WORKERS", 1)
+    started: list[str] = []
+
+    def check(collection_id: str) -> float:
+        started.append(collection_id)
+        time.sleep(0.2)
+        return 0.2
+
+    monkeypatch.setattr(canary, "_check_collection", check)
+    began = time.monotonic()
+
+    reads = canary._read_twice(_CATALOG, end=began + 0.3)
+
+    assert time.monotonic() - began < 0.6
+    assert len(started) <= 2
+    unread = [cid for cid, attempts in reads.items() if not attempts]
+    assert len(unread) >= len(_CATALOG) - 2
+    assert all(canary._cell(reads[cid]) == "not_verified" for cid in unread)
+
+
+# --- a region's re-run ------------------------------------------------------------
+
+
+def test_a_region_reruns_the_whole_canary(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setenv("MODAL_REGION", "us-east-1")
+    monkeypatch.setattr(
+        canary, "_check_collection", _scripted({"collection-2": ["error", "error"]})
+    )
+
+    result = canary._run_region("us-east", time.time() + canary._RETURN_BY_SECONDS)
+
+    assert result["region"] == "us-east"
+    assert result["placed"] == "us-east-1"
+    assert result["status"] == "ran"
+    assert result["catalog"]["loaded"] is True
+    assert result["names"] == {cid: _name(cid) for cid in _CATALOG}
+    assert sorted(result["reads"]) == _CATALOG
+    judged = canary._judge_region("us-east", result)
+    assert judged["cells"]["collection-2"] == "failed"
+    assert recorder.index_of("clear_cache") < recorder.index_of("load_catalog")
+
+
+def test_a_region_started_too_late_reads_nothing(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Too late for the catalog window and two reads: Modal placed it late,
+    which is no observation of the stores."""
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(
+        canary, "_check_collection", lambda _cid: pytest.fail("must not read")
+    )
+    margin = canary._RETURN_BY_SECONDS - canary._REGION_START_BY_SECONDS
+
+    result = canary._run_region("eu-west", time.time() + margin - 1)
+
+    assert result["status"] == "late_start"
+    assert [name for name, _ in recorder.calls if name == "load_catalog"] == []
+    assert canary._judge_region("eu-west", result)["why"] == "late_start"
+
+
+def test_a_region_without_a_catalog_reports_it_and_reads_nothing(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_CATALOG_WINDOW_SECONDS", 0.2)
+    monkeypatch.setattr(canary, "_CATALOG_MIN_ATTEMPT_SECONDS", 0.05)
+    _loads(monkeypatch, recorder, [_raise(ConnectionError("unreachable"))])
+    monkeypatch.setattr(
+        canary, "_check_collection", lambda _cid: pytest.fail("must not read")
+    )
+
+    result = canary._run_region("us-west", time.time() + canary._RETURN_BY_SECONDS)
+
+    assert result["catalog"]["loaded"] is False
+    assert result["names"] == {}
+    assert result["reads"] == {}
+    assert canary._region_status(canary._judge_region("us-west", result), {}) == "fail"
+
+
+def _ran(
+    region: str,
+    cells: dict[str, str] | None = None,
+    *,
+    catalog: list[str] = _CATALOG,
+) -> dict[str, Any]:
+    """A re-run's result: every collection passed unless `cells` says otherwise.
+
+    A cell of "failed" is two errored reads, "not_verified" one read that the
+    canary stopped waiting for.
+    """
+    reads_for = {
+        "passed": [["passed", "read in 0.1s"]],
+        "failed": [["error", "OSError('x')"], ["error", "OSError('x')"]],
+        "not_verified": [["deadline", "no result within 150s"]],
+    }
+    cells = cells or {}
+    return {
+        "region": region,
+        "placed": f"{region}-1",
+        "status": "ran",
+        "catalog": {"loaded": True, "attempts": 1, "seconds": 0.5, "error": None},
+        "names": {cid: _name(cid) for cid in catalog},
+        "reads": {cid: reads_for[cells.get(cid, "passed")] for cid in catalog},
+    }
+
+
+def _no_catalog(region: str) -> dict[str, Any]:
+    return {
+        "region": region,
+        "placed": f"{region}-1",
+        "status": "ran",
+        "catalog": {
+            "loaded": False,
+            "attempts": 7,
+            "seconds": 120.0,
+            "error": "CatalogFetchError('timed out')",
+        },
+        "names": {},
+        "reads": {},
+    }
 
 
 @pytest.mark.parametrize(
-    "broken",
+    "result",
     [
-        pytest.param("spawn", id="confirmation cannot start"),
-        pytest.param("get", id="confirmation raises"),
-        pytest.param("timeout", id="confirmation does not return"),
-        pytest.param("missing", id="confirmation omits the collection"),
-        pytest.param("malformed", id="confirmation returns garbage"),
+        None,
+        "ok",
+        {**_ran("us-east"), "region": "us-west"},
+        {**_ran("us-east"), "status": "maybe"},
+        {**_ran("us-east"), "names": {}},  # catalog loaded, yet empty
+        {**_ran("us-east", catalog=_CATALOG[:3])},  # under the floor
+        {**_ran("us-east"), "reads": {}},
+        {**_no_catalog("us-east"), "names": {"collection-0": "x"}},
+        {**_ran("us-east"), "catalog": {"loaded": "yes"}},
+        {
+            **_ran("us-east"),
+            "reads": {cid: [["passed", "x"]] * 3 for cid in _CATALOG},
+        },
+        {**_ran("us-east"), "reads": {cid: [["maybe", "x"]] for cid in _CATALOG}},
     ],
 )
-def test_a_missing_confirmation_is_a_confirmed_failure(
+def test_a_rerun_result_of_any_other_shape_is_unobserved(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    result: object,
+) -> None:
+    """Never a failed read: the canary cannot tell what the region saw."""
+    canary = load_canary(_CATALOG)
+
+    assert canary._judge_region("us-east", result) == {
+        "id": "us-east",
+        "status": "unobserved",
+        "why": "invalid_result",
+    }
+
+
+# --- starting, waiting on and cancelling the re-runs -------------------------------
+
+
+class _Rerun:
+    """A region function whose spawn and call behave as told."""
+
+    def __init__(
+        self,
+        recorder: _Recorder,
+        region: str,
+        *,
+        result: object = None,
+        spawn_error: BaseException | None = None,
+        get: Callable[[float | None], object] | None = None,
+    ) -> None:
+        self.recorder = recorder
+        self.region = region
+        self.result = _ran(region) if result is None else result
+        self.spawn_error = spawn_error
+        self.get = get
+
+    def spawn(self, return_by: float) -> _Call:
+        self.recorder.calls.append(("spawn", {"fn": self.region, "args": (return_by,)}))
+        if self.spawn_error is not None:
+            raise self.spawn_error
+        recorder, region, get = self.recorder, self.region, self.get
+
+        class _RegionCall(_Call):
+            def get(self, timeout: float | None = None) -> object:
+                recorder.calls.append(("get", {"region": region, "timeout": timeout}))
+                return get(timeout) if get is not None else self._outcome()
+
+            def cancel(self, terminate_containers: bool = False) -> None:
+                recorder.calls.append(
+                    (
+                        "cancel",
+                        {
+                            "region": region,
+                            "terminate_containers": terminate_containers,
+                        },
+                    )
+                )
+
+        return _RegionCall(recorder, lambda: self.result)
+
+
+def _reruns(
+    canary: types.ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    recorder: _Recorder,
+    **behaviour: dict[str, Any],
+) -> None:
+    """Replace each region's function; `behaviour` maps us_east=... to _Rerun kwargs."""
+    monkeypatch.setattr(
+        canary,
+        "_REGION_FUNCTIONS",
+        {
+            region: _Rerun(
+                recorder, region, **behaviour.get(region.replace("-", "_"), {})
+            )
+            for region in canary._REGIONS
+        },
+    )
+
+
+def test_reruns_start_together_and_one_that_hangs_costs_the_others_nothing(
     load_canary: Callable[[list[str]], types.ModuleType],
     recorder: _Recorder,
     monkeypatch: pytest.MonkeyPatch,
-    broken: str,
 ) -> None:
-    """Missing evidence is never evidence of health."""
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_check_collection", _flaky({"collection-2": 1}))
+    release = threading.Event()
 
-    def outcome() -> object:
-        if broken == "get":
-            raise RuntimeError("remote function crashed")
-        if broken == "timeout":
-            raise TimeoutError
-        if broken == "missing":
-            return {"region": "us-east", "reads": {}}
-        return {"region": "us-east", "reads": {"collection-2": "ok"}}
+    def hang(timeout: float | None) -> object:
+        release.wait(timeout)
+        raise TimeoutError("still running")
 
-    def spawn(*args: object) -> _Call:
-        recorder.calls.append(("spawn", {"fn": "confirm_reads", "args": args}))
-        if broken == "spawn":
-            raise ConnectionError("modal unreachable")
-        return _Call(recorder, outcome)
+    _reruns(canary, monkeypatch, recorder, us_west={"get": hang})
+    # Leave 0.3 s before the run stops waiting.
+    run_started = time.monotonic() - (canary._COLLECT_BY_SECONDS - 0.3)
+    monkeypatch.setattr(canary, "_SPAWN_BY_SECONDS", canary._COLLECT_BY_SECONDS)
+    try:
+        regions = canary._rerun_regions(run_started)
+    finally:
+        release.set()
 
-    monkeypatch.setattr(canary.confirm_reads, "spawn", spawn)
-
-    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections") as excinfo:
-        canary.read_canary()
-
-    assert "confirmation missing" in str(excinfo.value)
-    assert recorder.checkins() == ["in_progress", "error"]
-    assert recorder.coverage() == ["in_progress", "ok"]
+    assert [region["id"] for region in regions] == ["us-east", "us-west", "eu-west"]
+    assert regions[1] == {"id": "us-west", "status": "unobserved", "why": "no_result"}
+    assert regions[0]["cells"] == dict.fromkeys(_CATALOG, "passed")
+    assert regions[2]["cells"] == dict.fromkeys(_CATALOG, "passed")
     cancels = [kw for name, kw in recorder.calls if name == "cancel"]
-    if broken in {"get", "timeout"}:
-        assert cancels == [{"terminate_containers": True}]
-    else:
-        assert cancels == []
+    assert cancels == [{"region": "us-west", "terminate_containers": True}]
+    # Every re-run got the same wall-clock deadline.
+    assert len({kw["args"] for kw in recorder.spawns()}) == 1
 
 
-def test_a_hung_read_does_not_hold_the_run_past_its_deadline(
+def test_a_rerun_that_cannot_start_is_unobserved(
     load_canary: Callable[[list[str]], types.ModuleType],
     recorder: _Recorder,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A read that never returns is a failed attempt at the sweep's deadline;
-    the run confirms it elsewhere and reports instead of waiting for Modal to
-    kill it."""
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_MAIN_PASS_DEADLINE_SECONDS", 0.5)
-    never = threading.Event()
-    hung = {"collection-3"}
+    _reruns(
+        canary,
+        monkeypatch,
+        recorder,
+        eu_west={"spawn_error": RuntimeError("no capacity")},
+    )
+
+    regions = canary._rerun_regions(time.monotonic())
+
+    assert regions[2] == {"id": "eu-west", "status": "unobserved", "why": "not_started"}
+    assert [kw["fn"] for kw in recorder.spawns()].count("eu-west") == 1
+
+
+def test_no_rerun_starts_after_its_spawn_deadline(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _reruns(canary, monkeypatch, recorder)
+    run_started = time.monotonic() - canary._SPAWN_BY_SECONDS - 1
+
+    regions = canary._rerun_regions(run_started)
+
+    assert recorder.spawns() == []
+    assert {region["why"] for region in regions} == {"not_started"}
+
+
+def test_a_rerun_that_raises_is_unobserved(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+
+    def crash(_timeout: float | None) -> object:
+        raise RuntimeError("container exited")
+
+    _reruns(canary, monkeypatch, recorder, us_east={"get": crash})
+
+    regions = canary._rerun_regions(time.monotonic())
+
+    assert regions[0] == {"id": "us-east", "status": "unobserved", "why": "no_result"}
+    # Its wait failed, which does not mean its container stopped.
+    cancels = [kw for name, kw in recorder.calls if name == "cancel"]
+    assert cancels == [{"region": "us-east", "terminate_containers": True}]
+
+
+def test_only_reruns_that_returned_go_uncancelled(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _reruns(canary, monkeypatch, recorder)
+
+    canary._rerun_regions(time.monotonic())
+
+    assert [name for name, _ in recorder.calls if name == "cancel"] == []
+
+
+def test_a_rerun_whose_spawn_returns_late_is_cancelled(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _reruns(canary, monkeypatch, recorder)
+    late = canary._REGION_FUNCTIONS["eu-west"]
+    spawn = late.spawn
+
+    def slow_spawn(return_by: float) -> object:
+        time.sleep(0.4)
+        return spawn(return_by)
+
+    monkeypatch.setattr(late, "spawn", slow_spawn)
+    # 0.1 s to start a re-run, 0.6 s before the run stops waiting.
+    monkeypatch.setattr(canary, "_SPAWN_BY_SECONDS", canary._COLLECT_BY_SECONDS - 0.5)
+    run_started = time.monotonic() - (canary._COLLECT_BY_SECONDS - 0.6)
+
+    regions = canary._rerun_regions(run_started)
+    time.sleep(0.5)  # the spawn completes after the run gave up on it
+
+    assert regions[2] == {"id": "eu-west", "status": "unobserved", "why": "not_started"}
+    # Its spawn completed after the run gave up on it.
+    cancels = [kw for name, kw in recorder.calls if name == "cancel"]
+    assert cancels == [{"region": "eu-west", "terminate_containers": True}]
+
+
+# --- the verdict -------------------------------------------------------------------
+
+
+# Shared with dynamical.org-data's status publisher, which recomputes the
+# verdict from the report by the same table; keep every copy byte-identical.
+_VERDICT_TABLE = json.loads(
+    (
+        pathlib.Path(__file__).parent / "fixtures" / "read_regions_verdict_table.json"
+    ).read_text()
+)
+
+
+def test_the_verdict_table_covers_every_combination_of_regions() -> None:
+    combinations = {
+        tuple(case["regions"][region] for region in ("us-east", "us-west", "eu-west"))
+        for case in _VERDICT_TABLE["cases"]
+    }
+    assert len(_VERDICT_TABLE["cases"]) == len(combinations) == 27
+    assert _VERDICT_TABLE["unobserved_with_only_failures"] == "down"
+
+
+@pytest.mark.parametrize(
+    "case",
+    _VERDICT_TABLE["cases"],
+    ids=lambda case: "/".join(case["regions"].values()),
+)
+def test_the_verdict_for_every_combination_of_regions(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    case: dict[str, Any],
+) -> None:
+    canary = load_canary(_CATALOG)
+    statuses = [case["regions"][region] for region in canary._REGIONS]
+
+    assert canary.regional_verdict(statuses) == case["verdict"]
+    assert (
+        canary._UNOBSERVED_WITH_ONLY_FAILURES
+        == (_VERDICT_TABLE["unobserved_with_only_failures"])
+    )
+
+
+def test_regions_that_failed_beside_one_unobserved_are_down(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    """Every region that could be checked failed."""
+    canary = load_canary(_CATALOG)
+
+    assert canary._UNOBSERVED_WITH_ONLY_FAILURES == "down"
+    assert canary.regional_verdict(["fail", "fail", "unobserved"]) == "down"
+    assert canary.regional_verdict(["fail", "unobserved", "unobserved"]) == "down"
+
+
+# --- the report ---------------------------------------------------------------------
+
+
+def _judged(canary: types.ModuleType, *results: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        canary._judge_region(region, result)
+        if result.get("status") != "unobserved"
+        else result
+        for region, result in zip(canary._REGIONS, results, strict=True)
+    ]
+
+
+def _ids(entries: list[dict[str, str]]) -> list[str]:
+    return [entry["id"] for entry in entries]
+
+
+def test_report_of_one_region_failing_one_collection(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    canary = load_canary(_CATALOG)
+    regions = _judged(
+        canary,
+        _ran("us-east", {"collection-3": "failed"}),
+        _ran("us-west"),
+        _ran("eu-west"),
+    )
+
+    report = canary._read_report(_RUN, "production", regions, "degraded")
+
+    assert report["v"] == 2
+    assert report["run"] == _RUN
+    assert report["environment"] == "production"
+    assert report["verdict"] == "degraded"
+    east, west, europe = report["regions"]
+    assert east == {
+        "id": "us-east",
+        "status": "fail",
+        "catalog": "loaded",
+        "passed": 7,
+        "failed": [{"id": "collection-3", "name": "Collection 3"}],
+        "not_verified": [],
+    }
+    assert west["status"] == europe["status"] == "pass"
+    assert west["passed"] == 8
+    # Passed only where every region read it; failed only where every one
+    # failed it: collection-3 read elsewhere is neither.
+    assert report["selected"] == 8
+    assert report["passed"] == 7
+    assert report["failed"] == []
+    assert _ids(report["unverified"]) == ["collection-3"]
+
+
+def test_report_counts_a_collection_failed_only_where_every_region_failed_it(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    canary = load_canary(_CATALOG)
+    broken = {"collection-3": "failed"}
+    regions = _judged(
+        canary,
+        _ran("us-east", broken),
+        _ran("us-west", broken),
+        _ran("eu-west", broken),
+    )
+
+    report = canary._read_report(_RUN, "production", regions, "down")
+
+    assert _ids(report["failed"]) == ["collection-3"]
+    assert report["passed"] == 7
+    assert report["unverified"] == []
+
+
+def test_failures_spread_over_regions_never_add_up_to_every_collection(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    """Each collection failed somewhere and was unknown elsewhere: no region
+    saw them all fail, so the report must not say every collection failed."""
+    canary = load_canary(_CATALOG)
+    thirds = [_CATALOG[0:3], _CATALOG[3:6], _CATALOG[6:8]]
+    results = [
+        _ran(
+            region,
+            {
+                cid: "failed" if cid in thirds[index] else "not_verified"
+                for cid in _CATALOG
+            },
+        )
+        for index, region in enumerate(canary._REGIONS)
+    ]
+
+    report = canary._read_report(_RUN, "production", _judged(canary, *results), "down")
+
+    assert report["failed"] == []
+    assert report["passed"] == 0
+    assert _ids(report["unverified"]) == _CATALOG
+
+
+def test_a_region_without_a_catalog_leaves_every_collection_unverified(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    canary = load_canary(_CATALOG)
+    regions = _judged(canary, _no_catalog("us-east"), _ran("us-west"), _ran("eu-west"))
+
+    report = canary._read_report(_RUN, "production", regions, "degraded")
+
+    assert report["regions"][0] == {
+        "id": "us-east",
+        "status": "fail",
+        "catalog": "failed",
+        "passed": 0,
+        "failed": [],
+        "not_verified": [],
+    }
+    assert report["selected"] == 8
+    assert report["passed"] == 0
+    assert _ids(report["unverified"]) == _CATALOG
+
+
+def test_no_catalog_anywhere_reports_no_collections(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    canary = load_canary(_CATALOG)
+    regions = _judged(
+        canary, _no_catalog("us-east"), _no_catalog("us-west"), _no_catalog("eu-west")
+    )
+
+    report = canary._read_report(_RUN, "production", regions, "down")
+
+    assert [region["catalog"] for region in report["regions"]] == ["failed"] * 3
+    assert report["selected"] == 0
+    assert report["passed"] == 0
+    assert report["failed"] == report["unverified"] == []
+
+
+def test_a_collection_one_region_did_not_list_is_unverified_there(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    canary = load_canary(_CATALOG)
+    regions = _judged(
+        canary,
+        _ran("us-east"),
+        _ran("us-west", catalog=_CATALOG[:7]),
+        _ran("eu-west"),
+    )
+
+    union = canary._union(regions)
+    assert canary._region_status(regions[1], union) == "fail"
+    report = canary._read_report(_RUN, "production", regions, "degraded")
+
+    assert report["regions"][1]["passed"] == 7
+    assert _ids(report["regions"][1]["not_verified"]) == ["collection-7"]
+    assert _ids(report["unverified"]) == ["collection-7"]
+
+
+def test_report_of_an_unobserved_region(
+    load_canary: Callable[[list[str]], types.ModuleType],
+) -> None:
+    canary = load_canary(_CATALOG)
+    regions = _judged(
+        canary,
+        _ran("us-east"),
+        _ran("us-west"),
+        {"id": "eu-west", "status": "unobserved", "why": "no_result"},
+    )
+
+    report = canary._read_report(_RUN, "production", regions, "gap")
+
+    assert report["regions"][2] == {
+        "id": "eu-west",
+        "status": "unobserved",
+        "why": "no_result",
+    }
+    assert report["passed"] == 0  # not read in every region
+    assert len(report["unverified"]) == 8
+
+
+def test_report_names_fall_back_to_the_id(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _loads(
+        monkeypatch,
+        recorder,
+        [
+            lambda: {
+                cid: {"name": ""} if cid == "collection-0" else {} for cid in _CATALOG
+            }
+        ],
+    )
+    monkeypatch.setattr(canary, "_check_collection", lambda _cid: 0.1)
+
+    result = canary._run_region("us-east", time.time() + canary._RETURN_BY_SECONDS)
+
+    assert set(result["names"].values()) == set(_CATALOG)
+
+
+# --- the run, end to end --------------------------------------------------------------
+
+
+def _failing_schedule(
+    canary: types.ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The scheduled sweep fails collection-5; regional reads go through _REGION_FUNCTIONS."""
 
     def check(collection_id: str) -> float:
-        if collection_id in hung:
-            hung.discard(collection_id)  # the confirmation's reads are fine
-            never.wait()
+        if collection_id == "collection-5":
+            raise OSError("collection-5 unreadable")
         return 0.1
 
     monkeypatch.setattr(canary, "_check_collection", check)
 
-    started = time.monotonic()
-    try:
-        canary.read_canary()
-    finally:
-        never.set()
 
-    assert time.monotonic() - started < 5
+def test_a_scheduled_failure_that_every_region_reads_clean_is_ok(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _failing_schedule(canary, monkeypatch)
+    _reruns(canary, monkeypatch, recorder)
+
+    canary.read_canary()
+
+    assert sorted(kw["fn"] for kw in recorder.spawns()) == sorted(canary._REGIONS)
+    assert recorder.checkins() == ["in_progress", "ok"]
+    assert recorder.coverage() == ["in_progress", "ok"]
+    assert recorder.events() == []
+    (warning,) = recorder.warnings()
+    assert warning["level"] == "warning"
+    assert warning["message"] == (
+        "read canary scheduled run failed; every region re-ran clean"
+    )
+    detail = warning["contexts"]["read_canary"]
+    assert "collection-5" in detail["scheduled"]["failed"]
+    assert {region: s["status"] for region, s in detail["regions"].items()} == {
+        "us-east": "pass",
+        "us-west": "pass",
+        "eu-west": "pass",
+    }
+    assert any(
+        m.startswith("read canary ok: 8 collections") for m in recorder.messages()
+    )
+
+
+def test_a_catalog_the_scheduled_run_cannot_load_triggers_the_reruns(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    monkeypatch.setattr(canary, "_CATALOG_WINDOW_SECONDS", 0.2)
+    monkeypatch.setattr(canary, "_CATALOG_MIN_ATTEMPT_SECONDS", 0.05)
+    _loads(monkeypatch, recorder, [_raise(ConnectionError("catalog.json unreachable"))])
+    monkeypatch.setattr(
+        canary, "_check_collection", lambda _cid: pytest.fail("must not read")
+    )
+    _reruns(canary, monkeypatch, recorder)
+
+    canary.read_canary()
+
+    assert len(recorder.spawns()) == 3
+    assert recorder.checkins() == ["in_progress", "ok"]
+    (warning,) = recorder.warnings()
+    scheduled = warning["contexts"]["read_canary"]["scheduled"]
+    assert scheduled["catalog"]["loaded"] is False
+    assert "catalog.json unreachable" in scheduled["catalog"]["error"]
+
+
+def test_one_region_failing_is_a_regional_partial_outage(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _failing_schedule(canary, monkeypatch)
+    _reruns(
+        canary,
+        monkeypatch,
+        recorder,
+        us_east={"result": _ran("us-east", {"collection-5": "failed"})},
+    )
+
+    with pytest.raises(
+        RuntimeError, match=r"read canary degraded: us-east fail"
+    ) as excinfo:
+        canary.read_canary()
+
+    assert recorder.checkins() == ["in_progress", "error"]
+    assert recorder.coverage() == ["in_progress", "ok"]
+    (event,) = recorder.events()
+    assert event["event_id"] == _REPORT_EVENT
+    report = event["contexts"]["read_canary_report"]
+    assert report["verdict"] == "degraded"
+    assert [region["status"] for region in report["regions"]] == [
+        "fail",
+        "pass",
+        "pass",
+    ]
+    assert "collection-5" in event["contexts"]["read_canary"]["scheduled"]["failed"]
+    (captured,) = recorder.exceptions()
+    assert captured is excinfo.value
+    assert recorder.warnings() == []
+    assert [f["timeout"] for f in recorder.flushes()] == [15]
+    assert recorder.index_of_log("read canary failed") < recorder.index_of(
+        "capture_checkin", status="error"
+    )
+
+
+def test_every_region_failing_is_an_outage(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _failing_schedule(canary, monkeypatch)
+    broken = {"collection-5": "failed"}
+    _reruns(
+        canary,
+        monkeypatch,
+        recorder,
+        **{
+            region.replace("-", "_"): {"result": _ran(region, broken)}
+            for region in canary._REGIONS
+        },
+    )
+
+    with pytest.raises(RuntimeError, match=r"read canary down"):
+        canary.read_canary()
+
+    assert recorder.checkins() == ["in_progress", "error"]
+    assert recorder.coverage() == ["in_progress", "ok"]
+    (event,) = recorder.events()
+    report = event["contexts"]["read_canary_report"]
+    assert report["verdict"] == "down"
+    assert _ids(report["failed"]) == ["collection-5"]
+
+
+def test_no_catalog_in_any_region_is_an_outage(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The STAC catalog is on the path to every read: no catalog, no reads."""
+    canary = load_canary(_CATALOG)
+    _failing_schedule(canary, monkeypatch)
+    _reruns(
+        canary,
+        monkeypatch,
+        recorder,
+        **{
+            region.replace("-", "_"): {"result": _no_catalog(region)}
+            for region in canary._REGIONS
+        },
+    )
+
+    with pytest.raises(RuntimeError, match=r"read canary down"):
+        canary.read_canary()
+
+    assert recorder.coverage() == ["in_progress", "ok"]
+    report = recorder.events()[0]["contexts"]["read_canary_report"]
+    assert report["selected"] == 0
+
+
+def test_reruns_that_could_not_run_without_a_failure_are_a_gap(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canary = load_canary(_CATALOG)
+    _failing_schedule(canary, monkeypatch)
+    _reruns(
+        canary,
+        monkeypatch,
+        recorder,
+        eu_west={"spawn_error": RuntimeError("no capacity")},
+    )
+
+    with pytest.raises(RuntimeError, match=r"read canary gap"):
+        canary.read_canary()
+
     assert recorder.checkins() == ["in_progress", "error"]
     assert recorder.coverage() == ["in_progress", "error"]
-    (warning,) = recorder.warnings()
-    assert "collection-3" in warning["contexts"]["read_canary"]["unconfirmed"]
+    # The marker goes first: a publisher reading between them sees an outage,
+    # never a marker without its error.
+    assert recorder.index_of(
+        "capture_checkin", monitor_slug="read-canary-coverage", status="error"
+    ) < recorder.index_of("capture_checkin", monitor_slug="read-canary", status="error")
+    report = recorder.events()[0]["contexts"]["read_canary_report"]
+    assert report["verdict"] == "gap"
+    failure = next(m for m in recorder.messages() if m.startswith("read canary failed"))
+    assert f"with coverage marker {_MARKER}" in failure
 
 
-def test_reads_never_started_are_confirmed_not_failed(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """With the only worker stuck, the queued collections were never
-    attempted: each goes to the confirmation, and reading fine there counts as
-    read, not as an unconfirmed failure."""
-    canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_MAIN_PASS_DEADLINE_SECONDS", 0.5)
-    monkeypatch.setattr(canary, "_READ_WORKERS", 1)
-    never = threading.Event()
-    hung = {"collection-0"}
-
-    def check(collection_id: str) -> float:
-        if collection_id in hung:
-            hung.discard(collection_id)
-            never.wait()
-        return 0.1
-
-    monkeypatch.setattr(canary, "_check_collection", check)
-
-    try:
-        canary.read_canary()
-    finally:
-        never.set()
-
-    (spawn,) = recorder.spawns()
-    assert spawn["args"][0] == _CATALOG
-    (warning,) = recorder.warnings()
-    assert list(warning["contexts"]["read_canary"]["unconfirmed"]) == ["collection-0"]
-
-
-def test_a_hung_catalog_load_fails_the_run_inside_its_budget(
+def test_failed_regions_beside_an_unobserved_one_are_an_outage(
     load_canary: Callable[[list[str]], types.ModuleType],
     recorder: _Recorder,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_CATALOG_DEADLINE_SECONDS", 0.2)
-    never = threading.Event()
-
-    def hung_load_catalog() -> dict[str, None]:
-        never.wait()
-        return {}
-
-    monkeypatch.setattr(
-        sys.modules["dynamical_catalog"], "load_catalog", hung_load_catalog
+    _failing_schedule(canary, monkeypatch)
+    broken = {"collection-5": "failed"}
+    _reruns(
+        canary,
+        monkeypatch,
+        recorder,
+        us_east={"result": _ran("us-east", broken)},
+        us_west={"result": _ran("us-west", broken)},
+        eu_west={"spawn_error": RuntimeError("no capacity")},
     )
 
-    try:
-        with pytest.raises(TimeoutError, match=r"catalog"):
-            canary.read_canary()
-    finally:
-        never.set()
+    with pytest.raises(RuntimeError, match=r"read canary down"):
+        canary.read_canary()
+
+    assert recorder.coverage() == ["in_progress", "ok"]
+    report = recorder.events()[0]["contexts"]["read_canary_report"]
+    assert [region["status"] for region in report["regions"]] == [
+        "fail",
+        "fail",
+        "unobserved",
+    ]
+
+
+def test_an_unexpected_fault_is_a_plain_failure(
+    load_canary: Callable[[list[str]], types.ModuleType],
+    recorder: _Recorder,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Never ok, never a gap."""
+    canary = load_canary(_CATALOG)
+    _failing_schedule(canary, monkeypatch)
+
+    def explode(_started: float) -> list[dict[str, Any]]:
+        raise KeyError("bug")
+
+    monkeypatch.setattr(canary, "_rerun_regions", explode)
+
+    with pytest.raises(KeyError, match="bug"):
+        canary.read_canary()
 
     assert recorder.checkins() == ["in_progress", "error"]
     assert recorder.coverage() == ["in_progress", "ok"]
-    assert recorder.spawns() == []
-
-
-def test_confirm_reads_reads_each_collection_twice_from_a_fresh_catalog(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    canary = load_canary(_CATALOG)
-    monkeypatch.setenv("MODAL_REGION", "us-west")
-    checked: list[str] = []
-    monkeypatch.setattr(
-        canary, "_check_collection", lambda cid: checked.append(cid) or 0.1
-    )
-
-    result = canary.confirm_reads(
-        ["collection-1", "collection-2"], time.time() + canary._CONFIRM_BUDGET_SECONDS
-    )
-
-    assert sorted(checked) == ["collection-1"] * 2 + ["collection-2"] * 2
-    assert result["region"] == "us-west"
-    assert set(result["reads"]) == {"collection-1", "collection-2"}
-    assert all(canary._read_back(attempts) for attempts in result["reads"].values())
-    assert recorder.index_of("clear_cache") < recorder.index_of_log("confirming")
-
-
-def test_confirm_reads_bounds_each_attempt(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_CONFIRM_ATTEMPT_SECONDS", 0.2)
-    never = threading.Event()
-
-    def check(_collection_id: str) -> float:
-        never.wait()
-        return 0.1
-
-    monkeypatch.setattr(canary, "_check_collection", check)
-
-    try:
-        result = canary.confirm_reads(
-            ["collection-1"], time.time() + canary._CONFIRM_BUDGET_SECONDS
-        )
-    finally:
-        never.set()
-
-    (attempt,) = result["reads"]["collection-1"]
-    assert attempt[0] is False
-    assert "TimeoutError" in attempt[1]
-    assert not canary._read_back(result["reads"]["collection-1"])
-
-
-def test_confirm_reads_never_starts_an_attempt_it_cannot_finish(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Out of time is confirmation missing, never a read failure or a pass."""
-    canary = load_canary(_CATALOG)
-    checked: list[str] = []
-    monkeypatch.setattr(
-        canary, "_check_collection", lambda cid: checked.append(cid) or 0.1
-    )
-
-    result = canary.confirm_reads(
-        ["collection-1"], time.time() + canary._CONFIRM_ATTEMPT_SECONDS - 1
-    )
-
-    assert checked == []
-    assert result["reads"]["collection-1"] == [(False, "no time left to re-read")]
-    assert not canary._read_back(result["reads"]["collection-1"])
+    (event,) = recorder.events()
+    assert "read_canary_report" not in event.get("contexts", {})
 
 
 def test_the_run_owns_its_check_in_ids_when_sentry_captures_nothing(
@@ -1147,7 +1936,8 @@ def test_the_run_owns_its_check_in_ids_when_sentry_captures_nothing(
     """capture_checkin returns None when the SDK drops the event (no DSN, say);
     the run's ids, and the marker derived from them, must not depend on it."""
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_check_collection", _flaky({"collection-2": 1}))
+    _failing_schedule(canary, monkeypatch)
+    _reruns(canary, monkeypatch, recorder, eu_west={"spawn_error": RuntimeError("x")})
     capture = sys.modules["sentry_sdk.crons"].capture_checkin
 
     def dropped(**kwargs: object) -> None:
@@ -1155,7 +1945,8 @@ def test_the_run_owns_its_check_in_ids_when_sentry_captures_nothing(
 
     monkeypatch.setattr(sys.modules["sentry_sdk.crons"], "capture_checkin", dropped)
 
-    canary.read_canary()
+    with pytest.raises(RuntimeError, match="read canary gap"):
+        canary.read_canary()
 
     ids = {
         (kw["monitor_slug"], kw["check_in_id"])
@@ -1163,246 +1954,6 @@ def test_the_run_owns_its_check_in_ids_when_sentry_captures_nothing(
         if name == "capture_checkin"
     }
     assert ids == {("read-canary", _RUN), ("read-canary-coverage", _MARKER)}
-
-
-# --- the failed run's report ---------------------------------------------------
-
-_36 = [f"collection-{i:02d}" for i in range(36)]
-_NO_TIME = (False, "no time left to re-read")
-_READ = (True, "read in 0.1s")
-
-
-def _report(
-    canary: types.ModuleType,
-    catalog: list[str],
-    *,
-    durations: list[str],
-    failures: list[str],
-    unattempted: list[str],
-    reads: dict[str, list[tuple[bool, str]]] | None,
-) -> dict[str, Any]:
-    """The report for one sweep and its confirmation, as the run builds it."""
-    sweep_errors: dict[str, BaseException] = {
-        cid: OSError(f"{cid}: reset") for cid in failures
-    }
-    confirmation = None if reads is None else {"region": "us-east", "reads": reads}
-    confirmed, _ = canary._confirmed_failures(
-        sweep_errors, unattempted, confirmation, "did not return"
-    )
-    return canary._read_report(
-        _RUN,
-        "production",
-        {cid: {"name": _name(cid)} for cid in catalog},
-        durations=dict.fromkeys(durations, 0.1),
-        failures=sweep_errors,
-        confirmation=confirmation,
-        confirmed=confirmed,
-    )
-
-
-def _ids(entries: list[dict[str, str]]) -> list[str]:
-    return [entry["id"] for entry in entries]
-
-
-def _assert_invariant(report: dict[str, Any]) -> None:
-    assert (
-        report["passed"] + len(report["failed"]) + len(report["unverified"])
-        == report["selected"]
-    )
-
-
-def test_report_buckets_when_every_collection_fails(
-    load_canary: Callable[[list[str]], types.ModuleType],
-) -> None:
-    canary = load_canary(_CATALOG)
-
-    report = _report(
-        canary,
-        _CATALOG,
-        durations=[],
-        failures=_CATALOG,
-        unattempted=[],
-        reads={cid: [(False, "OSError('reset')")] for cid in _CATALOG},
-    )
-
-    assert (report["selected"], report["passed"]) == (8, 0)
-    assert _ids(report["failed"]) == _CATALOG
-    assert report["unverified"] == []
-    _assert_invariant(report)
-
-
-def test_report_buckets_one_failure_with_the_rest_unreached_and_read_back(
-    load_canary: Callable[[list[str]], types.ModuleType],
-) -> None:
-    """2026-10-26: the sweep's only finished read failed, the other 35 were
-    never reached; the confirmation read the 35 and the failure failed again."""
-    canary = load_canary(_36)
-    broken, *rest = _36
-    reads = {cid: [_READ, _READ] for cid in rest}
-    reads[broken] = [(False, "OSError('reset')")]
-
-    report = _report(
-        canary, _36, durations=[], failures=[broken], unattempted=rest, reads=reads
-    )
-
-    assert (report["selected"], report["passed"]) == (36, 35)
-    assert report["failed"] == [{"id": broken, "name": _name(broken)}]
-    assert report["unverified"] == []
-    _assert_invariant(report)
-
-
-def test_report_buckets_one_failure_with_the_rest_unreached_and_no_confirmation(
-    load_canary: Callable[[list[str]], types.ModuleType],
-) -> None:
-    """Without the confirmation only the sweep's own failure was observed; the
-    unreached rest are unverified, never passed and never failed."""
-    canary = load_canary(_36)
-    broken, *rest = _36
-
-    report = _report(
-        canary, _36, durations=[], failures=[broken], unattempted=rest, reads=None
-    )
-
-    assert (report["selected"], report["passed"]) == (36, 0)
-    assert _ids(report["failed"]) == [broken]
-    assert _ids(report["unverified"]) == rest
-    _assert_invariant(report)
-
-
-def test_report_buckets_a_mixed_run(
-    load_canary: Callable[[list[str]], types.ModuleType],
-) -> None:
-    """Sweep: 30 read, 3 failed, 3 unreached. Of the failed, one reads back
-    twice, one fails its re-read, one gets no time; of the unreached, one reads
-    back, one fails its re-read, one gets no time."""
-    canary = load_canary(_36)
-    read, failed, unreached = _36[:30], _36[30:33], _36[33:]
-    reads = {
-        failed[0]: [_READ, _READ],
-        failed[1]: [(False, "OSError('reset')")],
-        failed[2]: [_NO_TIME],
-        unreached[0]: [_READ, _READ],
-        unreached[1]: [(False, "TimeoutError('re-read')")],
-        unreached[2]: [_NO_TIME],
-    }
-
-    report = _report(
-        canary, _36, durations=read, failures=failed, unattempted=unreached, reads=reads
-    )
-
-    assert (report["selected"], report["passed"]) == (36, 32)
-    assert _ids(report["failed"]) == [failed[1], failed[2], unreached[1]]
-    assert _ids(report["unverified"]) == [unreached[2]]
-    _assert_invariant(report)
-
-
-def test_report_buckets_a_pass_then_no_time_for_the_second_reread(
-    load_canary: Callable[[list[str]], types.ModuleType],
-) -> None:
-    """One good re-read is not two: it is unverified when no read was seen to
-    fail, and failed when the sweep's read did."""
-    canary = load_canary(_CATALOG)
-    swept_failed, unreached = "collection-1", "collection-2"
-    reads = {cid: [_READ, _NO_TIME] for cid in (swept_failed, unreached)}
-
-    report = _report(
-        canary,
-        _CATALOG,
-        durations=[cid for cid in _CATALOG if cid not in {swept_failed, unreached}],
-        failures=[swept_failed],
-        unattempted=[unreached],
-        reads=reads,
-    )
-
-    assert (report["selected"], report["passed"]) == (8, 6)
-    assert _ids(report["failed"]) == [swept_failed]
-    assert _ids(report["unverified"]) == [unreached]
-    _assert_invariant(report)
-
-
-def test_report_counts_a_sweep_deadline_as_a_failed_read(
-    load_canary: Callable[[list[str]], types.ModuleType],
-) -> None:
-    canary = load_canary(_CATALOG)
-    hung = "collection-3"
-    sweep_errors: dict[str, BaseException] = {hung: TimeoutError("sweep deadline")}
-    confirmed, _ = canary._confirmed_failures(sweep_errors, [], None, "no time")
-
-    report = canary._read_report(
-        _RUN,
-        "production",
-        {cid: {"name": _name(cid)} for cid in _CATALOG},
-        durations={cid: 0.1 for cid in _CATALOG if cid != hung},
-        failures=sweep_errors,
-        confirmation=None,
-        confirmed=confirmed,
-    )
-
-    assert _ids(report["failed"]) == [hung]
-    assert report["unverified"] == []
-
-
-def test_report_names_fall_back_to_the_id(
-    load_canary: Callable[[list[str]], types.ModuleType],
-) -> None:
-    canary = load_canary(_CATALOG)
-    catalog: dict[str, Any] = {cid: {"name": _name(cid)} for cid in _CATALOG}
-    catalog["collection-0"] = {}
-    catalog["collection-1"] = None
-    failures: dict[str, BaseException] = {
-        cid: OSError("reset") for cid in ("collection-0", "collection-1")
-    }
-    confirmed, _ = canary._confirmed_failures(failures, [], None, "no time")
-
-    report = canary._read_report(
-        _RUN,
-        "production",
-        catalog,
-        durations={cid: 0.1 for cid in _CATALOG if cid not in failures},
-        failures=failures,
-        confirmation=None,
-        confirmed=confirmed,
-    )
-
-    assert report["failed"] == [
-        {"id": "collection-0", "name": "collection-0"},
-        {"id": "collection-1", "name": "collection-1"},
-    ]
-
-
-def test_a_confirmed_failure_sends_its_report_under_the_derived_event_id(
-    load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    canary = load_canary(_CATALOG)
-    monkeypatch.setenv("SENTRY_ENVIRONMENT", "staging")
-    monkeypatch.setattr(canary, "_check_collection", _flaky({"collection-5": 9}))
-
-    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections") as excinfo:
-        canary.read_canary()
-
-    (event,) = recorder.events()
-    # The publisher derives the same id from the run's check-in id.
-    assert event["event_id"] == _REPORT_EVENT
-    assert canary._REPORT_NAMESPACE == _REPORT_NAMESPACE
-    assert recorder.exceptions() == [excinfo.value]
-    assert event["contexts"]["read_canary_report"] == {
-        "v": 1,
-        "run": _RUN,
-        "environment": "staging",
-        "selected": 8,
-        "passed": 7,
-        "failed": [{"id": "collection-5", "name": "Collection 5"}],
-        "unverified": [],
-    }
-    ((_, init_kwargs),) = [c for c in recorder.calls if c[0] == "init"]
-    assert init_kwargs["environment"] == "staging"
-    assert recorder.checkins() == ["in_progress", "error"]
-    assert recorder.coverage() == ["in_progress", "ok"]
-    assert recorder.index_of("capture_event") < recorder.index_of(
-        "capture_checkin", monitor_slug="read-canary", status="error"
-    )
 
 
 @pytest.mark.parametrize("broken", ["_read_report", "capture_event"])
@@ -1413,7 +1964,13 @@ def test_a_report_that_cannot_be_sent_leaves_the_run_unchanged(
     broken: str,
 ) -> None:
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_check_collection", _flaky({"collection-5": 9}))
+    _failing_schedule(canary, monkeypatch)
+    _reruns(
+        canary,
+        monkeypatch,
+        recorder,
+        us_east={"result": _ran("us-east", {"collection-5": "failed"})},
+    )
 
     def explode(*_: object, **__: object) -> None:
         raise KeyError("report exploded")
@@ -1423,10 +1980,9 @@ def test_a_report_that_cannot_be_sent_leaves_the_run_unchanged(
     else:
         monkeypatch.setattr(sys.modules["sentry_sdk"], "capture_event", explode)
 
-    with pytest.raises(RuntimeError, match=r"failed for 1/8 collections") as excinfo:
+    with pytest.raises(RuntimeError, match=r"read canary degraded") as excinfo:
         canary.read_canary()
 
-    # Today's capture, as if there were no report.
     assert recorder.events() == []
     assert [
         kw["error"] for name, kw in recorder.calls if name == "capture_exception"
@@ -1439,39 +1995,50 @@ def test_a_report_that_cannot_be_sent_leaves_the_run_unchanged(
     )
 
 
-def test_a_catalog_failure_event_has_the_derived_id_and_no_report(
+def test_a_rerun_runs_the_real_region_code_through_spawn(
     load_canary: Callable[[list[str]], types.ModuleType],
     recorder: _Recorder,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """The shipped wrappers, spawned as Modal would, reach a verdict."""
     canary = load_canary(_CATALOG)
+    _failing_schedule(canary, monkeypatch)
 
-    def broken_load_catalog() -> dict[str, None]:
-        raise ConnectionError("catalog.json unreachable")
-
-    monkeypatch.setattr(
-        sys.modules["dynamical_catalog"], "load_catalog", broken_load_catalog
-    )
-
-    with pytest.raises(ConnectionError):
+    with pytest.raises(RuntimeError, match=r"read canary down"):
         canary.read_canary()
 
-    (event,) = recorder.events()
-    assert event["event_id"] == _REPORT_EVENT
-    assert "read_canary_report" not in event.get("contexts", {})
+    assert sorted(kw["fn"] for kw in recorder.spawns()) == [
+        "rerun_eu_west",
+        "rerun_us_east",
+        "rerun_us_west",
+    ]
+    report = recorder.events()[0]["contexts"]["read_canary_report"]
+    # collection-5 errors on every read, in every region.
+    assert _ids(report["failed"]) == ["collection-5"]
+    assert report["passed"] == 7
 
 
-def test_an_unconfirmed_run_sends_no_report(
+def test_a_read_the_sweep_deadline_stops_is_a_failure(
     load_canary: Callable[[list[str]], types.ModuleType],
-    recorder: _Recorder,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     canary = load_canary(_CATALOG)
-    monkeypatch.setattr(canary, "_check_collection", _flaky({"collection-2": 1}))
+    release = threading.Event()
 
-    canary.read_canary()
+    def check(collection_id: str) -> float:
+        if collection_id == "collection-0":
+            release.wait(5)
+        return 0.1
 
-    assert recorder.events() == []
-    assert recorder.exceptions() == []
-    (warning,) = recorder.warnings()
-    assert "read_canary_report" not in warning["contexts"]
+    monkeypatch.setattr(canary, "_check_collection", check)
+    try:
+        durations, failures, unread = canary._read_all(
+            _CATALOG, deadline=time.monotonic() + 0.2
+        )
+    finally:
+        release.set()
+
+    assert list(failures) == ["collection-0"]
+    assert "deadline" in str(failures["collection-0"])
+    assert sorted(durations) == _CATALOG[1:]
+    assert unread == []

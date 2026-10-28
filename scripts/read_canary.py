@@ -18,24 +18,21 @@ could show whether those two runs had executed, let alone what they read.
 This is the data-plane half of the 99.5% uptime SLA: proof that reads actually
 resolve, not merely that catalog.json is served.
 
-A read that fails is re-read from a fresh container before it counts. Each
-collection that failed, or that the sweep never reached, is read again twice by
-`confirm_reads`, in its own single-use container. A collection without a
-positive read, in the sweep or in both re-reads, is a confirmed failure: the
-run closes `error` as it always has. A run whose every failure read back is one
-the canary could not confirm. It still closes `read-canary` as `error`, never
-`ok`, and also closes a second monitor, `read-canary-coverage`, as `error`
-under a check-in id derived from the run's own. The status publisher
-(dynamical.org-data) treats only that exact pair as a monitoring gap, so a
-lost or late marker leaves an outage, and only a full sweep's `ok` ends one.
-Missing confirmation (the call failed, timed out, or left a collection out) is
-a confirmed failure, never a pass.
-
-A run with a confirmed failure sends its error event under an id derived from
-the run's check-in id, carrying a report of which collections passed, failed,
-or could not be verified. The status publisher fetches it by that id to say
-how much of the catalog an outage affects; the report never changes the
-verdict.
+Any failure in the scheduled run, at the catalog step or at a data read, only
+triggers a check: the canary then runs again in full (the catalog and every
+collection) in three fresh single-use containers, one each in US East, US West
+and Europe West (`_REGIONS`), and those re-runs alone decide the verdict. Each
+container gives the catalog up to two minutes of retries, and a collection
+passes in a region if one of its two reads there succeeds. Every region
+passing closes the run `ok` (a warning event keeps the scheduled failure
+visible). Some regions failing is a regional partial outage, all of them an
+outage: the run closes `error` and sends its error event under an id derived
+from the run's check-in id, carrying a report of what each region read. The
+status publisher (dynamical.org-data) fetches it by that id to tell the two
+apart and to name the regions. A run that cannot tell, because a region's
+container never started or returned and no region failed, also closes a second
+monitor, `read-canary-coverage`, as `error` under a check-in id derived from
+the run's own; the publisher treats only that exact pair as a monitoring gap.
 
 Deploy:
     modal deploy scripts/read_canary.py
@@ -82,8 +79,10 @@ MIN_COLLECTIONS = 6
 
 # Modal kills the container at this timeout, so a run can never legitimately
 # stay `in_progress` past it. `max_runtime` (below) adds a couple of minutes
-# of buffer on top before Sentry declares the check-in hung.
-_TIMEOUT_SECONDS = 600
+# of buffer on top before Sentry declares the check-in hung. A failed run can
+# outlast the 10-minute schedule and overlap the next run; the publisher orders
+# runs by when they started, so the newer one's result governs.
+_TIMEOUT_SECONDS = 840
 _MAX_RUNTIME_MINUTES = _TIMEOUT_SECONDS // 60 + 2
 
 # sentry-sdk's default flush budget is `shutdown_timeout`, 2 seconds. If
@@ -94,27 +93,49 @@ _MAX_RUNTIME_MINUTES = _TIMEOUT_SECONDS // 60 + 2
 # 15 s matches reformatters' cron monitoring and is well inside the schedule.
 _FLUSH_TIMEOUT_SECONDS = 15
 
-# One budget from the run's start, inside _TIMEOUT_SECONDS. Healthy sweeps take
-# 18-32 s; a read still going at the sweep's deadline is a failed attempt that
-# the confirmation re-reads. The run stops waiting for the confirmation at
-# _CONFIRM_DEADLINE_SECONDS and keeps the rest for reporting and the flush.
-_CATALOG_DEADLINE_SECONDS = 60
-_MAIN_PASS_DEADLINE_SECONDS = 240
-_CONFIRM_DEADLINE_SECONDS = 500
+# Every container retries the catalog for up to _CATALOG_WINDOW_SECONDS, one
+# load at a time with these pauses between, and starts no load with less than
+# _CATALOG_MIN_ATTEMPT_SECONDS of the window left. A load still running when
+# the window ends ends the step: another would race it for the client's cache.
+_CATALOG_WINDOW_SECONDS = 120
+_CATALOG_BACKOFF_SECONDS = (2, 4, 8, 16)
+_CATALOG_MIN_ATTEMPT_SECONDS = 5
+
+# One budget from the scheduled run's start, inside _TIMEOUT_SECONDS. Healthy
+# runs take 15-145 s. The scheduled sweep stops at its first failure, or at
+# _SWEEP_DEADLINE_SECONDS, and the re-runs are started by _SPAWN_BY_SECONDS.
+# Each region returns by _RETURN_BY_SECONDS; the run stops waiting at
+# _COLLECT_BY_SECONDS and keeps the rest for reporting and the flush.
+_SWEEP_DEADLINE_SECONDS = 215
+_SPAWN_BY_SECONDS = 235
+_SPAWN_SECONDS = 20
+_RETURN_BY_SECONDS = 740
+_COLLECT_BY_SECONDS = 750
+_CANCEL_SECONDS = 10
 _READ_WORKERS = 8
 
-# The confirmation re-reads each collection _CONFIRM_READS times, a pause
-# apart, each attempt bounded, and starts no attempt it could not finish before
-# its own deadline. It returns a little before the run stops waiting.
-_CONFIRM_READS = 2
-_CONFIRM_ATTEMPT_SECONDS = 90
-_CONFIRM_INTERVAL_SECONDS = 15
-_CONFIRM_BUDGET_SECONDS = 240
-_CONFIRM_RETURN_MARGIN_SECONDS = 10
-_NO_TIME_TO_REREAD = "no time left to re-read"
+# In a region each collection gets up to _READ_ATTEMPTS reads, a pause apart,
+# first reads before second ones, each bounded at _READ_ATTEMPT_SECONDS (the
+# slowest healthy read seen is 122 s). One read passing passes it. A region
+# stops reading _REGION_RETURN_MARGIN_SECONDS before it must return, and one
+# that starts too late to give the catalog its window and a collection both of
+# its reads does nothing: Modal placed it late, which is not a failed read.
+_READ_ATTEMPTS = 2
+_READ_ATTEMPT_SECONDS = 150
+_READ_RETRY_PAUSE_SECONDS = 5
+_REGION_RETURN_MARGIN_SECONDS = 5
+_REGION_READ_SECONDS = (
+    _READ_ATTEMPTS * _READ_ATTEMPT_SECONDS + _READ_RETRY_PAUSE_SECONDS
+)
+_REGION_START_BY_SECONDS = (
+    _RETURN_BY_SECONDS
+    - _REGION_RETURN_MARGIN_SECONDS
+    - _CATALOG_WINDOW_SECONDS
+    - _REGION_READ_SECONDS
+)
 
-# The second monitor, closed `error` only on a run the canary could not
-# confirm. Its check-in id is uuid5 of the run's read-canary id (as hex) in
+# The second monitor, closed `error` only on a run whose re-runs could not
+# reach a verdict. Its check-in id is uuid5 of the run's read-canary id (as hex) in
 # this namespace; dynamical.org-data's status.py holds the same constant and
 # pairs the two by it.
 _MONITOR_SLUG = "read-canary"
@@ -122,11 +143,11 @@ _COVERAGE_MONITOR_SLUG = "read-canary-coverage"
 _COVERAGE_NAMESPACE = uuid.UUID("d014545d-f123-4e15-9893-6bfff7bbc831")
 
 # A failed run sends its error event under uuid5 of its read-canary id (as hex)
-# in this namespace, with a `read_canary_report` context when it has confirmed
-# failures. dynamical.org-data's status.py holds the same constant and fetches
+# in this namespace, with a `read_canary_report` context when its re-runs
+# reported. dynamical.org-data's status.py holds the same constant and fetches
 # the report by it.
 _REPORT_NAMESPACE = uuid.UUID("f19ee126-79b9-4217-95db-f305e99ce3a6")
-_REPORT_VERSION = 1
+_REPORT_VERSION = 2
 
 
 # Unpinned, Modal places runs in any of its regions worldwide. The WeatherNext 2
@@ -135,6 +156,21 @@ _REPORT_VERSION = 1
 # fine. The broad US region keeps every run in the US at a lower price
 # multiplier than any single narrow region.
 _REGION = "us"
+
+# The re-runs, each pinned to a narrow region (1.75x the base price, against
+# 1.15x for broad `us`) and only run after a scheduled failure. None is in a
+# country the WeatherNext 2 terms exclude. The order is the report's.
+_REGIONS = ("us-east", "us-west", "eu-west")
+
+# What a region's re-run found: every collection read, or not.
+_PASS = "pass"  # noqa: S105
+_FAIL = "fail"
+# No result to judge: the container did not start, start in time, or return
+# one the run could use.
+_UNOBSERVED = "unobserved"
+# The verdict when no region passed and at least one could not be observed:
+# every region that could be checked failed.
+_UNOBSERVED_WITH_ONLY_FAILURES = "down"
 
 # The canary names itself in the User-Agent of its WeatherNext chunk reads, so
 # proxy analytics can tell our own traffic apart.
@@ -280,12 +316,12 @@ def _run_with_deadline[T](fn: Callable[[], T], seconds: float, what: str) -> T:
 def _read_all(
     collection_ids: list[str], *, deadline: float
 ) -> tuple[dict[str, float], dict[str, BaseException], list[str]]:
-    """Read one value from every collection until the monotonic `deadline`.
+    """Read one value from every collection until its first failure or `deadline`.
 
     Returns each read's wall time, each failed read's error, and the
-    collections no worker reached. Every collection is attempted even after one
-    fails, so a failure reports the full set of broken stores rather than the
-    first one. A read still going at the deadline is a failure; its daemon
+    collections no worker reached. The scheduled run only triggers the
+    re-runs, so it stops at the first failed read rather than reading on to
+    the deadline. A read still going at the deadline is a failure; its daemon
     worker is abandoned.
     """
     pending: queue.SimpleQueue[str] = queue.SimpleQueue()
@@ -319,7 +355,7 @@ def _read_all(
         elif duration is not None:
             durations[collection_id] = duration
 
-    while len(durations) + len(failures) < len(collection_ids):
+    while len(durations) + len(failures) < len(collection_ids) and not failures:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             break
@@ -340,266 +376,616 @@ def _read_all(
             record(results.get_nowait())
         except queue.Empty:
             break
-    for collection_id in collection_ids:
-        if (
-            collection_id not in durations
-            and collection_id not in failures
-            and collection_id not in unattempted
-        ):
+    # A read still going is a failure only if the deadline stopped it; one cut
+    # short by another's failure is simply unread.
+    stopped_early = bool(failures) and time.monotonic() < deadline
+    unfinished = [
+        collection_id
+        for collection_id in collection_ids
+        if collection_id not in durations
+        and collection_id not in failures
+        and collection_id not in unattempted
+    ]
+    if stopped_early:
+        unattempted.extend(unfinished)
+    else:
+        for collection_id in unfinished:
             failures[collection_id] = TimeoutError(
-                f"read did not finish by the sweep's {_MAIN_PASS_DEADLINE_SECONDS}s "
-                "deadline"
+                "read did not finish by the sweep's deadline"
             )
     return durations, failures, sorted(unattempted)
 
 
-def _confirm_one(collection_id: str, deadline: float) -> list[tuple[bool, str]]:
-    """Up to _CONFIRM_READS bounded re-reads, stopping at the first failure.
+def _load_catalog(window_end: float) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    """The catalog, retried until the monotonic `window_end`, and how it went.
 
-    `deadline` is wall-clock (time.time()), since the run that set it is in
-    another container. An attempt that could not finish before it is never
-    started; its place is recorded as _NO_TIME_TO_REREAD.
+    Loads run one at a time, each bounded by what is left of the window, so a
+    load that hangs ends the step rather than racing a second one for the
+    client's cache. A catalog under MIN_COLLECTIONS counts as a failed load.
+    Returns the catalog (None once the window is spent) and the step's
+    outcome: whether it loaded, after how many loads and seconds, and the last
+    error.
     """
-    attempts: list[tuple[bool, str]] = []
-    for attempt in range(_CONFIRM_READS):
-        if attempt:
-            time.sleep(_CONFIRM_INTERVAL_SECONDS)
-        if time.time() + _CONFIRM_ATTEMPT_SECONDS > deadline:
-            attempts.append((False, _NO_TIME_TO_REREAD))
-            break
+    import dynamical_catalog  # noqa: PLC0415
+
+    log = _logger()
+    started = time.monotonic()
+    # A warm container keeps dynamical_catalog's module-level catalog cache;
+    # each run must fetch catalog.json afresh or it checks a stale listing.
+    dynamical_catalog.clear_cache()
+    attempts = 0
+    error: BaseException | None = None
+    while window_end - time.monotonic() >= _CATALOG_MIN_ATTEMPT_SECONDS:
+        attempts += 1
         try:
-            seconds = _run_with_deadline(
-                lambda: _check_collection(collection_id),
-                _CONFIRM_ATTEMPT_SECONDS,
-                f"re-read of {collection_id}",
+            catalog = _run_with_deadline(
+                dynamical_catalog.load_catalog,
+                window_end - time.monotonic(),
+                "loading the catalog",
+            )
+        except TimeoutError as timeout:
+            # Ours, or one the client raised inside its own load: either way
+            # this load is over and the window with it if it was ours.
+            error = timeout
+            if time.monotonic() >= window_end:
+                break
+        except Exception as failure:  # noqa: BLE001
+            error = failure
+        else:
+            if len(catalog) >= MIN_COLLECTIONS:
+                return catalog, {
+                    "loaded": True,
+                    "attempts": attempts,
+                    "seconds": round(time.monotonic() - started, 1),
+                    "error": None,
+                }
+            error = RuntimeError(
+                f"catalog returned {len(catalog)} collections, "
+                f"expected >= {MIN_COLLECTIONS}"
+            )
+            # The client cached that short catalog; the next load must fetch.
+            dynamical_catalog.clear_cache()
+        log.warning("catalog load %d failed: %r", attempts, error)
+        pause = _CATALOG_BACKOFF_SECONDS[
+            min(attempts, len(_CATALOG_BACKOFF_SECONDS)) - 1
+        ]
+        time.sleep(max(0.0, min(pause, window_end - time.monotonic())))
+    return None, {
+        "loaded": False,
+        "attempts": attempts,
+        "seconds": round(time.monotonic() - started, 1),
+        "error": repr(error)[:500] if error is not None else "no time to load",
+    }
+
+
+def _attempt(collection_id: str, seconds: float) -> tuple[str, str]:
+    """One bounded read of a collection: passed, error, or deadline.
+
+    `error` is a read that returned an exception, an observation that the
+    store could not be read; `deadline` is the canary no longer waiting, which
+    says only that the read was slow. Its daemon thread is abandoned.
+    """
+    outcome: list[tuple[str, str]] = []
+
+    def target() -> None:
+        try:
+            outcome.append(
+                ("passed", f"read in {_check_collection(collection_id):.1f}s")
             )
         except Exception as error:  # noqa: BLE001
-            attempts.append((False, repr(error)))
-            break
-        attempts.append((True, f"read in {seconds:.1f}s"))
-    return attempts
+            outcome.append(("error", repr(error)[:500]))
 
-
-def _read_back(attempts: object) -> bool:
-    """Whether a confirmation shows a collection readable: every re-read passed."""
-    return (
-        isinstance(attempts, list)
-        and len(attempts) == _CONFIRM_READS
-        and all(
-            isinstance(attempt, tuple) and len(attempt) == 2 and attempt[0] is True
-            for attempt in attempts
-        )
+    thread = threading.Thread(
+        target=target, name=f"read-canary read {collection_id}", daemon=True
     )
+    thread.start()
+    thread.join(max(0.0, seconds))
+    if not outcome:
+        return "deadline", f"no result within {seconds:.0f}s"
+    return outcome[0]
 
 
-def _confirm_all(
-    collection_ids: list[str], deadline: float
-) -> dict[str, list[tuple[bool, str]]]:
-    """_confirm_one for every collection, _READ_WORKERS at a time."""
-    pending: queue.SimpleQueue[str] = queue.SimpleQueue()
-    for collection_id in collection_ids:
-        pending.put(collection_id)
-    reads: dict[str, list[tuple[bool, str]]] = {}
+def _cell(attempts: list[tuple[str, str]]) -> str:
+    """A collection's result in one region from its reads there.
+
+    Passed on any passed read; failed only on _READ_ATTEMPTS reads that each
+    returned an error; otherwise not verified (slow, never read, or no time
+    for its second read).
+    """
+    if any(result == "passed" for result, _detail in attempts):
+        return "passed"
+    if len(attempts) >= _READ_ATTEMPTS and all(
+        result == "error" for result, _detail in attempts
+    ):
+        return "failed"
+    return "not_verified"
+
+
+def _read_twice(
+    collection_ids: list[str], *, end: float
+) -> dict[str, list[tuple[str, str]]]:
+    """Each collection's reads, up to _READ_ATTEMPTS, until the monotonic `end`.
+
+    _READ_WORKERS threads take every first read before any second one; a read
+    that did not pass is queued again _READ_RETRY_PAUSE_SECONDS later. Each
+    read is bounded by _READ_ATTEMPT_SECONDS or what is left before `end`, and
+    none starts after it. Reads still going at `end` are left out.
+    """
+    lock = threading.Condition()
+    first = list(reversed(collection_ids))
+    retries: list[tuple[float, str]] = []
+    reads: dict[str, list[tuple[str, str]]] = {cid: [] for cid in collection_ids}
+
+    def take() -> str | None:
+        with lock:
+            while True:
+                now = time.monotonic()
+                if now >= end:
+                    return None
+                if first:
+                    return first.pop()
+                ready = [entry for entry in retries if entry[0] <= now]
+                if ready:
+                    entry = min(ready)
+                    retries.remove(entry)
+                    return entry[1]
+                if not retries:
+                    return None
+                lock.wait(min(*(at for at, _cid in retries), end) - now)
 
     def work() -> None:
-        while True:
-            try:
-                collection_id = pending.get_nowait()
-            except queue.Empty:
-                return
-            reads[collection_id] = _confirm_one(collection_id, deadline)
+        while (collection_id := take()) is not None:
+            result = _attempt(
+                collection_id, min(_READ_ATTEMPT_SECONDS, end - time.monotonic())
+            )
+            with lock:
+                if time.monotonic() > end:
+                    return
+                reads[collection_id].append(result)
+                if result[0] != "passed" and len(reads[collection_id]) < _READ_ATTEMPTS:
+                    retries.append(
+                        (time.monotonic() + _READ_RETRY_PAUSE_SECONDS, collection_id)
+                    )
+                    lock.notify_all()
 
     workers = [
-        threading.Thread(target=work, name=f"read-canary confirm {index}", daemon=True)
+        threading.Thread(target=work, name=f"read-canary region {index}", daemon=True)
         for index in range(min(_READ_WORKERS, len(collection_ids)))
     ]
     for worker in workers:
         worker.start()
     for worker in workers:
-        worker.join(max(0.0, deadline - time.time()))
-    return {
-        collection_id: list(reads.get(collection_id, [(False, _NO_TIME_TO_REREAD)]))
-        for collection_id in collection_ids
-    }
+        worker.join(max(0.0, end - time.monotonic()))
+    with lock:
+        return {cid: list(attempts) for cid, attempts in reads.items()}
 
 
-@app.function(
-    image=image,
-    timeout=_CONFIRM_BUDGET_SECONDS + 60,
-    region=_REGION,
-    single_use_containers=True,
-)
-def confirm_reads(collection_ids: list[str], deadline: float) -> dict[str, Any]:
-    """Re-read collections from a fresh container, with a fresh catalog.
+def _run_region(region: str, return_by: float) -> dict[str, Any]:
+    """The canary in full from this container, to return by wall-clock `return_by`.
 
-    The run spawns this for every collection that failed or went unread, so
-    a fault confined to its own container, host, or connections does not
-    repeat here. Returns this container's Modal region and each collection's
-    re-read attempts as (passed, detail) pairs; `deadline` is wall-clock.
+    Loads its own catalog and reads every collection in it with
+    _read_twice. Returns plain data for the scheduled run to judge; it sends
+    no telemetry of its own.
     """
     import os  # noqa: PLC0415
 
-    import dynamical_catalog  # noqa: PLC0415
-
     log = _logger()
-    dynamical_catalog.clear_cache()
-    region = os.environ.get("MODAL_REGION", "unknown")
-    log.info("confirming %d collections in %s", len(collection_ids), region)
-    reads = _confirm_all(collection_ids, deadline)
+    placed = os.environ.get("MODAL_REGION", "unknown")
+    # Monotonic from here on; `return_by` came from another container's clock.
+    end = time.monotonic() + (return_by - _REGION_RETURN_MARGIN_SECONDS - time.time())
+    result: dict[str, Any] = {"region": region, "placed": placed}
+    start_by = return_by - (_RETURN_BY_SECONDS - _REGION_START_BY_SECONDS)
+    if time.time() > start_by:
+        log.warning("re-run in %s (%s) started too late to run", region, placed)
+        return {**result, "status": "late_start"}
+    log.info("re-running the canary in %s (%s)", region, placed)
+    catalog, outcome = _load_catalog(time.monotonic() + _CATALOG_WINDOW_SECONDS)
+    result.update(status="ran", catalog=outcome, names={}, reads={})
+    if catalog is None:
+        log.warning("re-run in %s could not load the catalog: %s", region, outcome)
+        return result
+    names: dict[str, str] = {}
+    for collection_id, config in catalog.items():
+        name = config.get("name") if isinstance(config, dict) else None
+        names[collection_id] = name if isinstance(name, str) and name else collection_id
+    reads = _read_twice(sorted(catalog), end=end)
     log.info(
-        "confirmation read back %d of %d collections",
-        sum(_read_back(attempts) for attempts in reads.values()),
-        len(collection_ids),
+        "re-run in %s read %d of %d collections",
+        region,
+        sum(_cell(attempts) == "passed" for attempts in reads.values()),
+        len(reads),
     )
-    return {"region": region, "reads": reads}
+    result.update(names=names, reads=reads)
+    return result
 
 
-def _confirm_remotely(
-    collection_ids: list[str], *, run_started: float
-) -> tuple[dict[str, Any] | None, str]:
-    """The confirmation's result, or None and why there is none.
+_REGION_FUNCTION_OPTIONS: dict[str, Any] = {
+    "image": image,
+    # A backstop only: a re-run returns by the deadline it is given.
+    "timeout": _TIMEOUT_SECONDS,
+    # A fresh container for every re-run, and a read abandoned at a deadline
+    # dies with it instead of living on in a warm one.
+    "single_use_containers": True,
+}
 
-    Bounded by the run's _CONFIRM_DEADLINE_SECONDS. A call that does not
-    return by then is cancelled and its container terminated.
+
+@app.function(region="us-east", **_REGION_FUNCTION_OPTIONS)
+def rerun_us_east(return_by: float) -> dict[str, Any]:
+    return _run_region("us-east", return_by)
+
+
+@app.function(region="us-west", **_REGION_FUNCTION_OPTIONS)
+def rerun_us_west(return_by: float) -> dict[str, Any]:
+    return _run_region("us-west", return_by)
+
+
+@app.function(region="eu-west", **_REGION_FUNCTION_OPTIONS)
+def rerun_eu_west(return_by: float) -> dict[str, Any]:
+    return _run_region("eu-west", return_by)
+
+
+# One function per region, so each re-run's placement is fixed at deploy time.
+_REGION_FUNCTIONS: dict[str, Any] = {
+    "us-east": rerun_us_east,
+    "us-west": rerun_us_west,
+    "eu-west": rerun_eu_west,
+}
+
+
+def _unobserved(region: str, why: str) -> dict[str, Any]:
+    return {"id": region, "status": _UNOBSERVED, "why": why}
+
+
+def _judge_region(region: str, result: object) -> dict[str, Any]:
+    """A re-run's result checked and reduced, or unobserved if it is not one.
+
+    The judged entry keeps the region's catalog outcome and, per collection,
+    its cell and reads. Anything that does not have exactly the shape
+    _run_region returns is `invalid_result`, never a failure of the reads.
+    """
+    if not isinstance(result, dict) or result.get("region") != region:
+        return _unobserved(region, "invalid_result")
+    if result.get("status") == "late_start":
+        return {
+            **_unobserved(region, "late_start"),
+            "placed": str(result.get("placed")),
+        }
+    catalog = result.get("catalog")
+    names = result.get("names")
+    reads = result.get("reads")
+    if (
+        result.get("status") != "ran"
+        or not isinstance(catalog, dict)
+        or not isinstance(catalog.get("loaded"), bool)
+        or not isinstance(names, dict)
+        or not isinstance(reads, dict)
+        or set(names) != set(reads)
+        or (catalog["loaded"] and len(names) < MIN_COLLECTIONS)
+        or (not catalog["loaded"] and names)
+        or not all(
+            isinstance(cid, str) and isinstance(name, str)
+            for cid, name in names.items()
+        )
+        or not all(
+            isinstance(attempts, list)
+            and len(attempts) <= _READ_ATTEMPTS
+            and all(
+                isinstance(attempt, list | tuple)
+                and len(attempt) == 2
+                and attempt[0] in {"passed", "error", "deadline"}
+                and isinstance(attempt[1], str)
+                for attempt in attempts
+            )
+            for attempts in reads.values()
+        )
+    ):
+        return _unobserved(region, "invalid_result")
+    return {
+        "id": region,
+        "placed": str(result.get("placed")),
+        "catalog": catalog,
+        "names": names,
+        "cells": {
+            cid: _cell([tuple(attempt) for attempt in attempts])
+            for cid, attempts in reads.items()
+        },
+        "reads": reads,
+    }
+
+
+def _cancel(call: modal.FunctionCall) -> None:
+    """Cancel a re-run and terminate its container, best effort."""
+    log = _logger()
+    try:
+        call.cancel(terminate_containers=True)
+    except Exception:
+        log.exception("cancelling a re-run failed")
+
+
+def _spawn(
+    function: modal.Function, return_by: float, seconds: float, region: str
+) -> modal.FunctionCall:
+    """`function.spawn(return_by)`, or TimeoutError once `seconds` pass.
+
+    A spawn that completes after the run gave up on it is cancelled at once:
+    nothing would collect it, and its container would run on unwatched.
+    """
+    lock = threading.Lock()
+    outcome: list[modal.FunctionCall | BaseException] = []
+    gave_up = False
+
+    def target() -> None:
+        try:
+            call = function.spawn(return_by)
+        except Exception as error:  # noqa: BLE001
+            with lock:
+                outcome.append(error)
+            return
+        with lock:
+            late = gave_up
+            if not late:
+                outcome.append(call)
+        if late:
+            _cancel(call)
+
+    thread = threading.Thread(
+        target=target, name=f"read-canary spawn {region}", daemon=True
+    )
+    thread.start()
+    thread.join(max(0.0, seconds))
+    with lock:
+        if not outcome:
+            gave_up = True
+            raise TimeoutError(
+                f"starting the re-run in {region} did not finish within {seconds:.0f}s"
+            )
+        value = outcome[0]
+    if isinstance(value, BaseException):
+        raise value
+    return value
+
+
+def _rerun_regions(run_started: float) -> list[dict[str, Any]]:
+    """Every region's judged re-run, in _REGIONS order.
+
+    The re-runs start together and are waited on together, so one that hangs
+    cannot cost another its result. Every call not known to have returned by
+    the run's _COLLECT_BY_SECONDS, including one whose wait failed, is
+    cancelled and its container terminated.
     """
     log = _logger()
-    remaining = run_started + _CONFIRM_DEADLINE_SECONDS - time.monotonic()
-    if remaining <= _CONFIRM_RETURN_MARGIN_SECONDS:
-        return None, "no time left to confirm"
-    deadline = time.time() + min(
-        remaining - _CONFIRM_RETURN_MARGIN_SECONDS, _CONFIRM_BUDGET_SECONDS
-    )
-    try:
-        call = _run_with_deadline(
-            lambda: confirm_reads.spawn(collection_ids, deadline),
-            remaining,
-            "starting the confirmation",
-        )
-    except Exception as error:  # noqa: BLE001
-        return None, f"could not start: {error!r}"
-    try:
-        wait = run_started + _CONFIRM_DEADLINE_SECONDS - time.monotonic()
-        result = _run_with_deadline(
-            lambda: call.get(timeout=max(0.0, wait)),
-            wait + 5,
-            "the confirmation",
-        )
-    except Exception as error:  # noqa: BLE001
+    return_by = time.time() + (run_started + _RETURN_BY_SECONDS - time.monotonic())
+    collect_by = run_started + _COLLECT_BY_SECONDS
+    lock = threading.Lock()
+    judged: dict[str, dict[str, Any]] = {}
+    calls: dict[str, modal.FunctionCall] = {}
+    # Calls known to have finished; any other is cancelled, whatever was judged.
+    returned: set[str] = set()
+    closed = False
+
+    def settle(region: str, entry: dict[str, Any]) -> None:
+        with lock:
+            if not closed:
+                judged[region] = entry
+
+    def rerun(region: str) -> None:
+        spawn_left = run_started + _SPAWN_BY_SECONDS - time.monotonic()
+        if spawn_left <= 0:
+            settle(region, _unobserved(region, "not_started"))
+            return
+        function = _REGION_FUNCTIONS[region]
         try:
-            _run_with_deadline(
-                lambda: call.cancel(terminate_containers=True),
-                10,
-                "cancelling the confirmation",
+            call = _spawn(function, return_by, min(_SPAWN_SECONDS, spawn_left), region)
+        except Exception as error:  # noqa: BLE001
+            log.warning("re-run in %s did not start: %r", region, error)
+            settle(region, _unobserved(region, "not_started"))
+            return
+        with lock:
+            calls[region] = call
+            late = closed
+        if late:
+            # Started after the run stopped waiting: nothing will collect it.
+            _cancel(call)
+            return
+        wait = collect_by - time.monotonic()
+        try:
+            result = _run_with_deadline(
+                lambda: call.get(timeout=max(0.0, wait)),
+                wait,
+                f"the re-run in {region}",
             )
-        except Exception:
-            log.exception("cancelling the confirmation failed")
-        return None, f"did not return: {error!r}"
-    if not isinstance(result, dict) or not isinstance(result.get("reads"), dict):
-        return None, f"returned {type(result).__name__}, not its result"
-    return result, ""
+        except Exception as error:  # noqa: BLE001
+            log.warning("re-run in %s returned no result: %r", region, error)
+            settle(region, _unobserved(region, "no_result"))
+            return
+        with lock:
+            returned.add(region)
+        settle(region, _judge_region(region, result))
+
+    threads = [
+        threading.Thread(
+            target=rerun, args=(region,), name=f"read-canary {region}", daemon=True
+        )
+        for region in _REGIONS
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(max(0.0, collect_by - time.monotonic()))
+    with lock:
+        closed = True
+        frozen = dict(judged)
+        outstanding = [call for region, call in calls.items() if region not in returned]
+
+    cancels = [
+        threading.Thread(
+            target=_cancel, args=(call,), name="read-canary cancel", daemon=True
+        )
+        for call in outstanding
+    ]
+    for thread in cancels:
+        thread.start()
+    cancel_by = time.monotonic() + _CANCEL_SECONDS
+    for thread in cancels:
+        thread.join(max(0.0, cancel_by - time.monotonic()))
+    return [frozen.get(region, _unobserved(region, "no_result")) for region in _REGIONS]
 
 
-def _confirmed_failures(
-    failures: dict[str, BaseException],
-    unattempted: list[str],
-    confirmation: dict[str, Any] | None,
-    missing: str,
-) -> tuple[dict[str, str], dict[str, str]]:
-    """Split the sweep's shortfall into confirmed and unconfirmed failures.
+def _union(regions: list[dict[str, Any]]) -> dict[str, str]:
+    """Every collection some region's catalog listed, with a name for it."""
+    union: dict[str, str] = {}
+    for entry in regions:
+        for collection_id, name in sorted(entry.get("names", {}).items()):
+            union.setdefault(collection_id, name)
+    return dict(sorted(union.items()))
 
-    Confirmed: any collection without a positive read in the sweep or in both
-    re-reads, including one the confirmation could not attempt or left out.
-    Unconfirmed: a failed read that read back twice. A collection the sweep
-    never reached that reads back twice is simply read.
+
+def _region_status(entry: dict[str, Any], union: dict[str, str]) -> str:
+    """Pass only when the region read every collection any region listed."""
+    if entry.get("status") == _UNOBSERVED:
+        return _UNOBSERVED
+    if not entry["catalog"]["loaded"]:
+        return _FAIL
+    cells = entry["cells"]
+    return _PASS if all(cells.get(cid) == "passed" for cid in union) else _FAIL
+
+
+def regional_verdict(statuses: list[str]) -> str:
+    """ok, degraded, down, or gap from the regions' statuses.
+
+    The one mapping from regions to a verdict; dynamical.org-data's status
+    publisher recomputes it from the report with the same table.
     """
-    reads: dict[str, Any] = confirmation["reads"] if confirmation else {}
-    confirmed: dict[str, str] = {}
-    unconfirmed: dict[str, str] = {}
-    for collection_id in sorted([*failures, *unattempted]):
-        error = failures.get(collection_id)
-        sweep = repr(error) if error is not None else "not reached by the sweep"
-        attempts = reads.get(collection_id)
-        if _read_back(attempts):
-            if error is not None:
-                unconfirmed[collection_id] = sweep
-            continue
-        if confirmation is None:
-            why = f"confirmation missing: {missing}"
-        elif not isinstance(attempts, list) or not attempts:
-            why = "confirmation missing: no re-read returned"
-        elif attempts[-1] == (False, _NO_TIME_TO_REREAD):
-            why = f"confirmation missing: {_NO_TIME_TO_REREAD}"
-        else:
-            why = f"re-read: {attempts[-1][1]}"
-        confirmed[collection_id] = f"{sweep}; {why}"
-    return confirmed, unconfirmed
+    passing = statuses.count(_PASS)
+    failing = statuses.count(_FAIL)
+    unobserved = statuses.count(_UNOBSERVED)
+    if not failing:
+        return "gap" if unobserved else "ok"
+    if passing:
+        return "degraded"
+    return _UNOBSERVED_WITH_ONLY_FAILURES if unobserved else "down"
+
+
+def _entry(collection_id: str, union: dict[str, str]) -> dict[str, str]:
+    return {"id": collection_id, "name": union[collection_id]}
 
 
 def _read_report(
-    run: str,
-    environment: str,
-    catalog: dict[str, Any],
-    *,
-    durations: dict[str, float],
-    failures: dict[str, BaseException],
-    confirmation: dict[str, Any] | None,
-    confirmed: dict[str, str],
+    run: str, environment: str, regions: list[dict[str, Any]], verdict: str
 ) -> dict[str, Any]:
-    """Every catalog collection as passed, failed, or unverified.
+    """The run's report (v2): each region's result and a dataset projection.
 
-    Passed: a positive sweep read, or both re-reads. Failed: confirmed, and at
-    least one read was seen to fail, in the sweep (its deadline included) or a
-    re-read. Unverified: confirmed with no read seen to fail, such as one the
-    sweep never reached whose confirmation is missing.
+    Per region: unobserved and why, or its catalog outcome and which
+    collections passed, failed, or could not be verified there. A collection
+    some region listed but this one did not is not verified here. The top
+    level is the v1 shape, projected across all three regions: passed or
+    failed only where every region read or failed it, so a run never claims
+    every collection failed from failures spread over regions.
     """
-    reads: dict[str, Any] = confirmation["reads"] if confirmation else {}
+    union = _union(regions)
+    entries: list[dict[str, Any]] = []
+    cells_by_region: list[dict[str, str] | None] = []
+    for region in regions:
+        status = _region_status(region, union)
+        if status == _UNOBSERVED:
+            entries.append(
+                {"id": region["id"], "status": _UNOBSERVED, "why": region["why"]}
+            )
+            cells_by_region.append(None)
+            continue
+        if not region["catalog"]["loaded"]:
+            entries.append(
+                {
+                    "id": region["id"],
+                    "status": _FAIL,
+                    "catalog": "failed",
+                    "passed": 0,
+                    "failed": [],
+                    "not_verified": [],
+                }
+            )
+            cells_by_region.append(None)
+            continue
+        cells = {cid: region["cells"].get(cid, "not_verified") for cid in union}
+        entries.append(
+            {
+                "id": region["id"],
+                "status": status,
+                "catalog": "loaded",
+                "passed": sum(cell == "passed" for cell in cells.values()),
+                "failed": [
+                    _entry(cid, union)
+                    for cid, cell in cells.items()
+                    if cell == "failed"
+                ],
+                "not_verified": [
+                    _entry(cid, union)
+                    for cid, cell in cells.items()
+                    if cell == "not_verified"
+                ],
+            }
+        )
+        cells_by_region.append(cells)
     passed = 0
     failed: list[dict[str, str]] = []
     unverified: list[dict[str, str]] = []
-    for collection_id in sorted(catalog):
-        attempts = reads.get(collection_id)
-        if collection_id in durations or _read_back(attempts):
+    for collection_id in union:
+        cells_here = [
+            cells.get(collection_id) if cells else None for cells in cells_by_region
+        ]
+        if all(cell == "passed" for cell in cells_here):
             passed += 1
-            continue
-        if collection_id not in confirmed:
-            raise ValueError(f"{collection_id} is neither read nor confirmed")
-        config = catalog[collection_id]
-        name = config.get("name") if isinstance(config, dict) else None
-        entry = {
-            "id": collection_id,
-            "name": name if isinstance(name, str) and name else collection_id,
-        }
-        failed_reread = isinstance(attempts, list) and any(
-            isinstance(attempt, tuple)
-            and len(attempt) == 2
-            and attempt[0] is False
-            and attempt[1] != _NO_TIME_TO_REREAD
-            for attempt in attempts
-        )
-        if collection_id in failures or failed_reread:
-            failed.append(entry)
+        elif all(cell == "failed" for cell in cells_here):
+            failed.append(_entry(collection_id, union))
         else:
-            unverified.append(entry)
+            unverified.append(_entry(collection_id, union))
     return {
         "v": _REPORT_VERSION,
         "run": run,
         "environment": environment,
-        "selected": len(catalog),
+        "verdict": verdict,
+        "regions": entries,
+        "selected": len(union),
         "passed": passed,
         "failed": failed,
         "unverified": unverified,
     }
 
 
+def _region_summary(regions: list[dict[str, Any]]) -> dict[str, Any]:
+    """What each region found, for logs and Sentry contexts."""
+    union = _union(regions)
+    summary: dict[str, Any] = {}
+    for region in regions:
+        status = _region_status(region, union)
+        if status == _UNOBSERVED:
+            summary[region["id"]] = {"status": status, "why": region["why"]}
+            continue
+        summary[region["id"]] = {
+            "status": status,
+            "placed": region["placed"],
+            "catalog": region["catalog"],
+            "not_passed": {
+                cid: region["reads"].get(cid, "absent from this region's catalog")
+                for cid in union
+                if region["catalog"]["loaded"] and region["cells"].get(cid) != "passed"
+            },
+        }
+    return summary
+
+
 def _capture_failure(
     error: BaseException,
     event_id: str,
     report: Callable[[], dict[str, Any]] | None,
+    detail: dict[str, Any] | None = None,
 ) -> None:
     """Send the run's error event under `event_id`, with its report if any.
 
-    Best effort: if the event or its report cannot be built or sent, the error
-    goes out as a plain capture_exception, as it did before reports existed.
+    `detail` goes in a `read_canary` context: what the scheduled run and each
+    region found, for whoever reads the event. Best effort: if the event or
+    its report cannot be built or sent, the error goes out as a plain
+    capture_exception, as it did before reports existed.
     """
     import sentry_sdk  # noqa: PLC0415
     import sentry_sdk.utils  # noqa: PLC0415
@@ -611,6 +997,8 @@ def _capture_failure(
         event["event_id"] = event_id
         if report is not None:
             event.setdefault("contexts", {})["read_canary_report"] = report()
+        if detail is not None:
+            event.setdefault("contexts", {})["read_canary"] = detail
         sentry_sdk.capture_event(event, hint=hint)
     except Exception:  # noqa: BLE001
         _logger().warning(
@@ -628,8 +1016,8 @@ def _capture_failure(
     secrets=[modal.Secret.from_name("sentry-read-canary")],
     timeout=_TIMEOUT_SECONDS,
     region=_REGION,
-    # A read abandoned at the sweep's deadline dies with its container instead
-    # of living on in a warm one beside the next run.
+    # A read abandoned when the sweep stops dies with its container instead of
+    # living on in a warm one beside the next run.
     single_use_containers=True,
 )
 def read_canary() -> None:  # noqa: PLR0915
@@ -644,7 +1032,9 @@ def read_canary() -> None:  # noqa: PLR0915
     started = time.monotonic()
     log.info("read canary started; %s", _runtime_versions())
 
-    import dynamical_catalog  # noqa: PLC0415
+    # The reader first, as ever: an install that cannot import it fails here,
+    # before any check-in.
+    import dynamical_catalog  # noqa: F401, PLC0415
     import sentry_sdk  # noqa: PLC0415
     import sentry_sdk.crons  # noqa: PLC0415
     from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: PLC0415
@@ -722,118 +1112,95 @@ def read_canary() -> None:  # noqa: PLR0915
             _FLUSH_TIMEOUT_SECONDS,
         )
 
-    # Set once the run has confirmed failures to report.
+    # Set once the re-runs have a failure to report.
     report: Callable[[], dict[str, Any]] | None = None
+    detail: dict[str, Any] | None = None
+    coverage: Literal["ok", "error"] = "ok"
     try:
-        # A warm container keeps dynamical_catalog's module-level catalog cache;
-        # each run must fetch catalog.json afresh or it checks a stale listing.
-        dynamical_catalog.clear_cache()
-        catalog = _run_with_deadline(
-            dynamical_catalog.load_catalog,
-            started + _CATALOG_DEADLINE_SECONDS - time.monotonic(),
-            "loading the catalog",
-        )
-        collection_ids = sorted(catalog)
-        if len(collection_ids) < MIN_COLLECTIONS:
-            raise RuntimeError(
-                f"catalog returned {len(collection_ids)} collections, "
-                f"expected >= {MIN_COLLECTIONS}"
+        catalog, catalog_outcome = _load_catalog(started + _CATALOG_WINDOW_SECONDS)
+        durations: dict[str, float] = {}
+        failures: dict[str, BaseException] = {}
+        unattempted: list[str] = []
+        if catalog is not None:
+            durations, failures, unattempted = _read_all(
+                sorted(catalog), deadline=started + _SWEEP_DEADLINE_SECONDS
             )
-        durations, failures, unattempted = _read_all(
-            collection_ids, deadline=started + _MAIN_PASS_DEADLINE_SECONDS
-        )
-        confirmation: dict[str, Any] | None = None
-        missing = ""
-        if failures or unattempted:
+        collections_read = len(durations)
+        if catalog is None or failures or unattempted:
+            scheduled = {
+                "region": os.environ.get("MODAL_REGION", "unknown"),
+                "catalog": catalog_outcome,
+                "failed": {cid: repr(error)[:500] for cid, error in failures.items()},
+                "unread": unattempted,
+            }
             log.warning(
-                "sweep left %d failed and %d unread of %d collections after "
-                "%.1fs; confirming from a fresh container",
-                len(failures),
-                len(unattempted),
-                len(collection_ids),
+                "scheduled run failed after %.1fs (%s); re-running in %s",
                 time.monotonic() - started,
+                "catalog not loaded"
+                if catalog is None
+                else f"{len(failures)} failed, {len(unattempted)} unread",
+                ", ".join(_REGIONS),
             )
-            confirmation, missing = _confirm_remotely(
-                sorted([*failures, *unattempted]), run_started=started
+            regions = _rerun_regions(started)
+            summary = _region_summary(regions)
+            detail = {"scheduled": scheduled, "regions": summary}
+            union = _union(regions)
+            statuses = [_region_status(region, union) for region in regions]
+            verdict = regional_verdict(statuses)
+            log.info(
+                "re-runs: %s; verdict %s",
+                ", ".join(f"{r} {s}" for r, s in zip(_REGIONS, statuses, strict=True)),
+                verdict,
             )
-        confirmed, unconfirmed = _confirmed_failures(
-            failures, unattempted, confirmation, missing
-        )
-        if confirmed:
-            # Built only when the event is sent, so that a fault building it
-            # cannot change what this run raises.
-            report = functools.partial(
-                _read_report,
-                check_in_id,
-                environment,
-                catalog,
-                durations=durations,
-                failures=failures,
-                confirmation=confirmation,
-                confirmed=confirmed,
-            )
-            raise RuntimeError(
-                f"read canary failed for {len(confirmed)}/{len(collection_ids)} "
-                "collections:\n"
-                + "\n".join(f"{cid}: {why}" for cid, why in confirmed.items())
-            )
+            if verdict == "ok":
+                # Every region read everything: the run passes, and this
+                # keeps the scheduled failure on record.
+                collections_read = len(union)
+                sentry_sdk.capture_message(
+                    "read canary scheduled run failed; every region re-ran clean",
+                    level="warning",
+                    contexts={"read_canary": detail},
+                )
+            else:
+                # Built only when the event is sent, so that a fault building
+                # it cannot change what this run raises.
+                report = functools.partial(
+                    _read_report, check_in_id, environment, regions, verdict
+                )
+                if verdict == "gap":
+                    coverage = "error"
+                raise RuntimeError(
+                    f"read canary {verdict}: "
+                    + "; ".join(
+                        f"{r} {s}" for r, s in zip(_REGIONS, statuses, strict=True)
+                    )
+                )
     except Exception as error:
         # Anything that goes wrong after the in_progress check-in closes it as
         # `error` rather than leaving Sentry to declare a hang at max_runtime.
         # Evidence first: the log line must not depend on the check-in or the
         # flush getting through.
         log.error(
-            "read canary failed after %.1fs; queueing error check-in %s: %s",
+            "read canary failed after %.1fs; queueing error check-in %s%s: %s",
             time.monotonic() - started,
             check_in_id,
+            f" with coverage marker {coverage_id}" if coverage == "error" else "",
             error,
         )
-        _capture_failure(error, uuid.uuid5(_REPORT_NAMESPACE, check_in_id).hex, report)
-        _finish("error")
+        _capture_failure(
+            error, uuid.uuid5(_REPORT_NAMESPACE, check_in_id).hex, report, detail
+        )
+        _finish("error", coverage)
         raise
 
-    if unconfirmed:
-        # Evidence first, as above. Never `ok`: an `ok` would end a failure
-        # still standing from an earlier run, which only a full sweep may do.
-        log.warning(
-            "read canary could not confirm %d failed reads after %.1fs; queueing "
-            "error check-in %s with coverage marker %s: %s",
-            len(unconfirmed),
-            time.monotonic() - started,
-            check_in_id,
-            coverage_id,
-            "; ".join(f"{cid}: {why}" for cid, why in unconfirmed.items()),
-        )
-        confirmed_by = confirmation or {}
-        sentry_sdk.capture_message(
-            "read canary could not confirm a failed read",
-            level="warning",
-            contexts={
-                "read_canary": {
-                    "unconfirmed": unconfirmed,
-                    "re-reads": {
-                        cid: confirmed_by.get("reads", {}).get(cid)
-                        for cid in unconfirmed
-                    },
-                    "regions": {
-                        "run": os.environ.get("MODAL_REGION", "unknown"),
-                        "confirmation": confirmed_by.get("region", "unknown"),
-                    },
-                }
-            },
-        )
-        _finish("error", coverage="error")
-        return
-
-    # A collection the sweep never reached was read in the confirmation, and
-    # has no sweep time.
+    # After an ok re-run the scheduled sweep's times are partial.
     slowest_id, slowest = max(
         durations.items(), key=lambda item: item[1], default=("none", 0.0)
     )
     log.info(
         "read canary ok: %d collections read in %.1fs (slowest %s %.1fs); "
         "queueing ok check-in %s",
-        len(collection_ids),
+        collections_read,
         time.monotonic() - started,
         slowest_id,
         slowest,

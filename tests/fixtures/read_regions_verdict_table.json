@@ -1,0 +1,222 @@
+{
+  "description": "Every pass/fail/unobserved combination of the three re-run regions (us-east, us-west, eu-west, in that order) and the run's verdict. F/F/U-style rows (failures, no pass, some unobserved) follow _UNOBSERVED_WITH_ONLY_FAILURES. Shared by the read canary's and the status publisher's tests; keep every copy byte-identical.",
+  "unobserved_with_only_failures": "down",
+  "cases": [
+    {
+      "regions": {
+        "us-east": "pass",
+        "us-west": "pass",
+        "eu-west": "pass"
+      },
+      "verdict": "ok"
+    },
+    {
+      "regions": {
+        "us-east": "pass",
+        "us-west": "pass",
+        "eu-west": "fail"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "pass",
+        "us-west": "pass",
+        "eu-west": "unobserved"
+      },
+      "verdict": "gap"
+    },
+    {
+      "regions": {
+        "us-east": "pass",
+        "us-west": "fail",
+        "eu-west": "pass"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "pass",
+        "us-west": "fail",
+        "eu-west": "fail"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "pass",
+        "us-west": "fail",
+        "eu-west": "unobserved"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "pass",
+        "us-west": "unobserved",
+        "eu-west": "pass"
+      },
+      "verdict": "gap"
+    },
+    {
+      "regions": {
+        "us-east": "pass",
+        "us-west": "unobserved",
+        "eu-west": "fail"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "pass",
+        "us-west": "unobserved",
+        "eu-west": "unobserved"
+      },
+      "verdict": "gap"
+    },
+    {
+      "regions": {
+        "us-east": "fail",
+        "us-west": "pass",
+        "eu-west": "pass"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "fail",
+        "us-west": "pass",
+        "eu-west": "fail"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "fail",
+        "us-west": "pass",
+        "eu-west": "unobserved"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "fail",
+        "us-west": "fail",
+        "eu-west": "pass"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "fail",
+        "us-west": "fail",
+        "eu-west": "fail"
+      },
+      "verdict": "down"
+    },
+    {
+      "regions": {
+        "us-east": "fail",
+        "us-west": "fail",
+        "eu-west": "unobserved"
+      },
+      "verdict": "down"
+    },
+    {
+      "regions": {
+        "us-east": "fail",
+        "us-west": "unobserved",
+        "eu-west": "pass"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "fail",
+        "us-west": "unobserved",
+        "eu-west": "fail"
+      },
+      "verdict": "down"
+    },
+    {
+      "regions": {
+        "us-east": "fail",
+        "us-west": "unobserved",
+        "eu-west": "unobserved"
+      },
+      "verdict": "down"
+    },
+    {
+      "regions": {
+        "us-east": "unobserved",
+        "us-west": "pass",
+        "eu-west": "pass"
+      },
+      "verdict": "gap"
+    },
+    {
+      "regions": {
+        "us-east": "unobserved",
+        "us-west": "pass",
+        "eu-west": "fail"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "unobserved",
+        "us-west": "pass",
+        "eu-west": "unobserved"
+      },
+      "verdict": "gap"
+    },
+    {
+      "regions": {
+        "us-east": "unobserved",
+        "us-west": "fail",
+        "eu-west": "pass"
+      },
+      "verdict": "degraded"
+    },
+    {
+      "regions": {
+        "us-east": "unobserved",
+        "us-west": "fail",
+        "eu-west": "fail"
+      },
+      "verdict": "down"
+    },
+    {
+      "regions": {
+        "us-east": "unobserved",
+        "us-west": "fail",
+        "eu-west": "unobserved"
+      },
+      "verdict": "down"
+    },
+    {
+      "regions": {
+        "us-east": "unobserved",
+        "us-west": "unobserved",
+        "eu-west": "pass"
+      },
+      "verdict": "gap"
+    },
+    {
+      "regions": {
+        "us-east": "unobserved",
+        "us-west": "unobserved",
+        "eu-west": "fail"
+      },
+      "verdict": "down"
+    },
+    {
+      "regions": {
+        "us-east": "unobserved",
+        "us-west": "unobserved",
+        "eu-west": "unobserved"
+      },
+      "verdict": "gap"
+    }
+  ]
+}
