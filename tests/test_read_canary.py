@@ -12,6 +12,7 @@ from __future__ import annotations
 import http.server
 import importlib.metadata
 import importlib.util
+import json
 import logging
 import math
 import pathlib
@@ -1355,30 +1356,41 @@ def test_a_rerun_that_raises_is_unobserved(
 # --- the verdict -------------------------------------------------------------------
 
 
-def _expected_verdict(statuses: tuple[str, ...]) -> str:
-    passing, failing = statuses.count("pass"), statuses.count("fail")
-    unobserved = statuses.count("unobserved")
-    if not failing:
-        return "gap" if unobserved else "ok"
-    return "degraded" if passing else "down"
+# Shared with dynamical.org-data's status publisher, which recomputes the
+# verdict from the report by the same table; keep every copy byte-identical.
+_VERDICT_TABLE = json.loads(
+    (
+        pathlib.Path(__file__).parent / "fixtures" / "read_regions_verdict_table.json"
+    ).read_text()
+)
+
+
+def test_the_verdict_table_covers_every_combination_of_regions() -> None:
+    combinations = {
+        tuple(case["regions"][region] for region in ("us-east", "us-west", "eu-west"))
+        for case in _VERDICT_TABLE["cases"]
+    }
+    assert len(_VERDICT_TABLE["cases"]) == len(combinations) == 27
+    assert _VERDICT_TABLE["unobserved_with_only_failures"] == "down"
 
 
 @pytest.mark.parametrize(
-    "statuses",
-    [
-        (a, b, c)
-        for a in ("pass", "fail", "unobserved")
-        for b in ("pass", "fail", "unobserved")
-        for c in ("pass", "fail", "unobserved")
-    ],
+    "case",
+    _VERDICT_TABLE["cases"],
+    ids=lambda case: "/".join(case["regions"].values()),
 )
 def test_the_verdict_for_every_combination_of_regions(
     load_canary: Callable[[list[str]], types.ModuleType],
-    statuses: tuple[str, ...],
+    case: dict[str, Any],
 ) -> None:
     canary = load_canary(_CATALOG)
+    statuses = [case["regions"][region] for region in canary._REGIONS]
 
-    assert canary.regional_verdict(list(statuses)) == _expected_verdict(statuses)
+    assert canary.regional_verdict(statuses) == case["verdict"]
+    assert (
+        canary._UNOBSERVED_WITH_ONLY_FAILURES
+        == (_VERDICT_TABLE["unobserved_with_only_failures"])
+    )
 
 
 def test_regions_that_failed_beside_one_unobserved_are_down(
