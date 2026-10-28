@@ -8,6 +8,7 @@ import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+import icechunk
 import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
@@ -15,6 +16,24 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
 from catalog import CATALOG_ITEMS
 from environments import STAC_ENVIRONMENTS
 from generate import _load_datasets, generate
+
+
+@pytest.fixture(scope="session", autouse=True)
+def icechunk_http_timeout() -> Iterator[None]:
+    def http_storage(
+        base_url: str,
+        opts: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> icechunk.Storage:
+        return icechunk.storage.http_storage(
+            base_url,
+            opts={"timeout": "90s", **(opts or {})},
+            headers=headers,
+        )
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(icechunk, "http_storage", http_storage)
+        yield
 
 
 @contextmanager
