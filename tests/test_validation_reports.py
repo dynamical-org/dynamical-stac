@@ -27,6 +27,7 @@ the committed tree matches what ``generate()`` produces.
 
 from __future__ import annotations
 
+import http.client
 import json
 import pathlib
 import urllib.error
@@ -63,11 +64,25 @@ _PRODUCTION_COLLECTIONS = _production_collections()
 assert _PRODUCTION_COLLECTIONS, "no committed collections found"
 
 
+def _fetch_once(req: urllib.request.Request) -> str:
+    with urllib.request.urlopen(req, timeout=90) as resp:  # noqa: S310
+        return resp.read().decode("utf-8", errors="replace")
+
+
 def _fetch(url: str) -> str:
     req = urllib.request.Request(url)  # noqa: S310
     req.add_header("User-Agent", "dynamical-stac-tests")
-    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310
-        return resp.read().decode("utf-8", errors="replace")
+    try:
+        return _fetch_once(req)
+    except urllib.error.HTTPError:
+        raise
+    except (
+        urllib.error.URLError,
+        TimeoutError,
+        ConnectionError,
+        http.client.IncompleteRead,
+    ):
+        return _fetch_once(req)
 
 
 @pytest.mark.integration
