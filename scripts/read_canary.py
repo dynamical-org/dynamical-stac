@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     import xarray as xr
 
 image = modal.Image.debian_slim(python_version="3.12").pip_install(
-    "dynamical-catalog>=1.0.0",
+    "dynamical-catalog>=1.1.0",
     "sentry-sdk>=2.72.0",
 )
 
