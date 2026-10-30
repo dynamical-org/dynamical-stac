@@ -224,3 +224,31 @@ When you add a new legacy range, CI tests its root file directly and can't see
 the Cloudflare User-Agent routing in the ops repo (`stac-ua-routing/`). Don't
 ship production items excluded from the new root until the ops rewrite rule is
 applied and `stac-ua-routing/verify.py --expect routed` passes.
+
+## Writing catalog descriptions
+
+Before drafting or editing prose, read comparable datasets and follow their
+section structure, tone, and level of detail. Consider the rendered page as a
+whole: the model description appears immediately above the dataset summary.
+
+- **Model description:** explain the model's purpose and distinguishing
+  characteristics. Where useful, explain its relationship to sibling models.
+- **Dataset summary:** explain what this particular dataset provides.
+  Do not repeat the model description.
+- **Avoid metadata inventories:** variables, coverage dates, dimensions, grid,
+  projection, and temporal/spatial resolution already have structured attributes
+  rendered in the docs. Generally omit these from prose unless they clarify an
+  important usage distinction.
+- **Variable details:** put properties that remain constant in variable comments,
+  maintained in the reformatters repository. Put historical changes, caveats,
+  and interpretation across eras in the validation report's review notes,
+  rather than catalog descriptions.
+- **Data availability:** a concise section may summarize groups of variables
+  added at different times and link to the validation report for details.
+  Omit this section if all variables are available throughout the dataset.
+- **Construction:** include this section only when users need a non-obvious
+  explanation of how the dataset was assembled or transformed. Omit it for
+  straightforward archives of source analyses.
+
+Keep each fact in the most useful place. Do not add sections merely to fill out
+a template, or repeat the same explanation across the summary and details.
