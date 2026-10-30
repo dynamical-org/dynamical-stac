@@ -1,8 +1,3 @@
-### Construction
-
-This dataset is constructed by concatenating NOAA's RTMA analyses along the time
-dimension, using virtual references to the source GRIB files.
-
 ### Source
 
 Source files are provided by [NOAA Open Data Dissemination](https://www.noaa.gov/information-technology/open-data-dissemination)
