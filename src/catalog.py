@@ -322,9 +322,12 @@ MODELS: dict[str, Model] = {
         id="noaa-rtma",
         name="NOAA RTMA",
         description=(
-            "The Real-Time Mesoscale Analysis (RTMA) is NOAA NCEP's "
-            "analysis of near-surface weather conditions. It combines observations "
-            "with a model background using two-dimensional variational assimilation."
+            "The Real-Time Mesoscale Analysis (RTMA) is NOAA's analysis of near-surface "
+            "weather conditions, combining observations with a model background. "
+            "NOAA publishes hourly RTMA analyses about an hour after analysis time. "
+            "Its Rapid Update variant, RTMA-RU, produces analyses every 15 minutes "
+            "with about 15 minutes of latency. Their sibling, URMA, incorporates "
+            "later-arriving observations for a more complete historical analysis."
         ),
         producer=NOAA_NCEP,
     ),
@@ -332,9 +335,12 @@ MODELS: dict[str, Model] = {
         id="noaa-urma",
         name="NOAA URMA",
         description=(
-            "The Unrestricted Mesoscale Analysis (URMA) is NOAA NCEP's hourly "
-            "analysis of near-surface weather conditions, incorporating observations "
-            "received after the RTMA analysis."
+            "The Unrestricted Mesoscale Analysis (URMA) is NOAA's analysis of near-surface "
+            "weather conditions incorporating observations that arrive too late for RTMA. "
+            "NOAA runs URMA about six hours after analysis time, allowing it to provide "
+            "a more complete historical analysis than the faster RTMA and RTMA-RU products. "
+            "URMA serves as the National Weather Service's analysis of record for "
+            "forecast verification."
         ),
         producer=NOAA_NCEP,
     ),
@@ -1344,11 +1350,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
             title="NOAA RTMA on NOAA Open Data Dissemination",
         ),
         description_summary=(
-            "Hourly near-surface analyses on the 2.5 km CONUS Western Expansion "
-            "grid, from 2017-05-02 onward. This virtual dataset references NOAA's "
-            "GRIB files and is optimized for spatial (map) access. It contains "
-            "13 analysis fields, with dimensions time, y, and x on the native "
-            "Lambert Conformal Conic projection. Precipitation is not included."
+            "This analysis dataset provides near-surface weather fields on spatial "
+            "dimensions `x` and `y`, with new analyses appended along the `time` "
+            "dimension as they become available. This virtual dataset references "
+            "NOAA's GRIB files and is optimized for spatial (map) access."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rtma/analysis_virtual/template_config.py",
         examples=(
@@ -1376,12 +1381,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
             title="NOAA RTMA on NOAA Open Data Dissemination",
         ),
         description_summary=(
-            "Near-surface rapid-update analyses every 15 minutes on the 2.5 km "
-            "CONUS Western Expansion grid, from 2017-12-13 onward. This virtual "
-            "dataset references NOAA's GRIB files and is optimized for spatial "
-            "(map) access. It contains 13 analysis fields, with dimensions time, "
-            "y, and x on the native Lambert Conformal Conic projection. "
-            "Precipitation is not included."
+            "This analysis dataset provides near-surface weather fields on spatial "
+            "dimensions `x` and `y`, with new analyses appended along the `time` "
+            "dimension as they become available. This virtual dataset references "
+            "NOAA's GRIB files and is optimized for spatial (map) access."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/rtma_ru/analysis_virtual/template_config.py",
         examples=(
@@ -1409,13 +1412,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
             title="NOAA URMA on NOAA Open Data Dissemination",
         ),
         description_summary=(
-            "Hourly near-surface analyses incorporating observations received "
-            "after RTMA, on the 2.5 km CONUS Western Expansion grid from "
-            "2017-05-02 onward. This virtual dataset references NOAA's GRIB "
-            "files and is optimized for spatial (map) access. It contains 14 "
-            "analysis fields, including significant wave height, with dimensions "
-            "time, y, and x on the native Lambert Conformal Conic projection. "
-            "Precipitation is not included."
+            "This analysis dataset provides near-surface weather fields on spatial "
+            "dimensions `x` and `y`, with new analyses appended along the `time` "
+            "dimension as they become available. This virtual dataset references "
+            "NOAA's GRIB files and is optimized for spatial (map) access."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/noaa/urma/analysis_virtual/template_config.py",
         examples=(
