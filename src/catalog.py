@@ -2023,6 +2023,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
     CatalogItem(
         environments=["staging", "test"],
         id="google-weathernext3-forecast-15-day-0-1-degree-virtual",
+        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-15-day-0-1-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
         license_links=WEATHERNEXT_LICENSE_LINKS,
         icechunk_href=(
             "https://google-weathernext3.r2.dynamical.org/"
@@ -2048,6 +2049,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
     CatalogItem(
         environments=["staging", "test"],
         id="google-weathernext3-forecast-15-day-0-05-degree-virtual",
+        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-15-day-0-05-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
         license_links=WEATHERNEXT_LICENSE_LINKS,
         icechunk_href=(
             "https://google-weathernext3.r2.dynamical.org/"
@@ -2073,6 +2075,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
     CatalogItem(
         environments=["staging", "test"],
         id="google-weathernext3-forecast-48-hour-0-1-degree-virtual",
+        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-48-hour-0-1-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
         license_links=WEATHERNEXT_LICENSE_LINKS,
         icechunk_href=(
             "https://google-weathernext3.r2.dynamical.org/"
@@ -2098,6 +2101,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
     CatalogItem(
         environments=["staging", "test"],
         id="google-weathernext3-forecast-48-hour-0-05-degree-virtual",
+        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-48-hour-0-05-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
         license_links=WEATHERNEXT_LICENSE_LINKS,
         icechunk_href=(
             "https://google-weathernext3.r2.dynamical.org/"
