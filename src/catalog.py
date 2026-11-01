@@ -463,6 +463,20 @@ MODELS: dict[str, Model] = {
             url="https://deepmind.google/",  # type: ignore[arg-type]
         ),
     ),
+    "google-weathernext3": Model(
+        id="google-weathernext3",
+        name="Google WeatherNext 3",
+        description=(
+            "WeatherNext 3 is Google's global probabilistic weather forecasting "
+            "model. It combines atmospheric analyses with satellite observations "
+            "and produces forecasts trained against gridded fields and weather "
+            "station observations."
+        ),
+        producer=Provider(
+            name="Google DeepMind",
+            url="https://deepmind.google/",  # type: ignore[arg-type]
+        ),
+    ),
     "dwd-icon-eu": Model(
         id="dwd-icon-eu",
         name="DWD ICON-EU",
@@ -866,6 +880,10 @@ _ECMWF_DATA_STORE = UpstreamSource(
 _WEATHERNEXT2 = UpstreamSource(
     href="https://developers.google.com/earth-engine/datasets/catalog/projects_gcp-public-data-weathernext_assets_weathernext_2_0_0",  # type: ignore[arg-type]
     title="WeatherNext 2 experimental forecast dataset",
+)
+_WEATHERNEXT3 = UpstreamSource(
+    href="https://developers.google.com/weathernext/guides/gcs",  # type: ignore[arg-type]
+    title="WeatherNext 3 statistics on Google Cloud Storage",
 )
 _DWD_OPEN_DATA = UpstreamSource(
     href="https://www.dwd.de/EN/ourservices/opendata/opendata.html",  # type: ignore[arg-type]
@@ -2001,6 +2019,110 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_WEATHERNEXT2_NOTEBOOK,),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="google-weathernext3-forecast-15-day-0-1-degree-virtual",
+        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-15-day-0-1-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
+        license_links=WEATHERNEXT_LICENSE_LINKS,
+        icechunk_href=(
+            "https://google-weathernext3.r2.dynamical.org/"
+            "google-weathernext3-forecast-15-day-0-1-degree-virtual/v0.1.0.icechunk/"
+        ),
+        virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        model_id="google-weathernext3",
+        source=_WEATHERNEXT3,
+        description_summary="This data product provides 15-day forecasts of gridded surface weather fields. Google's precomputed ensemble mean and percentiles are selected along the `statistic` dimension. The spatial dimensions `y` and `x` hold latitude and 0-360 degree longitude.",
+        reformatter_url=(
+            f"{REFORMATTERS_ROOT}/google/weathernext3/"
+            "forecast_15_day_0_1_degree_virtual/template_config.py"
+        ),
+        examples=(
+            _example(
+                "Ensemble mean temperature",
+                'ds = dynamical_catalog.open("google-weathernext3-forecast-15-day-0-1-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-07-01T00", lead_time="24h", statistic="mean", y=slice(25, 55), x=slice(230, 300))',
+                min_version="1.0.0",
+            ),
+        ),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="google-weathernext3-forecast-15-day-0-05-degree-virtual",
+        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-15-day-0-05-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
+        license_links=WEATHERNEXT_LICENSE_LINKS,
+        icechunk_href=(
+            "https://google-weathernext3.r2.dynamical.org/"
+            "google-weathernext3-forecast-15-day-0-05-degree-virtual/v0.1.0.icechunk/"
+        ),
+        virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        model_id="google-weathernext3",
+        source=_WEATHERNEXT3,
+        description_summary="This data product provides 15-day forecasts from the station-trained temperature and dew point head, evaluated on a global grid. These fields are distinct from the gridded fields in the 0.1 degree products. Google's precomputed ensemble mean and percentiles are selected along the `statistic` dimension. The spatial dimensions `y` and `x` hold latitude and 0-360 degree longitude.",
+        reformatter_url=(
+            f"{REFORMATTERS_ROOT}/google/weathernext3/"
+            "forecast_15_day_0_05_degree_virtual/template_config.py"
+        ),
+        examples=(
+            _example(
+                "Ensemble mean temperature",
+                'ds = dynamical_catalog.open("google-weathernext3-forecast-15-day-0-05-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-07-01T00", lead_time="24h", statistic="mean", y=slice(25, 55), x=slice(230, 300))',
+                min_version="1.0.0",
+            ),
+        ),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="google-weathernext3-forecast-48-hour-0-1-degree-virtual",
+        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-48-hour-0-1-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
+        license_links=WEATHERNEXT_LICENSE_LINKS,
+        icechunk_href=(
+            "https://google-weathernext3.r2.dynamical.org/"
+            "google-weathernext3-forecast-48-hour-0-1-degree-virtual/v0.1.0.icechunk/"
+        ),
+        virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        model_id="google-weathernext3",
+        source=_WEATHERNEXT3,
+        description_summary="This data product provides 48-hour forecasts of gridded surface weather fields. Google's precomputed ensemble mean and percentiles are selected along the `statistic` dimension. The spatial dimensions `y` and `x` hold latitude and 0-360 degree longitude.",
+        reformatter_url=(
+            f"{REFORMATTERS_ROOT}/google/weathernext3/"
+            "forecast_48_hour_0_1_degree_virtual/template_config.py"
+        ),
+        examples=(
+            _example(
+                "Ensemble mean temperature",
+                'ds = dynamical_catalog.open("google-weathernext3-forecast-48-hour-0-1-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-07-01T00", lead_time="24h", statistic="mean", y=slice(25, 55), x=slice(230, 300))',
+                min_version="1.0.0",
+            ),
+        ),
+    ),
+    CatalogItem(
+        environments=["staging", "test"],
+        id="google-weathernext3-forecast-48-hour-0-05-degree-virtual",
+        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-48-hour-0-05-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
+        license_links=WEATHERNEXT_LICENSE_LINKS,
+        icechunk_href=(
+            "https://google-weathernext3.r2.dynamical.org/"
+            "google-weathernext3-forecast-48-hour-0-05-degree-virtual/v0.1.0.icechunk/"
+        ),
+        virtual_chunk_container_prefixes=("https://wn.dynamical.org/chunks/",),
+        model_id="google-weathernext3",
+        source=_WEATHERNEXT3,
+        description_summary="This data product provides 48-hour forecasts from the station-trained temperature and dew point head, evaluated on a global grid. These fields are distinct from the gridded fields in the 0.1 degree products. Google's precomputed ensemble mean and percentiles are selected along the `statistic` dimension. The spatial dimensions `y` and `x` hold latitude and 0-360 degree longitude.",
+        reformatter_url=(
+            f"{REFORMATTERS_ROOT}/google/weathernext3/"
+            "forecast_48_hour_0_05_degree_virtual/template_config.py"
+        ),
+        examples=(
+            _example(
+                "Ensemble mean temperature",
+                'ds = dynamical_catalog.open("google-weathernext3-forecast-48-hour-0-05-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-07-01T00", lead_time="24h", statistic="mean", y=slice(25, 55), x=slice(230, 300))',
+                min_version="1.0.0",
+            ),
+        ),
     ),
     CatalogItem(
         environments=ALL_STAC_ENVIRONMENTS,

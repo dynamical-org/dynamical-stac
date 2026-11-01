@@ -312,12 +312,20 @@ def test_from_dataset_passes_additional_terms_through() -> None:
 
 
 @pytest.mark.parametrize("store_license", ["CC-BY-4.0", WEATHERNEXT_LICENSE])
-def test_weathernext_operational_license_states(store_license: str) -> None:
-    item = next(
-        item
-        for item in CATALOG_ITEMS
-        if item.id == "google-weathernext2-forecast-operational-virtual"
-    )
+@pytest.mark.parametrize(
+    "item_id",
+    [
+        "google-weathernext2-forecast-operational-virtual",
+        "google-weathernext3-forecast-15-day-0-1-degree-virtual",
+        "google-weathernext3-forecast-15-day-0-05-degree-virtual",
+        "google-weathernext3-forecast-48-hour-0-1-degree-virtual",
+        "google-weathernext3-forecast-48-hour-0-05-degree-virtual",
+    ],
+)
+def test_weathernext_operational_license_states(
+    store_license: str, item_id: str
+) -> None:
+    item = next(item for item in CATALOG_ITEMS if item.id == item_id)
     ds = _synthetic_dataset(item.id, ds_attrs_overrides={"license": store_license})
     collection = CollectionInput.from_dataset(item, ds).to_pystac_collection().to_dict()
     links = [link for link in collection["links"] if link["rel"] == "license"]

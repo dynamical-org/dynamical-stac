@@ -522,6 +522,10 @@ def test_example_import_comment_carries_per_dataset_reader_floor() -> None:
     for item_id in (
         "google-weathernext2-forecast-historical-virtual",
         "google-weathernext2-forecast-operational-virtual",
+        "google-weathernext3-forecast-15-day-0-1-degree-virtual",
+        "google-weathernext3-forecast-15-day-0-05-degree-virtual",
+        "google-weathernext3-forecast-48-hour-0-1-degree-virtual",
+        "google-weathernext3-forecast-48-hour-0-05-degree-virtual",
         "test-gcs-virtual",
         "test-azure-virtual",
     ):
