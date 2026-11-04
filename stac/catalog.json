@@ -216,6 +216,30 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/google-weathernext3-forecast-15-day-0-1-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "Google WeatherNext 3 forecast, 15 day, 0.1 degree, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/google-weathernext3-forecast-15-day-0-05-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "Google WeatherNext 3 forecast, 15 day, 0.05 degree, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/google-weathernext3-forecast-48-hour-0-1-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "Google WeatherNext 3 forecast, 48 hour, 0.1 degree, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/google-weathernext3-forecast-48-hour-0-05-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "Google WeatherNext 3 forecast, 48 hour, 0.05 degree, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/dwd-icon-eu-forecast-5-day/collection.json",
       "type": "application/json",
       "title": "DWD ICON-EU forecast, 5 day"

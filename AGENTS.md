@@ -181,14 +181,15 @@ Add the appropriate range name explicitly to each supported production item's
 clients can read them when adding one. The legacy environments must be subsets of production;
 staging-only and fixture datasets must not be included. The 0.4.0–0.5.0 root
 contains the 18 materialized production collections. The 0.7.0–0.8.0 root adds
-the twelve S3-backed virtual collections, for 30 of the 39 production
+the twelve S3-backed virtual collections, for 30 of the 43 production
 collections. Both exclude `ecmwf-aifs-single-forecast-virtual`, whose `gs://`
-virtual chunk container is unsupported by these clients, and the two
-`https://`-backed WeatherNext 2 collections. The 1.0.0 root lists the 33
-production collections a client with gribberish 1.7 can read: dynamical-catalog
-1.0.0 pins `gribberish<1.8`, which panics on some GRIB messages that later
-releases read, so the six RRFS and REFS virtual collections are left out. Adding
-a new production dataset does not add it to any legacy root automatically.
+virtual chunk container is unsupported by these clients, and the six
+`https://`-backed WeatherNext 2 and WeatherNext 3 collections. The 1.0.0 root
+lists the 37 production collections a client with gribberish 1.7 can read:
+dynamical-catalog 1.0.0 pins `gribberish<1.8`, which panics on some GRIB
+messages that later releases read, so the six RRFS and REFS virtual collections
+are left out. Adding a new production dataset does not add it to any legacy root
+automatically.
 
 A stock 0.5.0 install does not declare the `gribberish` codec required by the
 virtual collections. The compatibility contract therefore uses the

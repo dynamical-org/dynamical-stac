@@ -847,6 +847,12 @@ _WEATHERNEXT2_NOTEBOOK = DatasetNotebook(
     title="WeatherNext 2 forecasts, historical and operational, virtual",
 )
 
+# One notebook covers the four WeatherNext 3 datasets.
+_WEATHERNEXT3_NOTEBOOK = DatasetNotebook(
+    slug="google-weathernext3-forecast-virtual",
+    title="WeatherNext 3 forecasts, virtual",
+)
+
 
 # Upstream sources, rendered as each collection's `via` link.
 _NODD_GFS = UpstreamSource(
@@ -2021,9 +2027,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_WEATHERNEXT2_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "1.0.0-1.0.0"],
         id="google-weathernext3-forecast-15-day-0-1-degree-virtual",
-        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-15-day-0-1-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
         license_links=WEATHERNEXT_LICENSE_LINKS,
         icechunk_href=(
             "https://google-weathernext3.r2.dynamical.org/"
@@ -2045,11 +2050,11 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",
             ),
         ),
+        notebooks=(_WEATHERNEXT3_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "1.0.0-1.0.0"],
         id="google-weathernext3-forecast-15-day-0-05-degree-virtual",
-        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-15-day-0-05-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
         license_links=WEATHERNEXT_LICENSE_LINKS,
         icechunk_href=(
             "https://google-weathernext3.r2.dynamical.org/"
@@ -2071,11 +2076,11 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",
             ),
         ),
+        notebooks=(_WEATHERNEXT3_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "1.0.0-1.0.0"],
         id="google-weathernext3-forecast-48-hour-0-1-degree-virtual",
-        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-48-hour-0-1-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
         license_links=WEATHERNEXT_LICENSE_LINKS,
         icechunk_href=(
             "https://google-weathernext3.r2.dynamical.org/"
@@ -2097,11 +2102,11 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",
             ),
         ),
+        notebooks=(_WEATHERNEXT3_NOTEBOOK,),
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "1.0.0-1.0.0"],
         id="google-weathernext3-forecast-48-hour-0-05-degree-virtual",
-        draft_validation_report_url="https://dataset-validation-reports.dynamical.org/google-weathernext3-forecast-48-hour-0-05-degree-virtual/drafts/v0.1.0_2026-11-01T01-17/validation_report.html",
         license_links=WEATHERNEXT_LICENSE_LINKS,
         icechunk_href=(
             "https://google-weathernext3.r2.dynamical.org/"
@@ -2123,6 +2128,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",
             ),
         ),
+        notebooks=(_WEATHERNEXT3_NOTEBOOK,),
     ),
     CatalogItem(
         environments=ALL_STAC_ENVIRONMENTS,
