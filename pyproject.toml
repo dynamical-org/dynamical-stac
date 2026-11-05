@@ -40,6 +40,9 @@ markers = [
     "integration: slow network-dependent integration tests (reads from public R2 buckets)",
 ]
 
+[tool.ruff]
+extend-exclude = ["./reformatters"]
+
 [tool.ruff.lint]
 select = [
     "UP",    # pyupgrade
