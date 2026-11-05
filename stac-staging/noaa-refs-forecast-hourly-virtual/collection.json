@@ -112,9 +112,9 @@
     },
     "statistic": {
       "type": "other",
-      "extent": [
-        null,
-        null
+      "values": [
+        "mean",
+        "standard_deviation"
       ],
       "unit": "1",
       "size": 2

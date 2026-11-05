@@ -116,9 +116,13 @@
     },
     "statistic": {
       "type": "other",
-      "extent": [
-        null,
-        null
+      "values": [
+        "mean",
+        "p10",
+        "p25",
+        "p50",
+        "p75",
+        "p90"
       ],
       "unit": "1",
       "size": 6
