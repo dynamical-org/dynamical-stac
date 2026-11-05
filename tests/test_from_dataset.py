@@ -819,11 +819,29 @@ def test_dim_entry_xy_defaults_to_meters() -> None:
     assert d.unit == "m"
 
 
-def test_dim_entry_unknown_coord_falls_back_to_none() -> None:
-    labels = np.array(["a", "b", "c"], dtype=object)
+@pytest.mark.parametrize(
+    "labels",
+    [
+        # The ensemble-statistic labels of the WeatherNext 3 and REFS products.
+        ["mean", "p10", "p25", "p50", "p75", "p90"],
+        ["mean", "standard_deviation"],
+    ],
+)
+@pytest.mark.parametrize("dtype", [np.dtypes.StringDType(), "U", object])
+def test_dim_entry_string_coord_lists_values(labels: list[str], dtype: object) -> None:
+    # Datacube v2.2.0 Additional Dimension Object: nominal labels go in the
+    # ordered `values` list; `extent` is for ordinal bounds, so it is omitted.
     d = _dim_entry(
-        "member",
-        xr.DataArray(labels, dims="member", name="member", attrs={"units": ""}),
+        "statistic",
+        xr.DataArray(
+            np.array(labels, dtype=dtype),
+            dims="statistic",
+            name="statistic",
+            attrs={"units": "1"},
+        ),
     )
     assert d.type == "other"
-    assert d.extent == [None, None]
+    assert d.values == labels
+    assert d.extent is None
+    assert d.unit == "1"
+    assert d.size == len(labels)

@@ -210,12 +210,22 @@ class CubeDimension(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type: Literal["spatial", "temporal", "other"]
-    extent: list[str | None] | list[float | None] | list[int | None] = Field(
-        min_length=2, max_length=2
+    extent: list[str | None] | list[float | None] | list[int | None] | None = Field(
+        default=None, min_length=2, max_length=2
     )
+    # Datacube v2.2.0 Additional Dimension Object: the ordered list of all
+    # values, for nominal dimensions such as `statistic` that have no bounds.
+    values: list[str] | None = Field(default=None, min_length=1)
     axis: str | None = None
     unit: str | None = None
     size: int | None = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def _extent_or_values(self) -> CubeDimension:
+        # Datacube v2.2.0: a dimension MUST specify `extent` or `values`.
+        if self.extent is None and self.values is None:
+            raise ValueError("a cube dimension needs an extent or values")
+        return self
 
 
 class CubeVariable(BaseModel):
@@ -355,19 +365,25 @@ def _dim_entry(name: str, coord: xr.DataArray) -> CubeDimension:
         )
     # Numeric non-spatial/temporal coords (vertical levels, ensemble member)
     # carry a meaningful min/max; report it, preserving int vs float so integer
-    # level/member indices don't render as floats. Non-numeric coords, if any,
-    # keep [None, None].
+    # level/member indices don't render as floats. String coords (e.g. the
+    # `statistic` labels) are nominal: list them as datacube `values` and omit
+    # `extent`, which the spec reserves for ordinal bounds. Anything else keeps
+    # [None, None].
     kind = values.dtype.kind
-    if kind in "iu":
-        extent: list[int | None] | list[float | None] = [
-            int(values.min()),
-            int(values.max()),
-        ]
+    labels: list[str] | None = None
+    extent: list[int | None] | list[float | None] | None
+    if kind in "TU" or (kind == "O" and all(isinstance(v, str) for v in values)):
+        labels = [str(v) for v in values]
+        extent = None
+    elif kind in "iu":
+        extent = [int(values.min()), int(values.max())]
     elif kind == "f":
         extent = [float(values.min()), float(values.max())]
     else:
         extent = [None, None]
-    return CubeDimension(type="other", extent=extent, unit=units or None, size=size)
+    return CubeDimension(
+        type="other", extent=extent, values=labels, unit=units or None, size=size
+    )
 
 
 def _iso(value: np.datetime64) -> str:
