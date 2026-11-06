@@ -451,20 +451,6 @@ MODELS: dict[str, Model] = {
         ),
         producer=ECMWF,
     ),
-    "ecmwf-ifs-subs": Model(
-        id="ecmwf-ifs-subs",
-        name="ECMWF IFS SUBS",
-        description=(
-            "The Integrated Forecasting System (IFS) is a global forecast model developed by ECMWF. "
-            "SUBS is the sub-seasonal (extended-range) configuration of the IFS ensemble: 101 ensemble "
-            "members out to 46 days. IFS consists of "
-            "a numerical model of the Earth system, which includes an atmospheric model at its heart, "
-            "coupled with models of other Earth system components such as the ocean. The data "
-            "assimilation system combines the latest weather observations with a recent forecast to "
-            "obtain the best possible estimate of the current state of the Earth system."
-        ),
-        producer=ECMWF,
-    ),
     "google-weathernext2": Model(
         id="google-weathernext2",
         name="Google WeatherNext 2",
@@ -1884,7 +1870,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-daily-1-5-degree/v0.2.0.icechunk/",
         icechunk_region="us-west-2",
-        model_id="ecmwf-ifs-subs",
+        model_id="ecmwf-ifs-ens",
         source=_ECMWF_DATA_STORE,
         description_summary=(
             "This dataset is an archive of ECMWF IFS SUBS sub-seasonal-range "
@@ -1925,7 +1911,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-46-day-6-hourly-1-5-degree/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
-        model_id="ecmwf-ifs-subs",
+        model_id="ecmwf-ifs-ens",
         source=_ECMWF_DATA_STORE,
         description_summary=(
             "This dataset is an archive of ECMWF IFS SUBS sub-seasonal-range "
