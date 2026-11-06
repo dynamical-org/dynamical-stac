@@ -838,7 +838,7 @@ _RRFS_REFS_VIRTUAL_NOTEBOOK = DatasetNotebook(
 # One notebook covers the 46 day daily and 6 hourly datasets.
 _ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
     slug="ecmwf-ifs-ens-forecast-46-day-1-5-degree",
-    title="ECMWF IFS ENS 46 day, daily and 6 hourly",
+    title="ECMWF IFS SUBS 46 day, daily and 6 hourly",
 )
 
 # One notebook covers the historical and operational WeatherNext 2 datasets.
@@ -1873,7 +1873,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="ecmwf-ifs-ens",
         source=_ECMWF_DATA_STORE,
         description_summary=(
-            "This dataset is an archive of ECMWF IFS ENS sub-seasonal-range "
+            "This dataset is an archive of ECMWF IFS SUBS sub-seasonal-range "
             "forecasts. Forecasts are identified by an initialization time "
             "(`init_time`) denoting the start time of the model run, as well "
             "as by the `ensemble_member`. Each forecast steps forward along "
@@ -1914,7 +1914,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="ecmwf-ifs-ens",
         source=_ECMWF_DATA_STORE,
         description_summary=(
-            "This dataset is an archive of ECMWF IFS ENS sub-seasonal-range "
+            "This dataset is an archive of ECMWF IFS SUBS sub-seasonal-range "
             "forecasts. Forecasts are identified by an initialization time "
             "(`init_time`) denoting the start time of the model run, as well "
             "as by the `ensemble_member`. Each forecast steps forward along "
