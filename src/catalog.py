@@ -841,6 +841,12 @@ _ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
     title="ECMWF IFS ENS 46 day, daily and 6 hourly",
 )
 
+# One notebook covers the four IFS ENS virtual datasets.
+_IFS_ENS_VIRTUAL_NOTEBOOK = DatasetNotebook(
+    slug="ecmwf-ifs-ens-forecast-virtual",
+    title="ECMWF IFS ENS forecasts, virtual",
+)
+
 # One notebook covers the historical and operational WeatherNext 2 datasets.
 _WEATHERNEXT2_NOTEBOOK = DatasetNotebook(
     slug="google-weathernext2-forecast-historical+operational-virtual",
@@ -1943,6 +1949,172 @@ CATALOG_ITEMS: list[CatalogItem] = [
             ),
         ),
         notebooks=(_ECMWF_IFS_ENS_46_DAY_NOTEBOOK,),
+        additional_terms=ECMWF_TERMS,
+    ),
+    CatalogItem(
+        environments=["production", "staging", "test", "1.0.0-1.0.0"],
+        id="ecmwf-ifs-ens-forecast-6-day-0-25-degree-virtual",
+        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-6-day-0-25-degree-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=(
+            "gs://ecmwf-open-data/",
+            "s3://ecmwf-forecasts/",
+        ),
+        model_id="ecmwf-ifs-ens",
+        source=_ECMWF_OPEN_DATA,
+        description_summary=(
+            "This dataset is an archive of past and present ECMWF IFS ENS "
+            "forecasts at 0.25 degree resolution, optimized for spatial "
+            "(map) access patterns. Forecasts are identified by an "
+            "initialization time (`init_time`) denoting the start time of "
+            "the model run as well as by the "
+            "`ensemble_member`, and step forward along the "
+            "`lead_time` dimension out to 6 days. A new forecast is "
+            "initialized every 6 hours.\n\n"
+            "Variables on pressure levels live in the `pressure_level` "
+            "group.\n\n"
+            "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.7`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_6_day_0_25_degree_virtual/template_config.py",
+        examples=(
+            _example(
+                "Ensemble mean temperature map",
+                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-25-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
+                'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-25-degree-virtual", group="pressure_level", chunks=None)\n'
+                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500).std("ensemble_member")',
+                min_version="1.0.0",  # gs:// virtual chunk container
+            ),
+        ),
+        notebooks=(_IFS_ENS_VIRTUAL_NOTEBOOK,),
+        additional_terms=ECMWF_TERMS,
+    ),
+    CatalogItem(
+        environments=["production", "staging", "test", "1.0.0-1.0.0"],
+        id="ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual",
+        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=(
+            "gs://ecmwf-open-data/",
+            "s3://ecmwf-forecasts/",
+        ),
+        model_id="ecmwf-ifs-ens",
+        source=_ECMWF_OPEN_DATA,
+        description_summary=(
+            "This dataset is an archive of past and present ECMWF IFS ENS "
+            "forecasts at 0.1 degree resolution, optimized for spatial "
+            "(map) access patterns. Forecasts are identified by an "
+            "initialization time (`init_time`) denoting the start time of "
+            "the model run as well as by the "
+            "`ensemble_member`, and step forward along the "
+            "`lead_time` dimension out to 6 days. A new forecast is "
+            "initialized every 6 hours.\n\n"
+            "Variables on pressure levels live in the `pressure_level` "
+            "group.\n\n"
+            "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.7`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_6_day_0_1_degree_virtual/template_config.py",
+        examples=(
+            _example(
+                "Ensemble mean temperature map",
+                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
+                'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual", group="pressure_level", chunks=None)\n'
+                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500).std("ensemble_member")',
+                min_version="1.0.0",  # gs:// virtual chunk container
+            ),
+        ),
+        notebooks=(_IFS_ENS_VIRTUAL_NOTEBOOK,),
+        additional_terms=ECMWF_TERMS,
+    ),
+    CatalogItem(
+        environments=["production", "staging", "test", "1.0.0-1.0.0"],
+        id="ecmwf-ifs-ens-forecast-15-day-0-25-degree-virtual",
+        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-15-day-0-25-degree-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=(
+            "gs://ecmwf-open-data/",
+            "s3://ecmwf-forecasts/",
+        ),
+        model_id="ecmwf-ifs-ens",
+        source=_ECMWF_OPEN_DATA,
+        description_summary=(
+            "This dataset is an archive of past and present ECMWF IFS ENS "
+            "forecasts at 0.25 degree resolution, optimized for spatial "
+            "(map) access patterns. Forecasts are identified by an "
+            "initialization time (`init_time`) denoting the start time of "
+            "the model run as well as by the "
+            "`ensemble_member`, and step forward along the `lead_time` "
+            "dimension out to 15 days. This dataset contains the 00 "
+            "and 12 UTC initialization times, which produce the full "
+            "length 15 day forecast.\n\n"
+            "Variables on pressure levels live in the `pressure_level` "
+            "group.\n\n"
+            "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.7`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_15_day_0_25_degree_virtual/template_config.py",
+        examples=(
+            _example(
+                "Ensemble mean temperature map",
+                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
+                'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree-virtual", group="pressure_level", chunks=None)\n'
+                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500).std("ensemble_member")',
+                min_version="1.0.0",  # gs:// virtual chunk container
+            ),
+        ),
+        notebooks=(_IFS_ENS_VIRTUAL_NOTEBOOK,),
+        additional_terms=ECMWF_TERMS,
+    ),
+    CatalogItem(
+        environments=["production", "staging", "test", "1.0.0-1.0.0"],
+        id="ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual",
+        icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=(
+            "gs://ecmwf-open-data/",
+            "s3://ecmwf-forecasts/",
+        ),
+        model_id="ecmwf-ifs-ens",
+        source=_ECMWF_OPEN_DATA,
+        description_summary=(
+            "This dataset is an archive of past and present ECMWF IFS ENS "
+            "forecasts at 0.1 degree resolution, optimized for spatial "
+            "(map) access patterns. Forecasts are identified by an "
+            "initialization time (`init_time`) denoting the start time of "
+            "the model run as well as by the "
+            "`ensemble_member`, and step forward along the `lead_time` "
+            "dimension out to 15 days. This dataset contains the 00 "
+            "and 12 UTC initialization times, which produce the full "
+            "length 15 day forecast.\n\n"
+            "Variables on pressure levels live in the `pressure_level` "
+            "group.\n\n"
+            "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.7`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_15_day_0_1_degree_virtual/template_config.py",
+        examples=(
+            _example(
+                "Ensemble mean temperature map",
+                'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
+                'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual", group="pressure_level", chunks=None)\n'
+                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500).std("ensemble_member")',
+                min_version="1.0.0",  # gs:// virtual chunk container
+            ),
+        ),
+        notebooks=(_IFS_ENS_VIRTUAL_NOTEBOOK,),
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
