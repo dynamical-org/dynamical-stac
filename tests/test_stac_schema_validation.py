@@ -18,10 +18,12 @@ QGIS) refuses to read a file, this test should already have caught it.
 
 from __future__ import annotations
 
+import json
 import pathlib
 
 import pystac
 import pystac.errors
+import pystac.validation
 import pytest
 
 from environments import STAC_ENVIRONMENTS
@@ -43,11 +45,15 @@ _STAC_FILES = sorted(
     ids=[str(p.relative_to(REPO_ROOT)) for p in _STAC_FILES],
 )
 def test_committed_stac_validates_against_schemas(json_path: pathlib.Path) -> None:
-    """Each STAC file passes pystac's JSON Schema validation, including
-    every schema URI it declares in `stac_extensions`."""
-    obj = pystac.read_file(str(json_path))
+    """Parse every file with PySTAC and validate its raw committed JSON,
+    including every schema URI it declares in `stac_extensions`."""
+    pystac.read_file(str(json_path))
+    # Retain PySTAC parsing coverage, but validate the original committed JSON.
+    # obj.validate() serializes it again, resolving its published root link over
+    # HTTP once per document even though schema validation needs no traversal.
+    document = json.loads(json_path.read_text())
     try:
-        validated = obj.validate()
+        validated = pystac.validation.validate_dict(document, href=str(json_path))
     except pystac.errors.STACValidationError as e:
         pytest.fail(f"{json_path.relative_to(REPO_ROOT)} failed schema validation: {e}")
 
@@ -57,7 +63,7 @@ def test_committed_stac_validates_against_schemas(json_path: pathlib.Path) -> No
     # Every declared extension must have actually been validated, not silently
     # skipped (pystac will skip a schema URI it cannot fetch). A typo or a
     # 404'd extension URI would otherwise reach production unnoticed.
-    declared = set(getattr(obj, "stac_extensions", None) or [])
+    declared = set(document.get("stac_extensions", []))
     missing = declared - set(validated)
     assert not missing, (
         f"{json_path.relative_to(REPO_ROOT)} declares extensions that pystac "
