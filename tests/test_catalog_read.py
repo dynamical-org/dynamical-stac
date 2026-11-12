@@ -29,15 +29,43 @@ def _point_value(ds: object, name: str) -> object:
     return da.isel(dict.fromkeys(da.dims, 0)).load().item()
 
 
+def _read_collection(
+    dynamical_catalog: object, collection_id: str
+) -> tuple[str, object]:
+    ds = dynamical_catalog.open(collection_id)  # type: ignore[attr-defined]
+    first_var = next(iter(ds.data_vars))
+    return first_var, _point_value(ds, first_var)
+
+
+@pytest.fixture(scope="module")
+def collection_reads(
+    dynamical_catalog_fixture: object,
+) -> dict[str, Future[tuple[str, object]]]:
+    """Prefetch every module collection read with four workers, even under -k.
+
+    Like URL prefetch, selection still runs all cases when this fixture is used.
+    Exceptions stay in futures for the original parametrized tests to report.
+    """
+    # served_catalog, through dynamical_catalog_fixture, has already read every
+    # dataset and resolved its codecs. Warm the client root before threading.
+    dynamical_catalog_fixture.list()  # type: ignore[attr-defined]
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        return {
+            collection_id: executor.submit(
+                _read_collection, dynamical_catalog_fixture, collection_id
+            )
+            for collection_id in _COLLECTION_IDS
+        }
+
+
 @pytest.mark.integration
 @pytest.mark.parametrize("collection_id", _COLLECTION_IDS)
 def test_every_icechunk_opens_and_reads(
     dynamical_catalog_fixture: object,
     collection_id: str,
+    collection_reads: dict[str, Future[tuple[str, object]]],
 ) -> None:
-    ds = dynamical_catalog_fixture.open(collection_id)  # type: ignore[attr-defined]
-    first_var = next(iter(ds.data_vars))
-    value = _point_value(ds, first_var)
+    first_var, value = collection_reads[collection_id].result()
     # NaN is fine (sparse/unobserved cells), but the read must return a number
     assert isinstance(value, float | int), f"{collection_id}.{first_var} -> {value!r}"
     if isinstance(value, float):
@@ -84,7 +112,7 @@ def notebook_statuses() -> dict[str, Future[int]]:
     """Prefetch this module's URLs with bounded concurrency, even under -k.
 
     Keep exceptions in futures so failures remain attached to individual tests.
-    Only notebook tests request this fixture; store reads remain sequential.
+    Only notebook tests request this fixture; store reads use a separate pool.
     """
     with ThreadPoolExecutor(max_workers=8) as executor:
         return {

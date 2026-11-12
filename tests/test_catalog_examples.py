@@ -11,6 +11,7 @@ import ast
 import json
 import pathlib
 from collections.abc import Iterator
+from concurrent.futures import Future, ThreadPoolExecutor
 
 import pytest
 
@@ -65,6 +66,42 @@ def _assert_allowed_imports(code: str) -> None:
                     raise AssertionError(f"disallowed import: {ast.unparse(node)!r}")
 
 
+def _exec_example(collection_id: str, label: str, code: str, root_url: str) -> None:
+    _assert_allowed_imports(code)
+    # The client is already pointed at the local production catalog. Redirect
+    # the pystac variant's hardcoded production URL to the same catalog.
+    local_code = code.replace(_PROD_CATALOG_URL, f"{root_url}/catalog-production.json")
+    globals_ns: dict[str, object] = {"__name__": f"example::{collection_id}"}
+    exec(  # noqa: S102
+        compile(local_code, f"<example:{collection_id}:{label}>", "exec"),
+        globals_ns,
+    )
+
+
+@pytest.fixture(scope="module")
+def example_results(
+    served_production_catalog: object,
+    served_catalog: tuple[pathlib.Path, str],
+) -> dict[tuple[str, str, str, str], Future[None]]:
+    """Prefetch every module example with four workers, even under -k.
+
+    Like URL prefetch, selection still runs all cases when this fixture is used.
+    Exceptions stay in futures for the original parametrized tests to report.
+    """
+    # served_catalog has opened/read every dataset and resolved its codecs.
+    # Warm the client root on the main thread before workers import the client.
+    served_production_catalog.list()  # type: ignore[attr-defined]
+    _, root_url = served_catalog
+    # Joining here finishes all workers before the catalog URL patch tears down.
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        return {
+            (cid, title, label, code): executor.submit(
+                _exec_example, cid, label, code, root_url
+            )
+            for cid, title, label, code in _PYTHON_EXAMPLES
+        }
+
+
 def test_examples_found() -> None:
     # Guard against silently skipping everything if globbing breaks.
     assert _PYTHON_EXAMPLES, "no python examples found under stac/*/collection.json"
@@ -83,20 +120,11 @@ def test_example_executes(  # noqa: PLR0917
     title: str,
     label: str,
     code: str,
+    example_results: dict[tuple[str, str, str, str], Future[None]],
 ) -> None:
     _assert_allowed_imports(code)
-    # The served_production_catalog fixture has already imported the library and pointed
-    # it at the locally-served catalog; exec's `import dynamical_catalog` then
-    # hits sys.modules and reuses that configured module. The pystac variant
-    # reads the same catalog directly, so redirect its hardcoded prod URL too.
     assert served_production_catalog is not None
-    _, root_url = served_catalog
-    local_code = code.replace(_PROD_CATALOG_URL, f"{root_url}/catalog-production.json")
-    globals_ns: dict[str, object] = {"__name__": f"example::{collection_id}"}
-    exec(  # noqa: S102
-        compile(local_code, f"<example:{collection_id}:{label}>", "exec"),
-        globals_ns,
-    )
+    example_results[collection_id, title, label, code].result()
 
 
 @pytest.fixture(scope="module")
