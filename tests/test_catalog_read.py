@@ -41,7 +41,7 @@ def _read_collection(
 def collection_reads(
     dynamical_catalog_fixture: object,
 ) -> dict[str, Future[tuple[str, object]]]:
-    """Prefetch every module collection read with four workers, even under -k.
+    """Prefetch every module collection read with two workers, even under -k.
 
     Like URL prefetch, selection still runs all cases when this fixture is used.
     Exceptions stay in futures for the original parametrized tests to report.
@@ -49,7 +49,7 @@ def collection_reads(
     # served_catalog, through dynamical_catalog_fixture, has already read every
     # dataset and resolved its codecs. Warm the client root before threading.
     dynamical_catalog_fixture.list()  # type: ignore[attr-defined]
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         return {
             collection_id: executor.submit(
                 _read_collection, dynamical_catalog_fixture, collection_id

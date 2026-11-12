@@ -42,9 +42,11 @@ jobs:
       - run: uv sync --locked --group integration
       - run: uv run ruff check
       - run: uv run ruff format --check
-      - run: uv run pytest tests/ --ignore=tests/test_released_catalog_read.py --durations=50
+      - run: /usr/bin/time -v uv run pytest tests/ --ignore=tests/test_released_catalog_read.py --durations=50
         env:
           REFORMATTERS_DIR: ${{ github.workspace }}/reformatters
+          # Bound glibc arena retention while concurrent reads decode large chunks.
+          MALLOC_ARENA_MAX: "2"
 
   # Per-target compatibility checks. Each matrix entry shows up as its own
   # PR status check (via the job-level `name:` template) so a breaking

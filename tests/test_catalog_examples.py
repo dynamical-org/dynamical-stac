@@ -22,6 +22,14 @@ _STAC_DIR = pathlib.Path(__file__).parent.parent / "stac"
 # source rather than whatever prod happens to be serving.
 _PROD_CATALOG_URL = "https://stac.dynamical.org/catalog.json"
 
+# These examples reduce complete 0.1-degree global ensemble fields. Execute them
+# serially in their original tests after the pool has joined to avoid multiplying
+# their multi-GiB working sets. Keep the snippets and their reads unchanged.
+_SERIAL_COLLECTIONS = {
+    "ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual",
+    "ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual",
+}
+
 # Import forms an example is allowed to use. The dynamical-catalog variant
 # imports only dynamical_catalog; the pystac variant imports icechunk/pystac/
 # xarray.
@@ -83,9 +91,9 @@ def example_results(
     served_production_catalog: object,
     served_catalog: tuple[pathlib.Path, str],
 ) -> dict[tuple[str, str, str, str], Future[None]]:
-    """Prefetch every module example with four workers, even under -k.
+    """Prefetch the smaller examples with two workers, even under -k.
 
-    Like URL prefetch, selection still runs all cases when this fixture is used.
+    Like URL prefetch, selection still runs all pooled cases when this fixture is used.
     Exceptions stay in futures for the original parametrized tests to report.
     """
     # served_catalog has opened/read every dataset and resolved its codecs.
@@ -93,18 +101,22 @@ def example_results(
     served_production_catalog.list()  # type: ignore[attr-defined]
     _, root_url = served_catalog
     # Joining here finishes all workers before the catalog URL patch tears down.
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         return {
             (cid, title, label, code): executor.submit(
                 _exec_example, cid, label, code, root_url
             )
             for cid, title, label, code in _PYTHON_EXAMPLES
+            if cid not in _SERIAL_COLLECTIONS
         }
 
 
 def test_examples_found() -> None:
     # Guard against silently skipping everything if globbing breaks.
     assert _PYTHON_EXAMPLES, "no python examples found under stac/*/collection.json"
+    assert _SERIAL_COLLECTIONS <= {example[0] for example in _PYTHON_EXAMPLES}, (
+        "serial example collection IDs must exist in the committed catalog"
+    )
 
 
 @pytest.mark.integration
@@ -124,7 +136,11 @@ def test_example_executes(  # noqa: PLR0917
 ) -> None:
     _assert_allowed_imports(code)
     assert served_production_catalog is not None
-    example_results[collection_id, title, label, code].result()
+    if collection_id in _SERIAL_COLLECTIONS:
+        _, root_url = served_catalog
+        _exec_example(collection_id, label, code, root_url)
+    else:
+        example_results[collection_id, title, label, code].result()
 
 
 @pytest.fixture(scope="module")
