@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 import urllib.error
 import urllib.request
+from concurrent.futures import Future, ThreadPoolExecutor
 
 import pytest
 
@@ -57,22 +58,46 @@ def test_noaa_gfs_forecast_temperature_2m_reads(
     assert isinstance(value, float)
 
 
-@pytest.mark.integration
-@pytest.mark.parametrize("notebook_slug", _NOTEBOOK_SLUGS)
-def test_notebook_url_exists(notebook_slug: str) -> None:
+def _notebook_url(notebook_slug: str) -> str:
     # Use raw.githubusercontent.com so 404s actually return 404 — the
     # github.com/<repo>/blob/<ref>/<path> page always returns 200 (the SPA
     # renders "Page not found" client-side), which makes it useless for
     # existence checks.
-    url = (
+    return (
         "https://raw.githubusercontent.com/dynamical-org/notebooks"
         f"/main/{notebook_slug}.ipynb"
     )
+
+
+def _notebook_status(url: str) -> int:
     req = urllib.request.Request(url, method="HEAD")  # noqa: S310
     req.add_header("User-Agent", "dynamical-stac-tests")
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
-            status = resp.status
+            return resp.status
     except urllib.error.HTTPError as e:
-        status = e.code
+        return e.code
+
+
+@pytest.fixture(scope="module")
+def notebook_statuses() -> dict[str, Future[int]]:
+    """Prefetch this module's URLs with bounded concurrency, even under -k.
+
+    Keep exceptions in futures so failures remain attached to individual tests.
+    Only notebook tests request this fixture; store reads remain sequential.
+    """
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        return {
+            slug: executor.submit(_notebook_status, _notebook_url(slug))
+            for slug in _NOTEBOOK_SLUGS
+        }
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("notebook_slug", _NOTEBOOK_SLUGS)
+def test_notebook_url_exists(
+    notebook_slug: str, notebook_statuses: dict[str, Future[int]]
+) -> None:
+    url = _notebook_url(notebook_slug)
+    status = notebook_statuses[notebook_slug].result()
     assert status == 200, f"{url} returned {status}"

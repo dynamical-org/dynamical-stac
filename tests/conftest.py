@@ -1,3 +1,9 @@
+"""Shared integration fixtures for live catalog generation and serving.
+
+Drift and test-catalog checks share one live all-environment generation per
+session through ``generated``. Consumers must treat its output as read-only.
+"""
+
 from __future__ import annotations
 
 import http.server
@@ -14,7 +20,20 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
 
 from catalog import CATALOG_ITEMS
 from environments import STAC_ENVIRONMENTS
-from generate import _load_datasets, generate
+from generate import _load_datasets, generate, generate_environments
+
+
+@pytest.fixture(scope="session")
+def generated(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
+    """Generate every environment live once for drift and test-catalog checks.
+
+    Opens the network stores and validates the rendered catalogs. Even running
+    only the test-catalog module generates every environment. Consumers must
+    treat the returned directory and all its contents as read-only.
+    """
+    parent_dir = tmp_path_factory.mktemp("environments")
+    generate_environments(parent_dir)
+    return parent_dir
 
 
 @contextmanager
