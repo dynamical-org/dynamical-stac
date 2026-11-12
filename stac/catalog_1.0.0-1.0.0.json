@@ -168,6 +168,30 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-ifs-ens-forecast-6-day-0-25-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 6 day, 0.25 degree, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 6 day, 0.1 degree, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-ifs-ens-forecast-15-day-0-25-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 15 day, 0.25 degree, virtual"
+    },
+    {
+      "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual/collection.json",
+      "type": "application/json",
+      "title": "ECMWF IFS ENS forecast, 15 day, 0.1 degree, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/google-weathernext2-forecast-historical-virtual/collection.json",
       "type": "application/json",
       "title": "Google WeatherNext 2 forecast, historical, virtual"
