@@ -874,6 +874,7 @@
       ],
       "unit": "kg m-3",
       "long_name": "Snow density",
+      "standard_name": "surface_snow_density",
       "short_name": "rsn",
       "comment": "Mean snow density over the previous 24 hours. Missing where the surface carries no snowpack, including snow-free land."
     },

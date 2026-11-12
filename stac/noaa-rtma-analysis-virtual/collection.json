@@ -36,13 +36,13 @@
     },
     {
       "rel": "example",
-      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-rtma-family.ipynb",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/noaa-rtma-rtma-ru-urma-analysis-virtual.ipynb",
       "type": "application/x-ipynb+json",
       "title": "RTMA, RTMA-RU and URMA analyses (GitHub)"
     },
     {
       "rel": "example",
-      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-rtma-family.ipynb",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/noaa-rtma-rtma-ru-urma-analysis-virtual.ipynb",
       "type": "text/html",
       "title": "RTMA, RTMA-RU and URMA analyses (Colab)"
     },
