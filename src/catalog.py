@@ -1389,7 +1389,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
         notebooks=(
             DatasetNotebook(
-                slug="noaa-rtma-rtma-ru-urma-analysis-virtual", title="RTMA, RTMA-RU and URMA analyses"
+                slug="noaa-rtma-rtma-ru-urma-analysis-virtual",
+                title="RTMA, RTMA-RU and URMA analyses",
             ),
         ),
     ),
@@ -1420,7 +1421,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
         notebooks=(
             DatasetNotebook(
-                slug="noaa-rtma-rtma-ru-urma-analysis-virtual", title="RTMA, RTMA-RU and URMA analyses"
+                slug="noaa-rtma-rtma-ru-urma-analysis-virtual",
+                title="RTMA, RTMA-RU and URMA analyses",
             ),
         ),
     ),
@@ -1451,7 +1453,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
         ),
         notebooks=(
             DatasetNotebook(
-                slug="noaa-rtma-rtma-ru-urma-analysis-virtual", title="RTMA, RTMA-RU and URMA analyses"
+                slug="noaa-rtma-rtma-ru-urma-analysis-virtual",
+                title="RTMA, RTMA-RU and URMA analyses",
             ),
         ),
     ),
