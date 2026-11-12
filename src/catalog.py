@@ -1968,7 +1968,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "(map) access patterns. Forecasts are identified by an "
             "initialization time (`init_time`) denoting the start time of "
             "the model run as well as by the "
-            "`ensemble_member`, and step forward 3 hourly along the "
+            "`ensemble_member`, and step forward along the "
             "`lead_time` dimension out to 6 days. A new forecast is "
             "initialized every 6 hours.\n\n"
             "Variables on pressure levels live in the `pressure_level` "
@@ -1997,7 +1997,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
-        virtual_chunk_container_prefixes=("gs://ecmwf-open-data/",),
+        virtual_chunk_container_prefixes=(
+            "gs://ecmwf-open-data/",
+            "s3://ecmwf-forecasts/",
+        ),
         model_id="ecmwf-ifs-ens",
         source=_ECMWF_OPEN_DATA,
         description_summary=(
@@ -2006,7 +2009,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "(map) access patterns. Forecasts are identified by an "
             "initialization time (`init_time`) denoting the start time of "
             "the model run as well as by the "
-            "`ensemble_member`, and step forward 3 hourly along the "
+            "`ensemble_member`, and step forward along the "
             "`lead_time` dimension out to 6 days. A new forecast is "
             "initialized every 6 hours.\n\n"
             "Variables on pressure levels live in the `pressure_level` "
@@ -2047,10 +2050,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "(map) access patterns. Forecasts are identified by an "
             "initialization time (`init_time`) denoting the start time of "
             "the model run as well as by the "
-            "`ensemble_member`. Along the `lead_time` dimension, each "
-            "forecast begins at a 3 hourly forecast step (0-144 hours) "
-            "and switches to a 6 hourly step for days 6 through 15 of "
-            "the forecast (hours 144-360). This dataset contains the 00 "
+            "`ensemble_member`, and step forward along the `lead_time` "
+            "dimension out to 15 days. This dataset contains the 00 "
             "and 12 UTC initialization times, which produce the full "
             "length 15 day forecast.\n\n"
             "Variables on pressure levels live in the `pressure_level` "
@@ -2079,7 +2080,10 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
-        virtual_chunk_container_prefixes=("gs://ecmwf-open-data/",),
+        virtual_chunk_container_prefixes=(
+            "gs://ecmwf-open-data/",
+            "s3://ecmwf-forecasts/",
+        ),
         model_id="ecmwf-ifs-ens",
         source=_ECMWF_OPEN_DATA,
         description_summary=(
@@ -2088,10 +2092,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "(map) access patterns. Forecasts are identified by an "
             "initialization time (`init_time`) denoting the start time of "
             "the model run as well as by the "
-            "`ensemble_member`. Along the `lead_time` dimension, each "
-            "forecast begins at a 3 hourly forecast step (0-144 hours) "
-            "and switches to a 6 hourly step for days 6 through 15 of "
-            "the forecast (hours 144-360). This dataset contains the 00 "
+            "`ensemble_member`, and step forward along the `lead_time` "
+            "dimension out to 15 days. This dataset contains the 00 "
             "and 12 UTC initialization times, which produce the full "
             "length 15 day forecast.\n\n"
             "Variables on pressure levels live in the `pressure_level` "
