@@ -1,4 +1,8 @@
-"""Integration test: every committed environment must match what generate_environments() produces today."""
+"""Every committed environment must match today's live generated catalogs.
+
+The session-scoped ``generated`` fixture in conftest shares one live generation
+of every environment with test_test_catalog.py. All consumers are read-only.
+"""
 
 from __future__ import annotations
 
@@ -8,16 +12,8 @@ import pathlib
 import pytest
 
 from environments import STAC_ENVIRONMENTS
-from generate import generate_environments
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-
-
-@pytest.fixture(scope="module")
-def generated(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
-    parent_dir = tmp_path_factory.mktemp("environments")
-    generate_environments(parent_dir)
-    return parent_dir
 
 
 @pytest.mark.integration

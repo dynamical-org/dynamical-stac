@@ -31,6 +31,7 @@ import json
 import pathlib
 import urllib.error
 import urllib.request
+from concurrent.futures import Future, ThreadPoolExecutor
 
 import pytest
 
@@ -70,18 +71,34 @@ def _fetch(url: str) -> str:
         return resp.read().decode("utf-8", errors="replace")
 
 
+def _report_url(collection_id: str) -> str:
+    return f"{_REPORTS_BASE_URL}/{collection_id}/latest/validation_summary.md"
+
+
+@pytest.fixture(scope="module")
+def validation_reports() -> dict[str, Future[str]]:
+    """Prefetch all report URLs, even under -k, retaining per-item exceptions."""
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        return {
+            collection_id: executor.submit(_fetch, _report_url(collection_id))
+            for collection_id, _ in _PRODUCTION_COLLECTIONS
+        }
+
+
 @pytest.mark.integration
 @pytest.mark.parametrize(
     ("collection_id", "href"),
     _PRODUCTION_COLLECTIONS,
     ids=[c[0] for c in _PRODUCTION_COLLECTIONS],
 )
-def test_validation_report_is_published(collection_id: str, href: str) -> None:
+def test_validation_report_is_published(
+    collection_id: str, href: str, validation_reports: dict[str, Future[str]]
+) -> None:
     assert href == f"https://dynamical.org/catalog/{collection_id}/validation/"
 
-    report_url = f"{_REPORTS_BASE_URL}/{collection_id}/latest/validation_summary.md"
+    report_url = _report_url(collection_id)
     try:
-        markdown = _fetch(report_url)
+        markdown = validation_reports[collection_id].result()
     except urllib.error.HTTPError as e:
         pytest.fail(
             f"{report_url} returned {e.code}; the website renders "

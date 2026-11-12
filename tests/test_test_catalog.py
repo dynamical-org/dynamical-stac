@@ -1,11 +1,12 @@
 """Integration test: the test catalog renders the fixture collections.
 
-These generate the test environment, opening `gs://` and `az://` Icechunk
-repositories over the network alongside the weather datasets assigned to it.
-`generate()` calls `pystac.Catalog.validate_all()`, so reaching the assertions
-below also means the fixture collections passed STAC + extension schema
-validation. The catalog is generated once per module — a full `generate()` run
-opens every production store too, so it's far too slow to repeat per test.
+The session-scoped ``generated`` fixture in conftest shares one live generation
+of every environment with the drift checks. Running this module in isolation
+still generates every environment, opening `gs://` and `az://` Icechunk
+repositories over the network alongside the weather datasets. Generation calls
+`pystac.Catalog.validate_all()`, so reaching the assertions below also means the
+fixture collections passed STAC + extension schema validation. Consumers must
+treat the shared generated catalogs as read-only.
 """
 
 from __future__ import annotations
@@ -14,8 +15,6 @@ import json
 import pathlib
 
 import pytest
-
-from generate import generate
 
 _GCS_ID = "test-gcs-virtual"
 _GCS_BUCKET = "dynamical-icechunk-gcs-demo"
@@ -32,14 +31,9 @@ _AZ_CREDENTIALS = {"type": "azure", "anonymous": True}
 
 
 @pytest.fixture(scope="module")
-def test_catalog_dir(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
-    output_dir = tmp_path_factory.mktemp("stac-test")
-    generate(
-        output_dir,
-        root_href="https://stac-test.dynamical.org",
-        environment="test",
-    )
-    return output_dir
+def test_catalog_dir(generated: pathlib.Path) -> pathlib.Path:
+    """Return the read-only test catalog from the shared live generation."""
+    return generated / "stac-test"
 
 
 def _collection(output_dir: pathlib.Path, collection_id: str) -> dict[str, object]:
