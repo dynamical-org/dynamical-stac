@@ -97,7 +97,7 @@ def example_results(
     Exceptions stay in futures for the original parametrized tests to report.
     """
     # served_catalog has opened/read every dataset and resolved its codecs.
-    # Warm the client root on the main thread before workers import the client.
+    # Warm the client root on the main thread before workers open datasets.
     served_production_catalog.list()  # type: ignore[attr-defined]
     _, root_url = served_catalog
     # Joining here finishes all workers before the catalog URL patch tears down.
@@ -106,7 +106,9 @@ def example_results(
             (cid, title, label, code): executor.submit(
                 _exec_example, cid, label, code, root_url
             )
-            for cid, title, label, code in _PYTHON_EXAMPLES
+            # Separate each collection's variants so their working sets are less
+            # likely to overlap. Futures still map to the original test IDs.
+            for cid, title, label, code in sorted(_PYTHON_EXAMPLES, key=lambda e: e[2])
             if cid not in _SERIAL_COLLECTIONS
         }
 
