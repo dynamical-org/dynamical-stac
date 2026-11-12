@@ -844,7 +844,7 @@ _ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
 # One notebook covers the four IFS ENS virtual datasets.
 _IFS_ENS_VIRTUAL_NOTEBOOK = DatasetNotebook(
     slug="ecmwf-ifs-ens-forecast-virtual",
-    title="IFS ENS forecasts, 6 and 15 day, virtual",
+    title="ECMWF IFS ENS forecasts, virtual",
 )
 
 # One notebook covers the historical and operational WeatherNext 2 datasets.
@@ -1966,21 +1966,20 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "This dataset is an archive of past and present ECMWF IFS ENS "
             "forecasts at 0.25 degree resolution, optimized for spatial "
             "(map) access patterns. Forecasts are identified by an "
-            "initialization time (`init_time`) denoting the start time of the "
-            "model run, as well as by the `ensemble_member`. This dataset contains all four daily initializations (00, 06, 12 and 18 UTC). "
-            "Each forecast steps forward along the `lead_time` dimension from 0 to 144 hours (6 days) at a 3 hourly step.\n\n"
-            "Chunks reference the bytes of ECMWF's original GRIB files and are "
-            "decoded on read, so this archive carries every variable ECMWF "
-            "publishes for IFS ENS at this resolution. Surface and "
-            "single-level variables are at the dataset root; variables carried "
-            "on pressure levels are in the `pressure_level` group.\n\n"
+            "initialization time (`init_time`) denoting the start time of "
+            "the model run as well as by the "
+            "`ensemble_member`, and step forward 3 hourly along the "
+            "`lead_time` dimension out to 6 days. A new forecast is "
+            "initialized every 6 hours.\n\n"
+            "Variables on pressure levels live in the `pressure_level` "
+            "group.\n\n"
             "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
             "gribberish>=1.7`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_6_day_0_25_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean and spread maps",
+                "Ensemble mean temperature map",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-25-degree-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
                 "\n"
@@ -2005,21 +2004,20 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "This dataset is an archive of past and present ECMWF IFS ENS "
             "forecasts at 0.1 degree resolution, optimized for spatial "
             "(map) access patterns. Forecasts are identified by an "
-            "initialization time (`init_time`) denoting the start time of the "
-            "model run, as well as by the `ensemble_member`. This dataset contains all four daily initializations (00, 06, 12 and 18 UTC). "
-            "Each forecast steps forward along the `lead_time` dimension from 0 to 144 hours (6 days) at a 3 hourly step.\n\n"
-            "Chunks reference the bytes of ECMWF's original GRIB files and are "
-            "decoded on read, so this archive carries every variable ECMWF "
-            "publishes for IFS ENS at this resolution. Surface and "
-            "single-level variables are at the dataset root; variables carried "
-            "on pressure levels are in the `pressure_level` group.\n\n"
+            "initialization time (`init_time`) denoting the start time of "
+            "the model run as well as by the "
+            "`ensemble_member`, and step forward 3 hourly along the "
+            "`lead_time` dimension out to 6 days. A new forecast is "
+            "initialized every 6 hours.\n\n"
+            "Variables on pressure levels live in the `pressure_level` "
+            "group.\n\n"
             "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
             "gribberish>=1.7`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_6_day_0_1_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean and spread maps",
+                "Ensemble mean temperature map",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
                 "\n"
@@ -2047,21 +2045,23 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "This dataset is an archive of past and present ECMWF IFS ENS "
             "forecasts at 0.25 degree resolution, optimized for spatial "
             "(map) access patterns. Forecasts are identified by an "
-            "initialization time (`init_time`) denoting the start time of the "
-            "model run, as well as by the `ensemble_member`. This dataset contains the 00 and 12 UTC initializations. "
-            "Along the `lead_time` dimension, each forecast steps 3 hourly from 0 to 144 hours, then 6 hourly to 360 hours (15 days).\n\n"
-            "Chunks reference the bytes of ECMWF's original GRIB files and are "
-            "decoded on read, so this archive carries every variable ECMWF "
-            "publishes for IFS ENS at this resolution. Surface and "
-            "single-level variables are at the dataset root; variables carried "
-            "on pressure levels are in the `pressure_level` group.\n\n"
+            "initialization time (`init_time`) denoting the start time of "
+            "the model run as well as by the "
+            "`ensemble_member`. Along the `lead_time` dimension, each "
+            "forecast begins at a 3 hourly forecast step (0-144 hours) "
+            "and switches to a 6 hourly step for days 6 through 15 of "
+            "the forecast (hours 144-360). This dataset contains the 00 "
+            "and 12 UTC initialization times, which produce the full "
+            "length 15 day forecast.\n\n"
+            "Variables on pressure levels live in the `pressure_level` "
+            "group.\n\n"
             "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
             "gribberish>=1.7`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_15_day_0_25_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean and spread maps",
+                "Ensemble mean temperature map",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
                 "\n"
@@ -2086,21 +2086,23 @@ CATALOG_ITEMS: list[CatalogItem] = [
             "This dataset is an archive of past and present ECMWF IFS ENS "
             "forecasts at 0.1 degree resolution, optimized for spatial "
             "(map) access patterns. Forecasts are identified by an "
-            "initialization time (`init_time`) denoting the start time of the "
-            "model run, as well as by the `ensemble_member`. This dataset contains the 00 and 12 UTC initializations. "
-            "Along the `lead_time` dimension, each forecast steps 3 hourly from 0 to 144 hours, then 6 hourly to 360 hours (15 days).\n\n"
-            "Chunks reference the bytes of ECMWF's original GRIB files and are "
-            "decoded on read, so this archive carries every variable ECMWF "
-            "publishes for IFS ENS at this resolution. Surface and "
-            "single-level variables are at the dataset root; variables carried "
-            "on pressure levels are in the `pressure_level` group.\n\n"
+            "initialization time (`init_time`) denoting the start time of "
+            "the model run as well as by the "
+            "`ensemble_member`. Along the `lead_time` dimension, each "
+            "forecast begins at a 3 hourly forecast step (0-144 hours) "
+            "and switches to a 6 hourly step for days 6 through 15 of "
+            "the forecast (hours 144-360). This dataset contains the 00 "
+            "and 12 UTC initialization times, which produce the full "
+            "length 15 day forecast.\n\n"
+            "Variables on pressure levels live in the `pressure_level` "
+            "group.\n\n"
             "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
             "gribberish>=1.7`) is required."
         ),
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_15_day_0_1_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean and spread maps",
+                "Ensemble mean temperature map",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual", chunks=None)\n'
                 'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
                 "\n"
