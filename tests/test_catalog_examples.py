@@ -11,6 +11,7 @@ import ast
 import json
 import pathlib
 from collections.abc import Iterator
+from concurrent.futures import Future, ThreadPoolExecutor
 
 import pytest
 
@@ -20,6 +21,14 @@ _STAC_DIR = pathlib.Path(__file__).parent.parent / "stac"
 # rewrite it to the locally-generated catalog so the test exercises the current
 # source rather than whatever prod happens to be serving.
 _PROD_CATALOG_URL = "https://stac.dynamical.org/catalog.json"
+
+# These examples reduce complete 0.1-degree global ensemble fields. Execute them
+# serially in their original tests after the pool has joined to avoid multiplying
+# their multi-GiB working sets. Keep the snippets and their reads unchanged.
+_SERIAL_COLLECTIONS = {
+    "ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual",
+    "ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual",
+}
 
 # Import forms an example is allowed to use. The dynamical-catalog variant
 # imports only dynamical_catalog; the pystac variant imports icechunk/pystac/
@@ -65,9 +74,51 @@ def _assert_allowed_imports(code: str) -> None:
                     raise AssertionError(f"disallowed import: {ast.unparse(node)!r}")
 
 
+def _exec_example(collection_id: str, label: str, code: str, root_url: str) -> None:
+    _assert_allowed_imports(code)
+    # The client is already pointed at the local production catalog. Redirect
+    # the pystac variant's hardcoded production URL to the same catalog.
+    local_code = code.replace(_PROD_CATALOG_URL, f"{root_url}/catalog-production.json")
+    globals_ns: dict[str, object] = {"__name__": f"example::{collection_id}"}
+    exec(  # noqa: S102
+        compile(local_code, f"<example:{collection_id}:{label}>", "exec"),
+        globals_ns,
+    )
+
+
+@pytest.fixture(scope="module")
+def example_results(
+    served_production_catalog: object,
+    served_catalog: tuple[pathlib.Path, str],
+) -> dict[tuple[str, str, str, str], Future[None]]:
+    """Prefetch the smaller examples with two workers, even under -k.
+
+    Like URL prefetch, selection still runs all pooled cases when this fixture is used.
+    Exceptions stay in futures for the original parametrized tests to report.
+    """
+    # served_catalog has opened/read every dataset and resolved its codecs.
+    # Warm the client root on the main thread before workers open datasets.
+    served_production_catalog.list()  # type: ignore[attr-defined]
+    _, root_url = served_catalog
+    # Joining here finishes all workers before the catalog URL patch tears down.
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        return {
+            (cid, title, label, code): executor.submit(
+                _exec_example, cid, label, code, root_url
+            )
+            # Separate each collection's variants so their working sets are less
+            # likely to overlap. Futures still map to the original test IDs.
+            for cid, title, label, code in sorted(_PYTHON_EXAMPLES, key=lambda e: e[2])
+            if cid not in _SERIAL_COLLECTIONS
+        }
+
+
 def test_examples_found() -> None:
     # Guard against silently skipping everything if globbing breaks.
     assert _PYTHON_EXAMPLES, "no python examples found under stac/*/collection.json"
+    assert _SERIAL_COLLECTIONS <= {example[0] for example in _PYTHON_EXAMPLES}, (
+        "serial example collection IDs must exist in the committed catalog"
+    )
 
 
 @pytest.mark.integration
@@ -83,20 +134,15 @@ def test_example_executes(  # noqa: PLR0917
     title: str,
     label: str,
     code: str,
+    example_results: dict[tuple[str, str, str, str], Future[None]],
 ) -> None:
     _assert_allowed_imports(code)
-    # The served_production_catalog fixture has already imported the library and pointed
-    # it at the locally-served catalog; exec's `import dynamical_catalog` then
-    # hits sys.modules and reuses that configured module. The pystac variant
-    # reads the same catalog directly, so redirect its hardcoded prod URL too.
     assert served_production_catalog is not None
-    _, root_url = served_catalog
-    local_code = code.replace(_PROD_CATALOG_URL, f"{root_url}/catalog-production.json")
-    globals_ns: dict[str, object] = {"__name__": f"example::{collection_id}"}
-    exec(  # noqa: S102
-        compile(local_code, f"<example:{collection_id}:{label}>", "exec"),
-        globals_ns,
-    )
+    if collection_id in _SERIAL_COLLECTIONS:
+        _, root_url = served_catalog
+        _exec_example(collection_id, label, code, root_url)
+    else:
+        example_results[collection_id, title, label, code].result()
 
 
 @pytest.fixture(scope="module")

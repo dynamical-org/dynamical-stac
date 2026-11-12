@@ -107,6 +107,8 @@ def served_catalog(
         (tmp_path / "catalog-production.json").write_text(
             (production_dir / "catalog.json").read_text()
         )
+        # The server only needs the rendered JSON, not the open stores and caches.
+        del loaded
         yield tmp_path, root_url
 
 
