@@ -1979,13 +1979,13 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_6_day_0_25_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean temperature map",
+                "Global average temperature, control member",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-25-degree-virtual", chunks=None)\n'
-                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h", ensemble_member=0).mean()\n'
                 "\n"
                 "# Variables with a vertical dimension live in the pressure_level group\n"
                 'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-25-degree-virtual", group="pressure_level", chunks=None)\n'
-                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500).std("ensemble_member")',
+                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500, ensemble_member=0).mean()',
                 min_version="1.0.0",  # gs:// virtual chunk container
             ),
         ),
@@ -2020,13 +2020,13 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_6_day_0_1_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean temperature map",
+                "Global average temperature, control member",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual", chunks=None)\n'
-                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h", ensemble_member=0).mean()\n'
                 "\n"
                 "# Variables with a vertical dimension live in the pressure_level group\n"
                 'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual", group="pressure_level", chunks=None)\n'
-                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500).std("ensemble_member")',
+                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500, ensemble_member=0).mean()',
                 min_version="1.0.0",  # gs:// virtual chunk container
             ),
         ),
@@ -2062,13 +2062,13 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_15_day_0_25_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean temperature map",
+                "Global average temperature, control member",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree-virtual", chunks=None)\n'
-                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h", ensemble_member=0).mean()\n'
                 "\n"
                 "# Variables with a vertical dimension live in the pressure_level group\n"
                 'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-25-degree-virtual", group="pressure_level", chunks=None)\n'
-                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500).std("ensemble_member")',
+                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500, ensemble_member=0).mean()',
                 min_version="1.0.0",  # gs:// virtual chunk container
             ),
         ),
@@ -2104,13 +2104,13 @@ CATALOG_ITEMS: list[CatalogItem] = [
         reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/ifs_ens/forecast_15_day_0_1_degree_virtual/template_config.py",
         examples=(
             _example(
-                "Ensemble mean temperature map",
+                "Global average temperature, control member",
                 'ds = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual", chunks=None)\n'
-                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h").mean("ensemble_member")\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h", ensemble_member=0).mean()\n'
                 "\n"
                 "# Variables with a vertical dimension live in the pressure_level group\n"
                 'ds_pressure = dynamical_catalog.open("ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual", group="pressure_level", chunks=None)\n'
-                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500).std("ensemble_member")',
+                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500, ensemble_member=0).mean()',
                 min_version="1.0.0",  # gs:// virtual chunk container
             ),
         ),
