@@ -489,6 +489,32 @@ def test_cube_dimension_extent_accepts_supported_shapes(
     assert d.extent == extent
 
 
+def test_cube_dimension_requires_extent_or_values() -> None:
+    # Datacube v2.2.0: an Additional Dimension Object MUST specify `extent`
+    # or `values`.
+    with pytest.raises(pydantic.ValidationError, match="extent or values"):
+        CubeDimension(type="other", size=2)
+
+
+def test_string_dimension_serializes_values_and_validates() -> None:
+    statistic = CubeDimension(
+        type="other", values=["mean", "standard_deviation"], unit="1", size=2
+    )
+    collection = _valid_input(
+        cube_dimensions={
+            **_valid_input().cube_dimensions,
+            "statistic": statistic,
+        }
+    ).to_pystac_collection()
+    assert collection.extra_fields["cube:dimensions"]["statistic"] == {
+        "type": "other",
+        "values": ["mean", "standard_deviation"],
+        "unit": "1",
+        "size": 2,
+    }
+    collection.validate()
+
+
 def test_cube_dimension_extent_rejects_mixed_types() -> None:
     with pytest.raises(pydantic.ValidationError):
         CubeDimension(type="other", extent=[1, "a"], size=2)  # type: ignore[list-item]
