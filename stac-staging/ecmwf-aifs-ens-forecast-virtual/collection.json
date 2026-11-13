@@ -41,6 +41,18 @@
       "title": "ECMWF Open Data"
     },
     {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-aifs-forecast-virtual.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "ECMWF AIFS forecasts, virtual (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ecmwf-aifs-forecast-virtual.ipynb",
+      "type": "text/html",
+      "title": "ECMWF AIFS forecasts, virtual (Colab)"
+    },
+    {
       "rel": "self",
       "href": "https://stac-staging.dynamical.org/ecmwf-aifs-ens-forecast-virtual/collection.json",
       "type": "application/json",
@@ -75,13 +87,13 @@
         },
         {
           "label": "pystac",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-aifs-ens-forecast-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"gs://ecmwf-open-data/\": icechunk.gcs_credentials(anonymous=True)})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-11-01T00\", lead_time=\"24h\", ensemble_member=0).mean()\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-11-01T00\", lead_time=\"120h\", pressure_level=500, ensemble_member=0).mean()",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-aifs-ens-forecast-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"gs://ecmwf-open-data/\": icechunk.gcs_credentials(anonymous=True)})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-11-01T00\", lead_time=\"24h\", ensemble_member=0).mean()\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-11-01T00\", lead_time=\"120h\", pressure_level=500, ensemble_member=0).mean()",
           "language": "python"
         },
         {
           "label": "prompt",
           "language": "text",
-          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: ecmwf-aifs-ens-forecast-virtual\nSTAC collection: https://stac-staging.dynamical.org/ecmwf-aifs-ens-forecast-virtual/collection.json"
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: ecmwf-aifs-ens-forecast-virtual\nSTAC collection: https://stac.dynamical.org/ecmwf-aifs-ens-forecast-virtual/collection.json"
         }
       ]
     }

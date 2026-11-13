@@ -841,6 +841,12 @@ _ECMWF_IFS_ENS_46_DAY_NOTEBOOK = DatasetNotebook(
     title="ECMWF IFS ENS 46 day, daily and 6 hourly",
 )
 
+# One notebook covers the AIFS Single and AIFS ENS virtual datasets.
+_AIFS_VIRTUAL_NOTEBOOK = DatasetNotebook(
+    slug="ecmwf-aifs-forecast-virtual",
+    title="ECMWF AIFS forecasts, virtual",
+)
+
 # One notebook covers the four IFS ENS virtual datasets.
 _IFS_ENS_VIRTUAL_NOTEBOOK = DatasetNotebook(
     slug="ecmwf-ifs-ens-forecast-virtual",
@@ -1814,7 +1820,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",  # gs:// virtual chunk container
             ),
         ),
-        notebooks=(_quickstart_notebook("ecmwf-aifs-single-forecast-virtual"),),
+        notebooks=(_AIFS_VIRTUAL_NOTEBOOK,),
         additional_terms=ECMWF_TERMS,
         # Not in the legacy environments: dynamical-catalog <= 0.8.0 rejects
         # the gs:// virtual chunk container and parses every collection up
@@ -1847,7 +1853,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
-        environments=["staging", "test"],
+        environments=["production", "staging", "test", "1.0.0-1.0.0"],
         id="ecmwf-aifs-ens-forecast-virtual",
         icechunk_href="s3://dynamical-ecmwf-aifs-ens/ecmwf-aifs-ens-forecast-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -1880,8 +1886,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 min_version="1.0.0",  # gs:// virtual chunk container
             ),
         ),
-        # The shared AIFS virtual notebook and production membership follow once
-        # the notebook is on notebooks main.
+        notebooks=(_AIFS_VIRTUAL_NOTEBOOK,),
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
