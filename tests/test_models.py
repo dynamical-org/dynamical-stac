@@ -556,6 +556,7 @@ def test_example_import_comment_carries_per_dataset_reader_floor() -> None:
         "ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual",
         "ecmwf-ifs-ens-forecast-15-day-0-25-degree-virtual",
         "ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual",
+        "ecmwf-aifs-ens-forecast-virtual",
         "test-gcs-virtual",
         "test-azure-virtual",
     ):
