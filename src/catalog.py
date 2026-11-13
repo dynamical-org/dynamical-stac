@@ -1847,6 +1847,44 @@ CATALOG_ITEMS: list[CatalogItem] = [
         additional_terms=ECMWF_TERMS,
     ),
     CatalogItem(
+        environments=["staging", "test"],
+        id="ecmwf-aifs-ens-forecast-virtual",
+        icechunk_href="s3://dynamical-ecmwf-aifs-ens/ecmwf-aifs-ens-forecast-virtual/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        virtual_chunk_container_prefixes=("gs://ecmwf-open-data/",),
+        model_id="ecmwf-aifs-ens",
+        source=_ECMWF_OPEN_DATA,
+        description_summary=(
+            "This dataset is an archive of past and present ECMWF AIFS ENS "
+            "forecasts, optimized for spatial (map) access patterns. "
+            "Forecasts are identified by an initialization time (`init_time`) "
+            "denoting the start time of the model run as well as by the "
+            "`ensemble_member`, and step forward along the `lead_time` "
+            "dimension out to 15 days. A new forecast is initialized every 6 "
+            "hours.\n\n"
+            "Variables on pressure levels live in the `pressure_level` "
+            "group.\n\n"
+            "Note: `dynamical-catalog>=1.0.0` (or `zarr>=3.2 icechunk>=2.0 "
+            "gribberish>=1.7`) is required."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/ecmwf/aifs_ens/forecast_virtual/template_config.py",
+        examples=(
+            _example(
+                "Global average temperature, control member",
+                'ds = dynamical_catalog.open("ecmwf-aifs-ens-forecast-virtual", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", lead_time="24h", ensemble_member=0).mean()\n'
+                "\n"
+                "# Variables with a vertical dimension live in the pressure_level group\n"
+                'ds_pressure = dynamical_catalog.open("ecmwf-aifs-ens-forecast-virtual", group="pressure_level", chunks=None)\n'
+                'ds_pressure["geopotential_height"].sel(init_time="2026-11-01T00", lead_time="120h", pressure_level=500, ensemble_member=0).mean()',
+                min_version="1.0.0",  # gs:// virtual chunk container
+            ),
+        ),
+        # The shared AIFS virtual notebook and production membership follow once
+        # the notebook is on notebooks main.
+        additional_terms=ECMWF_TERMS,
+    ),
+    CatalogItem(
         environments=ALL_STAC_ENVIRONMENTS,
         id="ecmwf-ifs-ens-forecast-15-day-0-25-degree",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-15-day-0-25-degree/v0.1.0.icechunk/",
