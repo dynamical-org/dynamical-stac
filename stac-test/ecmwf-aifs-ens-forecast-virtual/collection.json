@@ -41,6 +41,18 @@
       "title": "ECMWF Open Data"
     },
     {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/ecmwf-aifs-forecast-virtual.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "ECMWF AIFS forecasts, virtual (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/ecmwf-aifs-forecast-virtual.ipynb",
+      "type": "text/html",
+      "title": "ECMWF AIFS forecasts, virtual (Colab)"
+    },
+    {
       "rel": "self",
       "href": "https://stac-test.dynamical.org/ecmwf-aifs-ens-forecast-virtual/collection.json",
       "type": "application/json",
@@ -75,13 +87,13 @@
         },
         {
           "label": "pystac",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-aifs-ens-forecast-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"gs://ecmwf-open-data/\": icechunk.gcs_credentials(anonymous=True)})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-11-01T00\", lead_time=\"24h\", ensemble_member=0).mean()\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-11-01T00\", lead_time=\"120h\", pressure_level=500, ensemble_member=0).mean()",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"ecmwf-aifs-ens-forecast-virtual\")\nasset = collection.assets[\"icechunk-https\"]\n\nauthorize = icechunk.containers_credentials({\"gs://ecmwf-open-data/\": icechunk.gcs_credentials(anonymous=True)})\nrepo = icechunk.Repository.open(\n    icechunk.http_storage(asset.href),\n    authorize_virtual_chunk_access=authorize,\n)\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-11-01T00\", lead_time=\"24h\", ensemble_member=0).mean()\n\n# Variables with a vertical dimension live in the pressure_level group\nds_pressure = xr.open_zarr(session.store, group=\"pressure_level\", chunks=None)\nds_pressure[\"geopotential_height\"].sel(init_time=\"2026-11-01T00\", lead_time=\"120h\", pressure_level=500, ensemble_member=0).mean()",
           "language": "python"
         },
         {
           "label": "prompt",
           "language": "text",
-          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: ecmwf-aifs-ens-forecast-virtual\nSTAC collection: https://stac-staging.dynamical.org/ecmwf-aifs-ens-forecast-virtual/collection.json"
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: ecmwf-aifs-ens-forecast-virtual\nSTAC collection: https://stac.dynamical.org/ecmwf-aifs-ens-forecast-virtual/collection.json"
         }
       ]
     }
@@ -185,7 +197,8 @@
       "unit": "degree_Celsius",
       "long_name": "2 metre dewpoint temperature",
       "standard_name": "dew_point_temperature",
-      "short_name": "2d"
+      "short_name": "2d",
+      "comment": "Dew point can exceed air temperature, so derived relative humidity can exceed 100%."
     },
     "downward_long_wave_radiation_run_total_surface": {
       "dimensions": [
@@ -400,7 +413,7 @@
       "long_name": "Runoff water equivalent (surface plus subsurface)",
       "standard_name": "runoff_amount",
       "short_name": "rowe",
-      "comment": "Applies over land only; over water the values can be NaN or unmasked, so mask with land_sea_mask_surface. Accumulated since forecast initialization."
+      "comment": "Applies over land only; over water values may be NaN or finite, so mask with land_sea_mask_surface. Accumulated since forecast initialization."
     },
     "skin_temperature_surface": {
       "dimensions": [
@@ -464,7 +477,7 @@
       "long_name": "Snow cover",
       "standard_name": "surface_snow_area_fraction",
       "short_name": "snowc",
-      "comment": "Fraction (0-1) of the grid box covered by snow. Applies over land only; NaN over water, except at forecast hour 0, which has values over water: 0 over open ocean and up to 1 in polar seas."
+      "comment": "Fraction (0-1) of the grid box covered by snow. Applies over land only; over water values may be NaN or finite, so mask with land_sea_mask_surface. At forecast hour 0, water values are finite and range from 0 to 1, including in polar seas."
     },
     "snowfall_water_equivalent_run_total_surface": {
       "dimensions": [
@@ -658,7 +671,7 @@
       "long_name": "Volumetric soil moisture",
       "standard_name": "volume_fraction_of_condensed_water_in_soil",
       "short_name": "vsw",
-      "comment": "ECMWF soil level 1, the uppermost soil layer. Applies over land only; NaN over water."
+      "comment": "ECMWF soil level 1, the uppermost soil layer. Applies over land only; over water values may be NaN or finite, so mask with land_sea_mask_surface."
     },
     "volumetric_soil_moisture_layer_2": {
       "dimensions": [
@@ -680,7 +693,7 @@
       "long_name": "Volumetric soil moisture",
       "standard_name": "volume_fraction_of_condensed_water_in_soil",
       "short_name": "vsw",
-      "comment": "ECMWF soil level 2, the second soil layer from the surface. Applies over land only; NaN over water."
+      "comment": "ECMWF soil level 2, the second soil layer from the surface. Applies over land only; over water values may be NaN or finite, so mask with land_sea_mask_surface."
     },
     "wind_u_100m": {
       "dimensions": [
