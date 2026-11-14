@@ -197,7 +197,8 @@
       "unit": "degree_Celsius",
       "long_name": "2 metre dewpoint temperature",
       "standard_name": "dew_point_temperature",
-      "short_name": "2d"
+      "short_name": "2d",
+      "comment": "Dew point can exceed air temperature, so derived relative humidity can exceed 100%."
     },
     "downward_long_wave_radiation_run_total_surface": {
       "dimensions": [
@@ -412,7 +413,7 @@
       "long_name": "Runoff water equivalent (surface plus subsurface)",
       "standard_name": "runoff_amount",
       "short_name": "rowe",
-      "comment": "Applies over land only; over water the values can be NaN or unmasked, so mask with land_sea_mask_surface. Accumulated since forecast initialization."
+      "comment": "Applies over land only; over water values may be NaN or finite, so mask with land_sea_mask_surface. Accumulated since forecast initialization."
     },
     "skin_temperature_surface": {
       "dimensions": [
@@ -476,7 +477,7 @@
       "long_name": "Snow cover",
       "standard_name": "surface_snow_area_fraction",
       "short_name": "snowc",
-      "comment": "Fraction (0-1) of the grid box covered by snow. Applies over land only; NaN over water, except at forecast hour 0, which has values over water: 0 over open ocean and up to 1 in polar seas."
+      "comment": "Fraction (0-1) of the grid box covered by snow. Applies over land only; over water values may be NaN or finite, so mask with land_sea_mask_surface. At forecast hour 0, water values are finite and range from 0 to 1, including in polar seas."
     },
     "snowfall_water_equivalent_run_total_surface": {
       "dimensions": [
@@ -670,7 +671,7 @@
       "long_name": "Volumetric soil moisture",
       "standard_name": "volume_fraction_of_condensed_water_in_soil",
       "short_name": "vsw",
-      "comment": "ECMWF soil level 1, the uppermost soil layer. Applies over land only; NaN over water."
+      "comment": "ECMWF soil level 1, the uppermost soil layer. Applies over land only; over water values may be NaN or finite, so mask with land_sea_mask_surface."
     },
     "volumetric_soil_moisture_layer_2": {
       "dimensions": [
@@ -692,7 +693,7 @@
       "long_name": "Volumetric soil moisture",
       "standard_name": "volume_fraction_of_condensed_water_in_soil",
       "short_name": "vsw",
-      "comment": "ECMWF soil level 2, the second soil layer from the surface. Applies over land only; NaN over water."
+      "comment": "ECMWF soil level 2, the second soil layer from the surface. Applies over land only; over water values may be NaN or finite, so mask with land_sea_mask_surface."
     },
     "wind_u_100m": {
       "dimensions": [
