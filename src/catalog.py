@@ -2035,10 +2035,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-6-day-0-1-degree-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
-        virtual_chunk_container_prefixes=(
-            "gs://ecmwf-open-data/",
-            "s3://ecmwf-forecasts/",
-        ),
+        virtual_chunk_container_prefixes=("gs://ecmwf-open-data/",),
         model_id="ecmwf-ifs-ens",
         source=_ECMWF_OPEN_DATA,
         description_summary=(
@@ -2118,10 +2115,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         id="ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual",
         icechunk_href="s3://dynamical-ecmwf-ifs-ens/ecmwf-ifs-ens-forecast-15-day-0-1-degree-virtual/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
-        virtual_chunk_container_prefixes=(
-            "gs://ecmwf-open-data/",
-            "s3://ecmwf-forecasts/",
-        ),
+        virtual_chunk_container_prefixes=("gs://ecmwf-open-data/",),
         model_id="ecmwf-ifs-ens",
         source=_ECMWF_OPEN_DATA,
         description_summary=(
