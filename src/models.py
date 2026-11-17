@@ -183,7 +183,8 @@ def _pystac_variant_code(
     body: list[str] = []
     saw_open = False
     for line in catalog_code.splitlines():
-        if line.startswith("import dynamical_catalog"):
+        # The preamble imports xarray itself.
+        if line.startswith("import dynamical_catalog") or line == "import xarray as xr":
             continue
         match = _CATALOG_OPEN_RE.match(line)
         if match:

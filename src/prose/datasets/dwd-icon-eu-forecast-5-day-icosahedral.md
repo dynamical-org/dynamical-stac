@@ -18,7 +18,9 @@ For a quick map, scatter the cell centres from the dataset (a single variable's
 
 ```python
 field = ds[["temperature_2m"]].sel(init_time="2026-11-01T00", lead_time="24h").load()
-field.plot.scatter(x="longitude", y="latitude", hue="temperature_2m", s=0.1, edgecolors="none")
+field.plot.scatter(
+    x="longitude", y="latitude", hue="temperature_2m", s=0.1, edgecolors="none"
+)
 ```
 
 To draw the cells themselves, add the `mesh` group:
@@ -26,8 +28,15 @@ To draw the cells themselves, add the `mesh` group:
 ```python
 import matplotlib.pyplot as plt
 
-mesh = dynamical_catalog.open("dwd-icon-eu-forecast-5-day-icosahedral", group="mesh", chunks=None)
-plt.tripcolor(mesh.node_longitude, mesh.node_latitude, mesh.face_node_connectivity, facecolors=field["temperature_2m"])
+mesh = dynamical_catalog.open(
+    "dwd-icon-eu-forecast-5-day-icosahedral", group="mesh", chunks=None
+)
+plt.tripcolor(
+    mesh.node_longitude,
+    mesh.node_latitude,
+    mesh.face_node_connectivity,
+    facecolors=field["temperature_2m"],
+)
 ```
 
 The same two groups open in the unstructured-grid libraries
