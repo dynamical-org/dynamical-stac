@@ -175,9 +175,11 @@ def test_native_mesh_store_generates_without_exposing_topology_as_data(
     assert cell["type"] == "other"
     assert cell["extent"] == [0, 3]
     assert cell["size"] == 4
-    assert "latitude" in cell["description"]
-    assert "longitude" in cell["description"]
-    assert f"`{mesh_group}` group" in cell["description"]
+    assert cell["description"] == (
+        "Native grid cell index, in source order. Cell centres are the "
+        "`latitude` and `longitude` coordinates. Cell polygons are in the UGRID "
+        f"mesh topology in the `{mesh_group}` group."
+    )
     assert document["extent"]["spatial"]["bbox"] == [[-179.0, 45.0, -176.0, 48.0]]
     assert document["summaries"]["source_grid_name"] == [native_root.source_grid_name]
     assert document["summaries"]["source_grid_id"] == [native_root.source_grid_id]
@@ -191,7 +193,9 @@ def test_native_mesh_store_generates_without_exposing_topology_as_data(
     assert len(links) == 1
     assert links[0].href == "https://ugrid-conventions.github.io/ugrid-conventions/"
     assert links[0].media_type == "text/html"
-    assert mesh_group in links[0].title
+    assert links[0].title == (
+        f'UGRID 1.0 conventions (mesh topology in the "{mesh_group}" group)'
+    )
     validated = collection.validate()
     assert validated
     assert set(collection.stac_extensions) <= set(validated)
@@ -211,11 +215,29 @@ def test_native_centres_describe_index_without_inventing_topology(
     assert cell["type"] == "other"
     assert cell["extent"] == [0, 3]
     assert cell["size"] == 4
-    assert "latitude" in cell["description"]
-    assert "longitude" in cell["description"]
-    assert "UGRID" not in cell["description"]
+    assert cell["description"] == (
+        "Native grid cell index, in source order. Cell centres are the "
+        "`latitude` and `longitude` coordinates."
+    )
     assert "dynamical-org:mesh" not in document
     assert not collection.get_links("describedby")
+
+
+def test_point_set_dimension_gets_no_grid_description(
+    native_item: CatalogItem, native_root: xr.Dataset
+) -> None:
+    # Stations also carry 1-D latitude/longitude, but are not grid cells.
+    stations = native_root.rename(cell="station")
+    collection = CollectionInput.from_dataset(native_item, stations)
+    assert collection.cube_dimensions["station"].description is None
+
+
+def test_topology_without_face_dimension_is_rejected(
+    native_item: CatalogItem, native_root: xr.Dataset, native_mesh: xr.Dataset
+) -> None:
+    del native_mesh["mesh"].attrs["face_dimension"]
+    with pytest.raises(ValueError, match="mesh/mesh has no face_dimension"):
+        CollectionInput.from_dataset(native_item, native_root, {"mesh": native_mesh})
 
 
 def test_multiple_topology_groups_are_rejected_instead_of_silently_choosing_one(
@@ -237,6 +259,8 @@ def test_staged_icosahedral_example_reads_a_point_from_native_grid(
     store instead, and both rendered variants must keep the same operations.
     """
     item = DWD_ICON_EU_FORECAST_5_DAY_ICOSAHEDRAL
+    # Fails on promotion by design: once the item is in CATALOG_ITEMS, the
+    # live example tests cover it and this test can go.
     assert item.id not in {catalog_item.id for catalog_item in CATALOG_ITEMS}
     ds = (
         native_root.rename(temperature="temperature_2m")
@@ -269,9 +293,10 @@ def test_staged_icosahedral_example_reads_a_point_from_native_grid(
     assert float(result) == 6.0
 
     collection = CollectionInput.from_dataset(item, ds).to_pystac_collection()
-    catalog_variant, pystac_variant, _ = collection.extra_fields["examples"][0][
-        "variants"
-    ]
-    assert catalog_variant["code"] == example.code
-    assert pystac_variant["code"].count("import xarray as xr") == 1
+    variants = {
+        variant["label"]: variant["code"]
+        for variant in collection.extra_fields["examples"][0]["variants"]
+    }
+    assert variants["dynamical-catalog"] == example.code
+    assert "import math\n" in variants["pystac"]
     assert "{{" not in collection.extra_fields["description_details"]

@@ -183,8 +183,7 @@ def _pystac_variant_code(
     body: list[str] = []
     saw_open = False
     for line in catalog_code.splitlines():
-        # The preamble imports xarray itself.
-        if line.startswith("import dynamical_catalog") or line == "import xarray as xr":
+        if line.startswith("import dynamical_catalog"):
             continue
         match = _CATALOG_OPEN_RE.match(line)
         if match:
@@ -804,10 +803,16 @@ class CollectionInput(BaseModel):
                     raise ValueError(
                         "More than one UGRID topology group is not supported"
                     )
+                face_dimension = group_ds[topology_name].attrs.get("face_dimension")
+                if face_dimension is None:
+                    raise ValueError(
+                        f"UGRID topology {group_name}/{topology_name} has no "
+                        f"face_dimension attribute"
+                    )
                 mesh = MeshTopology(
                     group=group_name,
                     topology_variable=str(topology_name),
-                    face_dimension=group_ds[topology_name].attrs["face_dimension"],
+                    face_dimension=face_dimension,
                 )
                 continue
             for name in sorted(group_ds.dims):
@@ -817,30 +822,27 @@ class CollectionInput(BaseModel):
                 variables[f"{group_name}/{name}"] = _cube_variable(
                     group_ds.data_vars[name]
                 )
+        # A native grid's single spatial dimension is `cell`, indexed by 1-D
+        # latitude/longitude centres. Point sets such as stations use their own
+        # dimension name and get no grid description.
         lat = _geographic_coord(ds, "latitude")
         lon = _geographic_coord(ds, "longitude")
         if (
-            lat is not None
+            "cell" in dims
+            and lat is not None
             and lon is not None
-            and len(lat.dims) == 1
-            and lat.dims == lon.dims
+            and lat.dims == lon.dims == ("cell",)
         ):
-            name = str(lat.dims[0])
-            if (
-                name not in ("latitude", "longitude")
-                and name in dims
-                and dims[name].type == "other"
-            ):
-                description = (
-                    "Native grid cell index, in source order. Cell centres are the "
-                    "`latitude` and `longitude` coordinates."
+            description = (
+                "Native grid cell index, in source order. Cell centres are the "
+                "`latitude` and `longitude` coordinates."
+            )
+            if mesh is not None and mesh.face_dimension == "cell":
+                description += (
+                    " Cell polygons are in the UGRID mesh topology in the "
+                    f"`{mesh.group}` group."
                 )
-                if mesh is not None:
-                    description += (
-                        " Cell polygons are in the UGRID mesh topology in the "
-                        f"`{mesh.group}` group."
-                    )
-                dims[name] = dims[name].model_copy(update={"description": description})
+            dims["cell"] = dims["cell"].model_copy(update={"description": description})
         model = MODELS[item.model_id]
         chunking = _build_chunking(ds)
         chunking_table = chunking.as_markdown_table() if chunking is not None else None
@@ -1015,7 +1017,7 @@ class CollectionInput(BaseModel):
                     media_type="text/html",
                     title=(
                         "UGRID 1.0 conventions "
-                        f"(mesh topology in the `{self.mesh.group}` group)"
+                        f'(mesh topology in the "{self.mesh.group}" group)'
                     ),
                 )
             )

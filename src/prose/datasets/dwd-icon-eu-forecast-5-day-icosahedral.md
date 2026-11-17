@@ -3,18 +3,19 @@
 This dataset keeps the triangular cells ICON-EU computes on, rather than
 interpolating them to a regular latitude/longitude grid. A single spatial
 dimension, `cell`, indexes the triangles in DWD's order. The `latitude` and
-`longitude` coordinates give each cell's centre and `cell_area` its area in
-square metres. The triangles themselves are described, following the
+`longitude` coordinates give each cell's centre and `cell_area` its area. The
+triangles themselves are described, following the
 [UGRID conventions](https://ugrid-conventions.github.io/ugrid-conventions/),
 in the store's separate `mesh` group.
 
 To read a location, select the cell whose centre is nearest, as the example
-does. Load `latitude` and `longitude` once and keep them in memory: each spans
-every cell, and leaving them lazy fetches them again with every point read. The
+does. It keeps `latitude` and `longitude` in memory because each spans every
+cell, and lazy coordinates would be fetched again with every point read. The
 nearest centre is returned even for a point outside the model domain.
 
-For a quick map, scatter the cell centres from the dataset (a single variable's
-`plot.scatter` does not colour by value):
+The snippets below continue from the example. For a quick map, scatter the
+cell centres from the dataset (a single variable's `plot.scatter` does not
+colour by value):
 
 ```python
 field = ds[["temperature_2m"]].sel(init_time="2026-11-01T00", lead_time="24h").load()
@@ -46,6 +47,7 @@ and mesh-aware plotting:
 
 ```python
 import uxarray as ux
+import xarray as xr
 import xugrid as xu
 
 uxds = ux.open_dataset(mesh, ds)  # UXarray renames `cell` to `n_face`

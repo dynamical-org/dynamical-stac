@@ -25,10 +25,6 @@ REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 _DEFAULT_MIN_DYNAMICAL_CATALOG = "0.8.0"
 
 
-# Imported by examples whose body calls ``xr`` (see ``_example``).
-_XARRAY_IMPORT = "import xarray as xr"
-
-
 def _dynamical_catalog_import(min_version: str) -> str:
     return f"import dynamical_catalog  # dynamical-catalog>={min_version}"
 
@@ -191,23 +187,16 @@ class DatasetNotebook(BaseModel):
 
 
 def _example(
-    title: str,
-    body: str,
-    min_version: str = _DEFAULT_MIN_DYNAMICAL_CATALOG,
-    *,
-    import_xarray: bool = False,
+    title: str, body: str, min_version: str = _DEFAULT_MIN_DYNAMICAL_CATALOG
 ) -> DatasetExample:
     """Build an example, prepending the standard dynamical_catalog import preamble.
 
     ``min_version`` is the oldest dynamical-catalog release that can open the
     dataset; it is rendered into the import comment users copy.
-    ``import_xarray`` adds ``import xarray as xr`` for bodies that call ``xr``;
-    the pystac variant's preamble already imports it.
     """
-    imports = _dynamical_catalog_import(min_version)
-    if import_xarray:
-        imports += f"\n{_XARRAY_IMPORT}"
-    return DatasetExample(title=title, code=f"{imports}\n\n{body}")
+    return DatasetExample(
+        title=title, code=f"{_dynamical_catalog_import(min_version)}\n\n{body}"
+    )
 
 
 # Shared prose fragments, substituted into markdown files via {{ name }} tokens.
@@ -2586,14 +2575,14 @@ DWD_ICON_EU_FORECAST_5_DAY_ICOSAHEDRAL = CatalogItem(
     examples=(
         _example(
             "Point forecast",
+            "import math\n\n"
             'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day-icosahedral", chunks=None)\n'
             "# Fetch the cell centres once, so each point read after this fetches only weather data\n"
             'ds = ds.drop_vars("cell_area")\n'
             'ds = ds.assign_coords(ds[["latitude", "longitude"]].load().coords)\n'
             "lat, lon = 52.52, 13.40  # Berlin\n"
-            "distance = (ds.latitude - lat) ** 2 + ((ds.longitude - lon) * xr.ufuncs.cos(xr.ufuncs.radians(lat))) ** 2\n"
+            "distance = (ds.latitude - lat) ** 2 + ((ds.longitude - lon) * math.cos(math.radians(lat))) ** 2\n"
             'ds["temperature_2m"].isel(cell=distance.argmin("cell")).sel(init_time="2026-11-01T00").max()',
-            import_xarray=True,
         ),
     ),
 )
