@@ -23,12 +23,11 @@ _STAC_DIR = pathlib.Path(__file__).parent.parent / "stac"
 _PROD_CATALOG_URL = "https://stac.dynamical.org/catalog.json"
 
 # Import forms an example is allowed to use. The dynamical-catalog variant
-# imports dynamical_catalog; the pystac variant imports icechunk/pystac/
-# xarray. Either may import the standard library's math.
+# imports only dynamical_catalog; the pystac variant imports icechunk/pystac/
+# xarray.
 _ALLOWED_IMPORTS: set[tuple[str, str | None]] = {
     ("dynamical_catalog", None),
     ("icechunk", None),
-    ("math", None),
     ("pystac", None),
     ("xarray", "xr"),
 }

@@ -2564,25 +2564,22 @@ DWD_ICON_EU_FORECAST_5_DAY_ICOSAHEDRAL = CatalogItem(
     model_id="dwd-icon-eu",
     source=_DWD_OPEN_DATA,
     description_summary=(
-        "This dataset is an archive of past and present ICON-EU forecasts on "
-        "the model's native icosahedral grid. Forecasts are identified by an "
-        "initialization time (`init_time`) denoting the start time of the "
-        "model run and step forward in time along the `lead_time` dimension. "
-        "This dataset contains only the 00, 06, 12, and 18 hour UTC "
-        "initialization times which produce the full length, 5 day forecast."
+        "This dataset is an archive of past and present ICON-EU forecasts. "
+        "Forecasts are identified by an initialization time (`init_time`) "
+        "denoting the start time of the model run and step forward in time "
+        "along the `lead_time` dimension. This dataset contains only the "
+        "00, 06, 12, and 18 hour UTC initialization times which produce "
+        "the full length, 5 day forecast."
+        "\n\nICON-EU uses a triangular grid, laid out along a single `cell` "
+        "dimension. The [quickstart notebook](https://github.com/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day-icosahedral.ipynb) "
+        "demonstrates spatial selection and regridding."
     ),
     reformatter_url=f"{REFORMATTERS_ROOT}/dwd/icon_eu/forecast_5_day_icosahedral/template_config.py",
     examples=(
         _example(
-            "Point forecast",
-            "import math\n\n"
+            "Maximum temperature",
             'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day-icosahedral", chunks=None)\n'
-            "# Fetch the cell centres once, so each point read after this fetches only weather data\n"
-            'ds = ds.drop_vars("cell_area")\n'
-            'ds = ds.assign_coords(ds[["latitude", "longitude"]].load().coords)\n'
-            "lat, lon = 52.52, 13.40  # Berlin\n"
-            "distance = (ds.latitude - lat) ** 2 + ((ds.longitude - lon) * math.cos(math.radians(lat))) ** 2\n"
-            'ds["temperature_2m"].isel(cell=distance.argmin("cell")).sel(init_time="2026-11-01T00").max()',
+            'ds["temperature_2m"].sel(init_time="2026-11-01T00", cell=0).max()',
         ),
     ),
 )

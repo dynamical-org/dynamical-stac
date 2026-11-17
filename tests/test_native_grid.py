@@ -266,8 +266,6 @@ def test_staged_icosahedral_example_reads_a_point_from_native_grid(
         native_root.rename(temperature="temperature_2m")
         .assign_coords(
             init_time=np.array(["2026-11-01T00", "2026-11-01T06"], "datetime64[ns]"),
-            longitude=("cell", [13.0, 13.2, 13.4, 13.6], {"units": "degree_east"}),
-            latitude=("cell", [52.5, 52.5, 52.5, 52.5], {"units": "degree_north"}),
         )
         .assign_attrs(dataset_id=item.id)
     )
@@ -288,9 +286,9 @@ def test_staged_icosahedral_example_reads_a_point_from_native_grid(
     assert opened == [item.id]
     result = namespace["result"]
     assert isinstance(result, xr.DataArray)
-    # Berlin (52.52 N, 13.40 E) is nearest the third cell; init 0 holds 0..7.
-    assert int(result["cell"]) == 2
-    assert float(result) == 6.0
+    # Init 0 holds 0..7; cell 0 has 0 at lead 0 and 4 at lead 1.
+    assert int(result["cell"]) == 0
+    assert float(result) == 4.0
 
     collection = CollectionInput.from_dataset(item, ds).to_pystac_collection()
     variants = {
@@ -298,5 +296,5 @@ def test_staged_icosahedral_example_reads_a_point_from_native_grid(
         for variant in collection.extra_fields["examples"][0]["variants"]
     }
     assert variants["dynamical-catalog"] == example.code
-    assert "import math\n" in variants["pystac"]
+    assert variants["pystac"].endswith(example.code.splitlines()[-1])
     assert "{{" not in collection.extra_fields["description_details"]
