@@ -82,8 +82,9 @@ def _open_icechunk(item: CatalogItem) -> tuple[xr.Dataset, dict[str, xr.Dataset]
 
     Child groups (e.g. the HRRR spatial dataset's ``pressure_level`` /
     ``model_level`` vertical groups) are opened separately and returned keyed by
-    group name; ``from_dataset`` flattens their variables into the collection.
-    Single-group stores yield an empty dict.
+    group name; ``from_dataset`` flattens data groups into the collection and
+    records UGRID topology groups separately. Single-group stores yield an
+    empty dict.
     """
     storage = _storage(item)
     authorize = (
