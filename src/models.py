@@ -68,8 +68,6 @@ _SUMMARY_ATTRS = (
     "time_resolution",
     "forecast_domain",
     "forecast_resolution",
-    "source_grid_name",
-    "source_grid_id",
 )
 
 # Published catalog URL baked into the pystac open snippet. Reading the

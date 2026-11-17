@@ -92,8 +92,6 @@ def native_root() -> xr.Dataset:
             "license": "CC-BY-4.0",
             "attribution": "Test attribution",
             "dataset_version": "v0.0.0",
-            "source_grid_name": "ICON grid 62 (R03B08)",
-            "source_grid_id": "832c1507-fbc7-3eb3-8413-9890094d2c60",
         },
     )
     ds.temperature.encoding = {
@@ -181,8 +179,6 @@ def test_native_mesh_store_generates_without_exposing_topology_as_data(
         f"mesh topology in the `{mesh_group}` group."
     )
     assert document["extent"]["spatial"]["bbox"] == [[-179.0, 45.0, -176.0, 48.0]]
-    assert document["summaries"]["source_grid_name"] == [native_root.source_grid_name]
-    assert document["summaries"]["source_grid_id"] == [native_root.source_grid_id]
     assert document["dynamical-org:mesh"] == {
         "group": mesh_group,
         "topology_variable": topology_variable,
@@ -221,6 +217,24 @@ def test_native_centres_describe_index_without_inventing_topology(
     )
     assert "dynamical-org:mesh" not in document
     assert not collection.get_links("describedby")
+
+
+def test_native_grid_without_cell_area_generates(
+    native_item: CatalogItem, native_root: xr.Dataset, native_mesh: xr.Dataset
+) -> None:
+    # Cell areas are optional: nothing in the native grid handling needs them.
+    native_root = native_root.drop_vars("cell_area")
+    del native_root.temperature.attrs["cell_measures"]
+    collection = CollectionInput.from_dataset(
+        native_item, native_root, {"mesh": native_mesh}
+    ).to_pystac_collection()
+    document = collection.to_dict()
+    assert set(document["cube:variables"]) == {"temperature"}
+    assert document["cube:dimensions"]["cell"]["description"].endswith(
+        "Cell polygons are in the UGRID mesh topology in the `mesh` group."
+    )
+    assert document["extent"]["spatial"]["bbox"] == [[-179.0, 45.0, -176.0, 48.0]]
+    assert collection.validate()
 
 
 def test_point_set_dimension_gets_no_grid_description(
