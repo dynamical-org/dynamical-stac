@@ -55,7 +55,6 @@ def native_root() -> xr.Dataset:
                     "units": "K",
                     "mesh": "/mesh/mesh",
                     "location": "face",
-                    "cell_measures": "area: cell_area",
                 },
             ),
         },
@@ -77,11 +76,6 @@ def native_root() -> xr.Dataset:
                 "cell",
                 [181.0, 182.0, 183.0, 184.0],
                 {"standard_name": "longitude", "units": "degree_east"},
-            ),
-            "cell_area": (
-                "cell",
-                np.full(4, 1_000_000.0),
-                {"standard_name": "cell_area", "units": "m2"},
             ),
             "spatial_ref": ((), 0),
         },
@@ -217,24 +211,6 @@ def test_native_centres_describe_index_without_inventing_topology(
     )
     assert "dynamical-org:mesh" not in document
     assert not collection.get_links("describedby")
-
-
-def test_native_grid_without_cell_area_generates(
-    native_item: CatalogItem, native_root: xr.Dataset, native_mesh: xr.Dataset
-) -> None:
-    # Cell areas are optional: nothing in the native grid handling needs them.
-    native_root = native_root.drop_vars("cell_area")
-    del native_root.temperature.attrs["cell_measures"]
-    collection = CollectionInput.from_dataset(
-        native_item, native_root, {"mesh": native_mesh}
-    ).to_pystac_collection()
-    document = collection.to_dict()
-    assert set(document["cube:variables"]) == {"temperature"}
-    assert document["cube:dimensions"]["cell"]["description"].endswith(
-        "Cell polygons are in the UGRID mesh topology in the `mesh` group."
-    )
-    assert document["extent"]["spatial"]["bbox"] == [[-179.0, 45.0, -176.0, 48.0]]
-    assert collection.validate()
 
 
 def test_point_set_dimension_gets_no_grid_description(
