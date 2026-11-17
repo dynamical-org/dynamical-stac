@@ -186,6 +186,12 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/ecmwf-aifs-ens-forecast-virtual/collection.json",
+      "type": "application/json",
+      "title": "ECMWF AIFS ENS forecast, virtual"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/ecmwf-ifs-ens-forecast-15-day-0-25-degree/collection.json",
       "type": "application/json",
       "title": "ECMWF IFS ENS forecast, 15 day, 0.25 degree"
