@@ -25,6 +25,10 @@ REFORMATTERS_REPO = "https://github.com/dynamical-org/reformatters/"
 _DEFAULT_MIN_DYNAMICAL_CATALOG = "0.8.0"
 
 
+# Imported by examples whose body calls ``xr`` (see ``_example``).
+_XARRAY_IMPORT = "import xarray as xr"
+
+
 def _dynamical_catalog_import(min_version: str) -> str:
     return f"import dynamical_catalog  # dynamical-catalog>={min_version}"
 
@@ -187,16 +191,23 @@ class DatasetNotebook(BaseModel):
 
 
 def _example(
-    title: str, body: str, min_version: str = _DEFAULT_MIN_DYNAMICAL_CATALOG
+    title: str,
+    body: str,
+    min_version: str = _DEFAULT_MIN_DYNAMICAL_CATALOG,
+    *,
+    import_xarray: bool = False,
 ) -> DatasetExample:
     """Build an example, prepending the standard dynamical_catalog import preamble.
 
     ``min_version`` is the oldest dynamical-catalog release that can open the
     dataset; it is rendered into the import comment users copy.
+    ``import_xarray`` adds ``import xarray as xr`` for bodies that call ``xr``;
+    the pystac variant's preamble already imports it.
     """
-    return DatasetExample(
-        title=title, code=f"{_dynamical_catalog_import(min_version)}\n\n{body}"
-    )
+    imports = _dynamical_catalog_import(min_version)
+    if import_xarray:
+        imports += f"\n{_XARRAY_IMPORT}"
+    return DatasetExample(title=title, code=f"{imports}\n\n{body}")
 
 
 # Shared prose fragments, substituted into markdown files via {{ name }} tokens.
@@ -2550,6 +2561,42 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(),
     ),
 ]
+
+
+# ICON-EU on its native icosahedral grid: one spatial `cell` dimension plus a
+# UGRID topology in the store's `mesh` group. Not in CATALOG_ITEMS yet:
+# generation opens every listed store, and this one is still being built. Add
+# it to CATALOG_ITEMS once its store exists, then regenerate.
+DWD_ICON_EU_FORECAST_5_DAY_ICOSAHEDRAL = CatalogItem(
+    environments=("staging", "test"),
+    id="dwd-icon-eu-forecast-5-day-icosahedral",
+    icechunk_href="s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day-icosahedral/v0.1.0.icechunk/",
+    icechunk_region="us-west-2",
+    model_id="dwd-icon-eu",
+    source=_DWD_OPEN_DATA,
+    description_summary=(
+        "This dataset is an archive of past and present ICON-EU forecasts on "
+        "the model's native icosahedral grid. Forecasts are identified by an "
+        "initialization time (`init_time`) denoting the start time of the "
+        "model run and step forward in time along the `lead_time` dimension. "
+        "This dataset contains only the 00, 06, 12, and 18 hour UTC "
+        "initialization times which produce the full length, 5 day forecast."
+    ),
+    reformatter_url=f"{REFORMATTERS_ROOT}/dwd/icon_eu/forecast_5_day_icosahedral/template_config.py",
+    examples=(
+        _example(
+            "Point forecast",
+            'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day-icosahedral", chunks=None)\n'
+            "# Fetch the cell centres once, so each point read after this fetches only weather data\n"
+            'ds = ds.drop_vars("cell_area")\n'
+            'ds = ds.assign_coords(ds[["latitude", "longitude"]].load().coords)\n'
+            "lat, lon = 52.52, 13.40  # Berlin\n"
+            "distance = (ds.latitude - lat) ** 2 + ((ds.longitude - lon) * xr.ufuncs.cos(xr.ufuncs.radians(lat))) ** 2\n"
+            'ds["temperature_2m"].isel(cell=distance.argmin("cell")).sel(init_time="2026-11-01T00").max()',
+            import_xarray=True,
+        ),
+    ),
+)
 
 
 # Collection ids served by the staging catalog for read/browse integration tests.
