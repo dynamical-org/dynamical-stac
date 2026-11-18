@@ -1,0 +1,692 @@
+{
+  "type": "Collection",
+  "id": "dwd-icon-eu-forecast-5-day-icosahedral",
+  "stac_version": "1.1.0",
+  "description": "High-resolution weather forecasts for Europe from the ICON-EU model operated by Deutscher Wetterdienst (DWD).",
+  "links": [
+    {
+      "rel": "root",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    },
+    {
+      "rel": "describedby",
+      "href": "https://ugrid-conventions.github.io/ugrid-conventions/",
+      "type": "text/html",
+      "title": "UGRID 1.0 conventions (mesh topology in the \"mesh\" group)"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/dwd-icon-eu-forecast-5-day-icosahedral/",
+      "type": "text/html",
+      "title": "Dataset documentation"
+    },
+    {
+      "rel": "about",
+      "href": "https://dynamical.org/catalog/dwd-icon-eu-forecast-5-day-icosahedral/validation/",
+      "type": "text/html",
+      "title": "Validation report"
+    },
+    {
+      "rel": "via",
+      "href": "https://www.dwd.de/EN/ourservices/opendata/opendata.html",
+      "type": "text/html",
+      "title": "DWD Open Data"
+    },
+    {
+      "rel": "example",
+      "href": "https://github.com/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day-icosahedral.ipynb",
+      "type": "application/x-ipynb+json",
+      "title": "Quickstart (GitHub)"
+    },
+    {
+      "rel": "example",
+      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day-icosahedral.ipynb",
+      "type": "text/html",
+      "title": "Quickstart (Colab)"
+    },
+    {
+      "rel": "self",
+      "href": "https://stac-staging.dynamical.org/dwd-icon-eu-forecast-5-day-icosahedral/collection.json",
+      "type": "application/json",
+      "title": "DWD ICON-EU forecast, 5 day, icosahedral"
+    },
+    {
+      "rel": "parent",
+      "href": "https://stac-staging.dynamical.org/catalog.json",
+      "type": "application/json",
+      "title": "dynamical.org STAC Catalog"
+    }
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ],
+  "attribution": "DWD ICON-EU data processed by dynamical.org.",
+  "version": "0.1.0",
+  "model_id": "dwd-icon-eu",
+  "model_name": "DWD ICON-EU",
+  "description_summary": "This dataset is an archive of past and present ICON-EU forecasts. Forecasts are identified by an initialization time (`init_time`) denoting the start time of the model run and step forward in time along the `lead_time` dimension. This dataset contains only the 00, 06, 12, and 18 hour UTC initialization times which produce the full length, 5 day forecast.\n\nICON-EU uses a triangular grid, laid out along a single `cell` dimension. The [quickstart notebook](https://github.com/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day-icosahedral.ipynb) demonstrates spatial selection and regridding.",
+  "description_details": "### Source\n\nThe source grib files this archive is constructed from are provided by\n[DWD Open Data](https://www.dwd.de/EN/ourservices/opendata/opendata.html)\nand the [dynamical.org DWD ICON grib archive](https://source.coop/dynamical/dwd-icon-grib)\non [Source Cooperative](https://source.coop/).\n\n### Storage\n\nIcechunk storage generously provided by [AWS Open Data](https://aws.amazon.com/opendata/).\nStorage for the dynamical.org DWD ICON-EU grib archive is generously provided by\n[Source Cooperative](https://source.coop/), a [Radiant Earth](https://radiant.earth/) initiative.\n\n### Chunks and shards\n\nThis dataset is stored in [Zarr](https://zarr.dev/) format, which splits each variable into a grid of **chunks** \u2014 the smallest unit read from storage. Chunks are grouped into larger **shards** (the objects actually written to storage), which keeps the object count manageable for long-archive datasets. When possible, aligning your reads with this dataset's chunk grid can significantly improve data access speed.\n\nThe element count and coordinate span of this dataset:\n\n| dimension | chunk | shard |\n|---|---|---|\n| init_time | 1 (6 hours) | 1 (6 hours) |\n| lead_time | 93 (121 hours) | 93 (121 hours) |\n| cell | 24019 | 768608 |\n| **uncompressed** | 8.5 MiB | 272.7 MiB |\n\n### Validation report\n\nReview the [validation report](https://dynamical.org/catalog/dwd-icon-eu-forecast-5-day-icosahedral/validation/) for variable availability, missing data, known quirks, fill values, value distributions, and sample plots.\n\n### Compression\n\nThe data values in this dataset have been rounded in their binary floating point representation to improve compression. See [Kl\u00f6wer et al. 2021](https://www.nature.com/articles/s43588-021-00156-2) for more information on this approach. The exact number of rounded bits can be found in our [reformatting code](https://github.com/dynamical-org/reformatters/blob/main/src/reformatters/dwd/icon_eu/forecast_5_day_icosahedral/template_config.py).",
+  "description_model": "ICON-EU is a regional weather forecast model operated by Deutscher Wetterdienst (DWD), Germany's national meteorological service. ICON-EU is a nested configuration of DWD's global ICON (Icosahedral Non-hydrostatic) model that provides high-resolution forecasts over Europe.",
+  "examples": [
+    {
+      "title": "Maximum temperature",
+      "variants": [
+        {
+          "label": "dynamical-catalog",
+          "code": "import dynamical_catalog  # dynamical-catalog>=0.8.0\n\nds = dynamical_catalog.open(\"dwd-icon-eu-forecast-5-day-icosahedral\", chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-11-01T00\", cell=0).max()",
+          "language": "python"
+        },
+        {
+          "label": "pystac",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"dwd-icon-eu-forecast-5-day-icosahedral\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-11-01T00\", cell=0).max()",
+          "language": "python"
+        },
+        {
+          "label": "prompt",
+          "language": "text",
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: dwd-icon-eu-forecast-5-day-icosahedral\nSTAC collection: https://stac.dynamical.org/dwd-icon-eu-forecast-5-day-icosahedral/collection.json"
+        }
+      ]
+    }
+  ],
+  "cube:dimensions": {
+    "cell": {
+      "type": "other",
+      "extent": [
+        0,
+        768607
+      ],
+      "unit": "1",
+      "size": 768608,
+      "description": "Native grid cell index, in source order. Cell centres are the `latitude` and `longitude` coordinates. Cell polygons are in the UGRID mesh topology in the `mesh` group."
+    },
+    "init_time": {
+      "type": "temporal",
+      "extent": [
+        "2026-10-07T00:00:00Z",
+        null
+      ],
+      "unit": "seconds since 1970-01-01"
+    },
+    "lead_time": {
+      "type": "other",
+      "extent": [
+        0,
+        432000
+      ],
+      "unit": "seconds",
+      "size": 93
+    }
+  },
+  "cube:variables": {
+    "cloud_cover_high": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "percent",
+      "long_name": "High cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "hcc",
+      "comment": "Cloud cover (0 - 400 hPa)."
+    },
+    "cloud_cover_low": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "percent",
+      "long_name": "Low cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "lcc",
+      "comment": "Cloud cover (800 hPa - surface)."
+    },
+    "cloud_cover_medium": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "percent",
+      "long_name": "Medium cloud cover",
+      "standard_name": "cloud_area_fraction_in_atmosphere_layer",
+      "short_name": "mcc",
+      "comment": "Cloud cover (400 - 800 hPa)."
+    },
+    "convective_available_potential_energy_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "J kg-1",
+      "long_name": "Convective available potential energy",
+      "standard_name": "atmosphere_convective_available_potential_energy",
+      "short_name": "cape"
+    },
+    "dew_point_temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre dewpoint temperature",
+      "standard_name": "dew_point_temperature",
+      "short_name": "2d"
+    },
+    "downward_diffuse_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface diffuse short-wave radiation flux",
+      "standard_name": "surface_diffuse_downwelling_shortwave_flux_in_air",
+      "short_name": "aswdifd_s",
+      "comment": "Average flux since the previous forecast step."
+    },
+    "downward_direct_short_wave_radiation_flux_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "W m-2",
+      "long_name": "Surface direct short-wave radiation flux",
+      "standard_name": "surface_direct_downwelling_shortwave_flux_in_air",
+      "short_name": "aswdir_s",
+      "comment": "Average flux since the previous forecast step."
+    },
+    "precipitable_water_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "kg m-2",
+      "long_name": "Precipitable water",
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "short_name": "pwat"
+    },
+    "precipitation_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "kg m-2 s-1",
+      "long_name": "Precipitation rate",
+      "standard_name": "precipitation_flux",
+      "short_name": "prate",
+      "comment": "Average precipitation rate since the previous forecast step. Units equivalent to mm/s."
+    },
+    "pressure_reduced_to_mean_sea_level": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "Pa",
+      "long_name": "Pressure reduced to MSL",
+      "standard_name": "air_pressure_at_mean_sea_level",
+      "short_name": "prmsl"
+    },
+    "pressure_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "Pa",
+      "long_name": "Surface pressure",
+      "standard_name": "surface_air_pressure",
+      "short_name": "sp"
+    },
+    "relative_humidity_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "percent",
+      "long_name": "2 metre relative humidity",
+      "standard_name": "relative_humidity",
+      "short_name": "2r"
+    },
+    "snow_thickness_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "m",
+      "long_name": "Snow depth",
+      "standard_name": "surface_snow_thickness",
+      "short_name": "sde"
+    },
+    "snow_water_equivalent_surface": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "m",
+      "long_name": "Snow depth water equivalent",
+      "standard_name": "lwe_thickness_of_surface_snow_amount",
+      "short_name": "sd",
+      "comment": "Set to 0 over water surfaces and snow-free land points."
+    },
+    "temperature_2m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "degree_Celsius",
+      "long_name": "2 metre temperature",
+      "standard_name": "air_temperature",
+      "short_name": "2t"
+    },
+    "total_cloud_cover_atmosphere": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "percent",
+      "long_name": "Total cloud cover",
+      "standard_name": "cloud_area_fraction",
+      "short_name": "tcc"
+    },
+    "wind_gust_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "m s-1",
+      "long_name": "Maximum 10 metre wind gust since previous post-processing",
+      "standard_name": "wind_speed_of_gust",
+      "short_name": "10fg",
+      "comment": "Maximum over the hour ending at the forecast step. At 3-hourly steps (81-120 hours), this covers only the last hour of each step."
+    },
+    "wind_u_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre U wind component",
+      "standard_name": "eastward_wind",
+      "short_name": "10u"
+    },
+    "wind_v_10m": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "type": "data",
+      "chunks": [
+        1,
+        93,
+        24019
+      ],
+      "shards": [
+        1,
+        93,
+        768608
+      ],
+      "unit": "m s-1",
+      "long_name": "10 metre V wind component",
+      "standard_name": "northward_wind",
+      "short_name": "10v"
+    }
+  },
+  "dynamical-org:chunking": {
+    "dtype": "float32",
+    "chunk": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "shape": [
+        1,
+        93,
+        24019
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "121 hours"
+      },
+      "uncompressed_size_bytes": 8935068,
+      "uncompressed_size": "8.5 MiB"
+    },
+    "shard": {
+      "dimensions": [
+        "init_time",
+        "lead_time",
+        "cell"
+      ],
+      "shape": [
+        1,
+        93,
+        768608
+      ],
+      "lengths": {
+        "init_time": "6 hours",
+        "lead_time": "121 hours"
+      },
+      "uncompressed_size_bytes": 285922176,
+      "uncompressed_size": "272.7 MiB"
+    }
+  },
+  "dynamical-org:mesh": {
+    "group": "mesh",
+    "topology_variable": "mesh",
+    "face_dimension": "cell",
+    "conventions": "UGRID-1.0"
+  },
+  "title": "DWD ICON-EU forecast, 5 day, icosahedral",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -25.451065063476562,
+          24.863548278808594,
+          63.97930908203125,
+          71.6417236328125
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2026-10-07T00:00:00Z",
+          null
+        ]
+      ]
+    }
+  },
+  "license": "CC-BY-4.0",
+  "providers": [
+    {
+      "name": "Deutscher Wetterdienst (DWD)",
+      "roles": [
+        "producer"
+      ],
+      "url": "https://www.dwd.de/"
+    },
+    {
+      "name": "dynamical.org",
+      "roles": [
+        "processor",
+        "host"
+      ],
+      "url": "https://dynamical.org/"
+    }
+  ],
+  "summaries": {
+    "spatial_domain": [
+      "Europe"
+    ],
+    "spatial_resolution": [
+      "6.5 km"
+    ],
+    "time_domain": [
+      "Forecasts initialized 2026-10-07 00:00:00 UTC to Present"
+    ],
+    "time_resolution": [
+      "Forecasts initialized every 6 hours"
+    ],
+    "forecast_domain": [
+      "Forecast lead time 0-120 hours (0-5 days) ahead"
+    ],
+    "forecast_resolution": [
+      "Forecast step 0-78 hours: hourly, 81-120 hours: 3 hourly"
+    ]
+  },
+  "assets": {
+    "icechunk": {
+      "href": "s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day-icosahedral/v0.1.0.icechunk/",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "anon": true,
+        "client_kwargs": {
+          "region_name": "us-west-2"
+        }
+      },
+      "roles": [
+        "data"
+      ]
+    },
+    "icechunk-https": {
+      "href": "https://dynamical-dwd-icon-eu.s3.us-west-2.amazonaws.com/dwd-icon-eu-forecast-5-day-icosahedral/v0.1.0.icechunk",
+      "type": "application/x-icechunk",
+      "title": "Icechunk v2 repository (HTTPS)",
+      "xarray:open_kwargs": {
+        "engine": "zarr"
+      },
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}
