@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import pathlib
-import sys
-import types
 
 import icechunk
 import numpy as np
@@ -11,8 +9,6 @@ import xarray as xr
 
 import generate
 from catalog import (
-    CATALOG_ITEMS,
-    DWD_ICON_EU_FORECAST_5_DAY_ICOSAHEDRAL,
     CatalogItem,
     DatasetExample,
     UpstreamSource,
@@ -237,54 +233,3 @@ def test_multiple_topology_groups_are_rejected_instead_of_silently_choosing_one(
         CollectionInput.from_dataset(
             native_item, native_root, {"mesh": native_mesh, "second_mesh": native_mesh}
         )
-
-
-def test_staged_icosahedral_example_reads_a_point_from_native_grid(
-    *, native_root: xr.Dataset, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """The staged ICON-EU icosahedral example runs against the native layout.
-
-    The item is not in CATALOG_ITEMS yet (its store does not exist), so the
-    live example tests cannot reach it. Its open call is served the synthetic
-    store instead, and both rendered variants must keep the same operations.
-    """
-    item = DWD_ICON_EU_FORECAST_5_DAY_ICOSAHEDRAL
-    # Fails on promotion by design: once the item is in CATALOG_ITEMS, the
-    # live example tests cover it and this test can go.
-    assert item.id not in {catalog_item.id for catalog_item in CATALOG_ITEMS}
-    ds = (
-        native_root.rename(temperature="temperature_2m")
-        .assign_coords(
-            init_time=np.array(["2026-11-01T00", "2026-11-01T06"], "datetime64[ns]"),
-        )
-        .assign_attrs(dataset_id=item.id)
-    )
-    opened: list[str] = []
-
-    def _open(dataset_id: str, chunks: None) -> xr.Dataset:
-        opened.append(dataset_id)
-        return ds
-
-    monkeypatch.setitem(
-        sys.modules, "dynamical_catalog", types.SimpleNamespace(open=_open)
-    )
-    (example,) = item.examples
-    *statements, last = example.code.splitlines()
-    namespace: dict[str, object] = {}
-    exec("\n".join([*statements, f"result = {last}"]), namespace)  # noqa: S102
-
-    assert opened == [item.id]
-    result = namespace["result"]
-    assert isinstance(result, xr.DataArray)
-    # Init 0 holds 0..7; cell 0 has 0 at lead 0 and 4 at lead 1.
-    assert int(result["cell"]) == 0
-    assert float(result) == 4.0
-
-    collection = CollectionInput.from_dataset(item, ds).to_pystac_collection()
-    variants = {
-        variant["label"]: variant["code"]
-        for variant in collection.extra_fields["examples"][0]["variants"]
-    }
-    assert variants["dynamical-catalog"] == example.code
-    assert variants["pystac"].endswith(example.code.splitlines()[-1])
-    assert "{{" not in collection.extra_fields["description_details"]

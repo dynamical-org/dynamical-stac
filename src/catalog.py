@@ -2374,6 +2374,35 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("dwd-icon-eu-forecast-5-day"),),
     ),
     CatalogItem(
+        environments=["staging", "test"],
+        id="dwd-icon-eu-forecast-5-day-icosahedral",
+        icechunk_href="s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day-icosahedral/v0.1.0.icechunk/",
+        icechunk_region="us-west-2",
+        model_id="dwd-icon-eu",
+        source=_DWD_OPEN_DATA,
+        description_summary=(
+            "This dataset is an archive of past and present ICON-EU forecasts. "
+            "Forecasts are identified by an initialization time (`init_time`) "
+            "denoting the start time of the model run and step forward in time "
+            "along the `lead_time` dimension. This dataset contains only the "
+            "00, 06, 12, and 18 hour UTC initialization times which produce "
+            "the full length, 5 day forecast."
+            "\n\nICON-EU uses a triangular grid, laid out along a single `cell` "
+            "dimension. The [quickstart notebook](https://github.com/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day-icosahedral.ipynb) "
+            "demonstrates spatial selection and regridding."
+        ),
+        reformatter_url=f"{REFORMATTERS_ROOT}/dwd/icon_eu/forecast_5_day_icosahedral/template_config.py",
+        examples=(
+            _example(
+                "Maximum temperature",
+                'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day-icosahedral", chunks=None)\n'
+                'ds["temperature_2m"].sel(init_time="2026-11-01T00", cell=0).max()',
+            ),
+        ),
+        # The quickstart notebook and production membership follow once the
+        # notebook is on notebooks main.
+    ),
+    CatalogItem(
         environments=ALL_STAC_ENVIRONMENTS,
         id="nasa-imerg-analysis-early",
         icechunk_href="s3://dynamical-nasa-imerg/nasa-imerg-analysis-early/v0.1.0.icechunk/",
@@ -2550,39 +2579,6 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(),
     ),
 ]
-
-
-# ICON-EU on its native icosahedral grid: one spatial `cell` dimension plus a
-# UGRID topology in the store's `mesh` group. Not in CATALOG_ITEMS yet:
-# generation opens every listed store, and this one is still being built. Add
-# it to CATALOG_ITEMS once its store exists, then regenerate.
-DWD_ICON_EU_FORECAST_5_DAY_ICOSAHEDRAL = CatalogItem(
-    environments=("staging", "test"),
-    id="dwd-icon-eu-forecast-5-day-icosahedral",
-    icechunk_href="s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day-icosahedral/v0.1.0.icechunk/",
-    icechunk_region="us-west-2",
-    model_id="dwd-icon-eu",
-    source=_DWD_OPEN_DATA,
-    description_summary=(
-        "This dataset is an archive of past and present ICON-EU forecasts. "
-        "Forecasts are identified by an initialization time (`init_time`) "
-        "denoting the start time of the model run and step forward in time "
-        "along the `lead_time` dimension. This dataset contains only the "
-        "00, 06, 12, and 18 hour UTC initialization times which produce "
-        "the full length, 5 day forecast."
-        "\n\nICON-EU uses a triangular grid, laid out along a single `cell` "
-        "dimension. The [quickstart notebook](https://github.com/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day-icosahedral.ipynb) "
-        "demonstrates spatial selection and regridding."
-    ),
-    reformatter_url=f"{REFORMATTERS_ROOT}/dwd/icon_eu/forecast_5_day_icosahedral/template_config.py",
-    examples=(
-        _example(
-            "Maximum temperature",
-            'ds = dynamical_catalog.open("dwd-icon-eu-forecast-5-day-icosahedral", chunks=None)\n'
-            'ds["temperature_2m"].sel(init_time="2026-11-01T00", cell=0).max()',
-        ),
-    ),
-)
 
 
 # Collection ids served by the staging catalog for read/browse integration tests.
