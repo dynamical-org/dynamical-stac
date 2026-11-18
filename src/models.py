@@ -219,6 +219,7 @@ class CubeDimension(BaseModel):
     axis: str | None = None
     unit: str | None = None
     size: int | None = Field(default=None, ge=0)
+    description: str | None = None
 
     @model_validator(mode="after")
     def _extent_or_values(self) -> CubeDimension:
@@ -243,6 +244,17 @@ class CubeVariable(BaseModel):
     standard_name: str | None = None
     short_name: str | None = None
     comment: str | None = None
+
+
+class MeshTopology(BaseModel):
+    """Location of the store's static UGRID topology, separate from data."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    group: str = Field(min_length=1)
+    topology_variable: str = Field(min_length=1)
+    face_dimension: str = Field(min_length=1)
+    conventions: Literal["UGRID-1.0"] = "UGRID-1.0"
 
 
 class ChunkGrid(BaseModel):
@@ -656,6 +668,7 @@ class CollectionInput(BaseModel):
     cube_dimensions: dict[str, CubeDimension]
     cube_variables: dict[str, CubeVariable]
     chunking: Chunking | None = None
+    mesh: MeshTopology | None = None
     icechunk_href: str = Field(pattern=r"^(s3|gs|az|https)://[^/]+/.+$")
     # S3 only; GCS, Azure and HTTPS stores carry no region. See
     # `CatalogItem._region_matches_scheme`.
@@ -745,7 +758,9 @@ class CollectionInput(BaseModel):
         keys (following GeoZarr's slash-path convention). This keeps the keys
         unique when the same variable name appears in several groups (e.g.
         ``temperature`` in both ``pressure_level`` and ``model_level``). Passing
-        no subgroups reproduces the single-group output exactly.
+        no subgroups reproduces the single-group output exactly. A group with
+        a UGRID ``mesh_topology`` variable is recorded separately instead of
+        being flattened into the data inventory.
         """
         ds_id = ds.attrs["dataset_id"]
         if ds_id != item.id:
@@ -771,7 +786,33 @@ class CollectionInput(BaseModel):
         }
         # Fold each nested group's new dimension(s) and variables into the same
         # flat datacube maps. Iterate groups in sorted order for determinism.
+        mesh: MeshTopology | None = None
         for group_name, group_ds in sorted((subgroups or {}).items()):
+            topology_name = next(
+                (
+                    name
+                    for name in sorted(group_ds.variables)
+                    if group_ds[name].attrs.get("cf_role") == "mesh_topology"
+                ),
+                None,
+            )
+            if topology_name is not None:
+                if mesh is not None:
+                    raise ValueError(
+                        "More than one UGRID topology group is not supported"
+                    )
+                face_dimension = group_ds[topology_name].attrs.get("face_dimension")
+                if face_dimension is None:
+                    raise ValueError(
+                        f"UGRID topology {group_name}/{topology_name} has no "
+                        f"face_dimension attribute"
+                    )
+                mesh = MeshTopology(
+                    group=group_name,
+                    topology_variable=str(topology_name),
+                    face_dimension=face_dimension,
+                )
+                continue
             for name in sorted(group_ds.dims):
                 if name in group_ds.coords and name not in dims:
                     dims[name] = _dim_entry(name, group_ds[name])
@@ -779,6 +820,27 @@ class CollectionInput(BaseModel):
                 variables[f"{group_name}/{name}"] = _cube_variable(
                     group_ds.data_vars[name]
                 )
+        # A native grid's single spatial dimension is `cell`, indexed by 1-D
+        # latitude/longitude centres. Point sets such as stations use their own
+        # dimension name and get no grid description.
+        lat = _geographic_coord(ds, "latitude")
+        lon = _geographic_coord(ds, "longitude")
+        if (
+            "cell" in dims
+            and lat is not None
+            and lon is not None
+            and lat.dims == lon.dims == ("cell",)
+        ):
+            description = (
+                "Native grid cell index, in source order. Cell centres are the "
+                "`latitude` and `longitude` coordinates."
+            )
+            if mesh is not None and mesh.face_dimension == "cell":
+                description += (
+                    " Cell polygons are in the UGRID mesh topology in the "
+                    f"`{mesh.group}` group."
+                )
+            dims["cell"] = dims["cell"].model_copy(update={"description": description})
         model = MODELS[item.model_id]
         chunking = _build_chunking(ds)
         chunking_table = chunking.as_markdown_table() if chunking is not None else None
@@ -801,6 +863,7 @@ class CollectionInput(BaseModel):
             cube_dimensions=dims,
             cube_variables=variables,
             chunking=chunking,
+            mesh=mesh,
             icechunk_href=item.icechunk_href,
             icechunk_region=item.icechunk_region,
             icechunk_account=item.icechunk_account,
@@ -942,6 +1005,19 @@ class CollectionInput(BaseModel):
             # is unchanged.
             collection.extra_fields["dynamical-org:chunking"] = (
                 self.chunking.model_dump(exclude_none=True)
+            )
+        if self.mesh is not None:
+            collection.extra_fields["dynamical-org:mesh"] = self.mesh.model_dump()
+            collection.add_link(
+                pystac.Link(
+                    rel="describedby",
+                    target="https://ugrid-conventions.github.io/ugrid-conventions/",
+                    media_type="text/html",
+                    title=(
+                        "UGRID 1.0 conventions "
+                        f'(mesh topology in the "{self.mesh.group}" group)'
+                    ),
+                )
             )
 
         virtual_chunk_containers = [
