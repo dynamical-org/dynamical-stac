@@ -2374,7 +2374,7 @@ CATALOG_ITEMS: list[CatalogItem] = [
         notebooks=(_quickstart_notebook("dwd-icon-eu-forecast-5-day"),),
     ),
     CatalogItem(
-        environments=ALL_STAC_ENVIRONMENTS,
+        environments=["staging", "test"],
         id="dwd-icon-eu-forecast-5-day-icosahedral",
         icechunk_href="s3://dynamical-dwd-icon-eu/dwd-icon-eu-forecast-5-day-icosahedral/v0.1.0.icechunk/",
         icechunk_region="us-west-2",
@@ -2399,7 +2399,8 @@ CATALOG_ITEMS: list[CatalogItem] = [
                 'ds["temperature_2m"].sel(init_time="2026-11-01T00", cell=0).max()',
             ),
         ),
-        notebooks=(_quickstart_notebook("dwd-icon-eu-forecast-5-day-icosahedral"),),
+        # The quickstart notebook and production membership follow once the
+        # notebook is on notebooks main.
     ),
     CatalogItem(
         environments=ALL_STAC_ENVIRONMENTS,

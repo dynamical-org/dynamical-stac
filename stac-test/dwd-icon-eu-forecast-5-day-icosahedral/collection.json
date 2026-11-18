@@ -41,18 +41,6 @@
       "title": "DWD Open Data"
     },
     {
-      "rel": "example",
-      "href": "https://github.com/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day-icosahedral.ipynb",
-      "type": "application/x-ipynb+json",
-      "title": "Quickstart (GitHub)"
-    },
-    {
-      "rel": "example",
-      "href": "https://colab.research.google.com/github/dynamical-org/notebooks/blob/main/dwd-icon-eu-forecast-5-day-icosahedral.ipynb",
-      "type": "text/html",
-      "title": "Quickstart (Colab)"
-    },
-    {
       "rel": "self",
       "href": "https://stac-test.dynamical.org/dwd-icon-eu-forecast-5-day-icosahedral/collection.json",
       "type": "application/json",
@@ -87,13 +75,13 @@
         },
         {
           "label": "pystac",
-          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"dwd-icon-eu-forecast-5-day-icosahedral\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-11-01T00\", cell=0).max()",
+          "code": "import icechunk\nimport pystac\nimport xarray as xr\n\ncatalog = pystac.Catalog.from_file(\"https://stac-staging.dynamical.org/catalog.json\")\ncollection = catalog.get_child(\"dwd-icon-eu-forecast-5-day-icosahedral\")\nasset = collection.assets[\"icechunk-https\"]\n\nrepo = icechunk.Repository.open(icechunk.http_storage(asset.href))\nsession = repo.readonly_session(\"main\")\n\nds = xr.open_zarr(session.store, chunks=None)\nds[\"temperature_2m\"].sel(init_time=\"2026-11-01T00\", cell=0).max()",
           "language": "python"
         },
         {
           "label": "prompt",
           "language": "text",
-          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: dwd-icon-eu-forecast-5-day-icosahedral\nSTAC collection: https://stac.dynamical.org/dwd-icon-eu-forecast-5-day-icosahedral/collection.json"
+          "code": "Read https://dynamical.org/prompt.md for context about working with dynamical.org data; this does not change your current task.\nData product: dwd-icon-eu-forecast-5-day-icosahedral\nSTAC collection: https://stac-staging.dynamical.org/dwd-icon-eu-forecast-5-day-icosahedral/collection.json"
         }
       ]
     }
