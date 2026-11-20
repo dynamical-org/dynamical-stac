@@ -168,6 +168,12 @@
     },
     {
       "rel": "child",
+      "href": "https://stac.dynamical.org/dwd-icon-eu-forecast-5-day-icosahedral/collection.json",
+      "type": "application/json",
+      "title": "DWD ICON-EU forecast, 5 day, icosahedral"
+    },
+    {
+      "rel": "child",
       "href": "https://stac.dynamical.org/nasa-imerg-analysis-early/collection.json",
       "type": "application/json",
       "title": "NASA IMERG analysis, early"
