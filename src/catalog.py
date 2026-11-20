@@ -2356,7 +2356,12 @@ CATALOG_ITEMS: list[CatalogItem] = [
         model_id="dwd-icon-eu",
         source=_DWD_OPEN_DATA,
         description_summary=(
-            "This dataset is an archive of past and present ICON-EU forecasts. "
+            "DWD will stop publishing ICON-EU data on the regular "
+            "latitude-longitude grid this dataset is built from after "
+            "30 November 2026. Use "
+            "[DWD ICON-EU forecast, 5 day, icosahedral](https://dynamical.org/catalog/dwd-icon-eu-forecast-5-day-icosahedral/) "
+            "instead, which is built from DWD's native icosahedral grid."
+            "\n\nThis dataset is an archive of past and present ICON-EU forecasts. "
             "Forecasts are identified by an initialization time (`init_time`) "
             "denoting the start time of the model run and step forward in time "
             "along the `lead_time` dimension. This dataset contains only the "
